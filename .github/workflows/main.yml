@@ -1,0 +1,47 @@
+name: Update Gas Prices
+
+on:
+  schedule:
+    # Runs at 7am, 12pm, and 6pm UTC daily
+    # Adjust these if you want them in a specific timezone offset
+    - cron: '0 7,12,18 * * *'
+  workflow_dispatch: # Allows you to trigger a manual run from the GitHub UI
+
+permissions:
+  contents: write # Required so the action can commit the updated JSON files back
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run scraper (All Prices)
+        run: python backend.py 4
+
+      - name: Commit and push updated JSON files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add local_prices.json ca_prices.json us_prices.json
+          # Only commits if there are actual changes — skips if prices haven't changed
+          git diff --staged --quiet || git commit -m "chore: auto-update gas prices [$(date -u '+%Y-%m-%d %H:%M UTC')]"
+          git push
