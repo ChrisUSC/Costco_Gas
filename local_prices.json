@@ -1,0 +1,4432 @@
+{
+    "2023-07-12 06:44": {
+        "CA": {
+            "Tracy": {
+                "Premium": "$4.49"
+            },
+            "Manteca": {
+                "Premium": "$4.59"
+            },
+            "Modesto": {
+                "Premium": "$4.69"
+            },
+            "Livermore": {
+                "Premium": "$4.79"
+            },
+            "Turlock": {
+                "Premium": "$4.85"
+            }
+        }
+    },
+    "2023-07-12 20:58": {
+        "CA": {
+            "Tracy": {
+                "Premium": "$4.49"
+            },
+            "Manteca": {
+                "Premium": "$4.59"
+            },
+            "Modesto": {
+                "Premium": "$4.79"
+            },
+            "Livermore": {
+                "Premium": "$4.79"
+            },
+            "Turlock": {
+                "Premium": "$4.85"
+            }
+        }
+    },
+    "2023-07-13 21:59": {
+        "CA": {
+            "Tracy": {
+                "Regular": "$4.15",
+                "Premium": "$4.55"
+            },
+            "Manteca": {
+                "Regular": "$4.29",
+                "Premium": "$4.59"
+            },
+            "Modesto": {
+                "Regular": "$4.35",
+                "Premium": "$4.75"
+            },
+            "Turlock": {
+                "Regular": "$4.45",
+                "Premium": "$4.85"
+            },
+            "Livermore": {
+                "Regular": "$4.52",
+                "Premium": "$4.79"
+            }
+        }
+    },
+    "2023-07-14 21:47": {
+        "CA": {
+            "Tracy": {
+                "Regular": "$4.15",
+                "Premium": "$4.55"
+            },
+            "Manteca": {
+                "Regular": "$4.25",
+                "Premium": "$4.59"
+            },
+            "Modesto": {
+                "Regular": "$4.35",
+                "Premium": "$4.75"
+            },
+            "Turlock": {
+                "Regular": "$4.45",
+                "Premium": "$4.85"
+            },
+            "Livermore": {
+                "Regular": "$4.52",
+                "Premium": "$4.79"
+            }
+        }
+    },
+    "2023-07-16 15:46": {
+        "CA": {
+            "Tracy": {
+                "Regular": "$4.15",
+                "Premium": "$4.55"
+            },
+            "Manteca": {
+                "Regular": "$4.25",
+                "Premium": "$4.59"
+            },
+            "Modesto": {
+                "Regular": "$4.35",
+                "Premium": "$4.75"
+            },
+            "Turlock": {
+                "Regular": "$4.45",
+                "Premium": "$4.85"
+            },
+            "Livermore": {
+                "Regular": "$4.52",
+                "Premium": "$4.79"
+            }
+        }
+    },
+    "2023-07-17 09:35": {
+        "CA": {
+            "Tracy": {
+                "Regular": "$4.15",
+                "Premium": "$4.55"
+            },
+            "Manteca": {
+                "Regular": "$4.25",
+                "Premium": "$4.59"
+            },
+            "Modesto": {
+                "Regular": "$4.39",
+                "Premium": "$4.79"
+            },
+            "Turlock": {
+                "Regular": "$4.45",
+                "Premium": "$4.85"
+            },
+            "Livermore": {
+                "Regular": "$4.52",
+                "Premium": "$4.79"
+            }
+        }
+    },
+    "2023-07-20 11:09": {
+        "CA": {
+            "Manteca": {
+                "Regular": "$4.25",
+                "Premium": "$4.65"
+            },
+            "Tracy": {
+                "Regular": "$4.25",
+                "Premium": "$4.65"
+            },
+            "Modesto": {
+                "Regular": "$4.39",
+                "Premium": "$4.79"
+            },
+            "Turlock": {
+                "Regular": "$4.47",
+                "Premium": "$4.89"
+            },
+            "Livermore": {
+                "Regular": "$4.52",
+                "Premium": "$4.79"
+            }
+        }
+    },
+    "2023-07-21 10:39": {
+        "CA": {
+            "Manteca": {
+                "Regular": "$4.25",
+                "Premium": "$4.65"
+            },
+            "Tracy": {
+                "Regular": "$4.25",
+                "Premium": "$4.65"
+            },
+            "Modesto": {
+                "Regular": "$4.39",
+                "Premium": "$4.75"
+            },
+            "Turlock": {
+                "Regular": "$4.47",
+                "Premium": "$4.87"
+            },
+            "Livermore": {
+                "Regular": "$4.52",
+                "Premium": "$4.79"
+            }
+        }
+    },
+    "2023-08-04 07:36": {
+        "CA": {
+            "Turlock": {
+                "Regular": "$4.47",
+                "Premium": "$5.07"
+            },
+            "Tracy": {
+                "Regular": "$4.47",
+                "Premium": "$4.93"
+            },
+            "Manteca": {
+                "Regular": "$4.55",
+                "Premium": "$4.95"
+            },
+            "Modesto": {
+                "Regular": "$4.59",
+                "Premium": "$4.99"
+            },
+            "Livermore": {
+                "Regular": "$4.75",
+                "Premium": "$5.17"
+            }
+        }
+    },
+    "2023-08-05 10:15": {
+        "CA": {
+            "Manteca": {
+                "Regular": "$4.49",
+                "Premium": "$4.99"
+            },
+            "Tracy": {
+                "Regular": "$4.49",
+                "Premium": "$4.89"
+            },
+            "Modesto": {
+                "Regular": "$4.59",
+                "Premium": "$5.15"
+            },
+            "Livermore": {
+                "Regular": "$4.75",
+                "Premium": "$5.15"
+            },
+            "Turlock": {
+                "Regular": "$5.07",
+                "Premium": "$5.07"
+            }
+        }
+    },
+    "2023-08-11 08:48": {
+        "CA": {
+            "Tracy": {
+                "Regular": "$4.47",
+                "Premium": "$4.95"
+            },
+            "Turlock": {
+                "Regular": "$4.62",
+                "Premium": "$5.17"
+            },
+            "Manteca": {
+                "Regular": "$4.64",
+                "Premium": "$5.29"
+            },
+            "Modesto": {
+                "Regular": "$4.65",
+                "Premium": "$5.19"
+            },
+            "Livermore": {
+                "Regular": "$4.78",
+                "Premium": "$5.19"
+            }
+        }
+    },
+    "2023-08-12 11:38": {
+        "CA": {
+            "Tracy": {
+                "Regular": "$4.57",
+                "Premium": "$5.05"
+            },
+            "Turlock": {
+                "Regular": "$4.65",
+                "Premium": "$5.17"
+            },
+            "Manteca": {
+                "Regular": "$4.65",
+                "Premium": "$5.35"
+            },
+            "Modesto": {
+                "Regular": "$4.75",
+                "Premium": "$5.25"
+            },
+            "Livermore": {
+                "Regular": "$4.79",
+                "Premium": "$5.39"
+            }
+        }
+    },
+    "2023-08-17 20:37": {
+        "CA": {
+            "Tracy": {
+                "Regular": "$4.65",
+                "Premium": "$5.19"
+            },
+            "Manteca": {
+                "Regular": "$4.69",
+                "Premium": "$5.47"
+            },
+            "Modesto": {
+                "Regular": "$4.75",
+                "Premium": "$5.15"
+            },
+            "Turlock": {
+                "Regular": "$4.79",
+                "Premium": "$5.19"
+            },
+            "Livermore": {
+                "Regular": "$4.95",
+                "Premium": "$5.35"
+            }
+        }
+    },
+    "2023-08-21 09:56": {
+        "CA": {
+            "Tracy": {
+                "Regular": "$4.59",
+                "Premium": "$4.99"
+            },
+            "Manteca": {
+                "Regular": "$4.75",
+                "Premium": "$5.49"
+            },
+            "Turlock": {
+                "Regular": "$4.79",
+                "Premium": "$5.29"
+            },
+            "Modesto": {
+                "Regular": "$4.82",
+                "Premium": "$5.27"
+            },
+            "Livermore": {
+                "Regular": "$4.95",
+                "Premium": "$5.39"
+            }
+        }
+    },
+    "2023-08-30 12:55": {
+        "CA": {
+            "Tracy": {
+                "Regular": "$4.59",
+                "Premium": "$4.99"
+            },
+            "Manteca": {
+                "Regular": "$4.75",
+                "Premium": "$5.19"
+            },
+            "Turlock": {
+                "Regular": "$4.85",
+                "Premium": "$5.19"
+            },
+            "Modesto": {
+                "Regular": "$4.89",
+                "Premium": "$5.19"
+            },
+            "Livermore": {
+                "Regular": "$4.99",
+                "Premium": "$5.29"
+            }
+        }
+    },
+    "2023-09-13 18:31": {
+        "CA": {
+            "Modesto": {
+                "Regular": "$4.93",
+                "Premium": "$5.48"
+            },
+            "Manteca": {
+                "Regular": "$4.94",
+                "Premium": "$5.29"
+            },
+            "Tracy": {
+                "Regular": "$4.94",
+                "Premium": "$5.34"
+            },
+            "Turlock": {
+                "Regular": "$4.95",
+                "Premium": "$5.55"
+            },
+            "Livermore": {
+                "Regular": "$5.09",
+                "Premium": "$5.49"
+            }
+        }
+    },
+    "2023-09-15 08:09": {
+        "CA": {
+            "Modesto": {
+                "Regular": "$4.93",
+                "Premium": "$5.48"
+            },
+            "Manteca": {
+                "Regular": "$4.94",
+                "Premium": "$5.39"
+            },
+            "Turlock": {
+                "Regular": "$4.95",
+                "Premium": "$5.49"
+            },
+            "Tracy": {
+                "Regular": "$4.97",
+                "Premium": "$5.37"
+            },
+            "Livermore": {
+                "Regular": "$5.09",
+                "Premium": "$5.49"
+            }
+        }
+    },
+    "2023-09-18 19:58": {
+        "CA": {
+            "Turlock": {
+                "Regular": "$4.89",
+                "Premium": "$5.49"
+            },
+            "Modesto": {
+                "Regular": "$4.98",
+                "Premium": "$5.49"
+            },
+            "Manteca": {
+                "Regular": "$4.99",
+                "Premium": "$5.45"
+            },
+            "Tracy": {
+                "Regular": "$5.09",
+                "Premium": "$5.29"
+            },
+            "Livermore": {
+                "Regular": "$5.09",
+                "Premium": "$5.52"
+            }
+        }
+    },
+    "2023-09-22 13:17": {
+        "CA": {
+            "Modesto": {
+                "Regular": "$4.98",
+                "Premium": "$5.49"
+            },
+            "Tracy": {
+                "Regular": "$4.99",
+                "Premium": "$5.35"
+            },
+            "Manteca": {
+                "Regular": "$5.05",
+                "Premium": "$5.34"
+            },
+            "Turlock": {
+                "Regular": "$5.09",
+                "Premium": "$5.55"
+            },
+            "Livermore": {
+                "Regular": "$5.09",
+                "Premium": "$5.59"
+            }
+        }
+    },
+    "2023-09-28 07:34": {
+        "CA": {
+            "Modesto": {
+                "Regular": "$5.08",
+                "Premium": "$5.65"
+            },
+            "Turlock": {
+                "Regular": "$5.09",
+                "Premium": "$5.49"
+            },
+            "Manteca": {
+                "Regular": "$5.09",
+                "Premium": "$5.69"
+            },
+            "Tracy": {
+                "Regular": "$5.09",
+                "Premium": "$5.49"
+            },
+            "Livermore": {
+                "Regular": "$5.09",
+                "Premium": "$5.54"
+            }
+        }
+    },
+    "2023-09-29 16:30": {
+        "CA": {
+            "Tracy": {
+                "Regular": "$5.19",
+                "Premium": "$5.59"
+            },
+            "Manteca": {
+                "Regular": "$5.22",
+                "Premium": "$5.74"
+            },
+            "Turlock": {
+                "Regular": "$5.25",
+                "Premium": "$5.69"
+            },
+            "Modesto": {
+                "Regular": "$5.29",
+                "Premium": "$5.85"
+            },
+            "Livermore": {
+                "Regular": "$5.35",
+                "Premium": "$5.72"
+            },
+            "Hayward Business Center": {
+                "Regular": "$5.35",
+                "Premium": "$5.69"
+            },
+            "NE San Jose": {
+                "Regular": "$5.35",
+                "Premium": "$5.79"
+            },
+            "Hayward": {
+                "Regular": "$5.37",
+                "Premium": "$5.89"
+            },
+            "Fremont": {
+                "Regular": "$5.54",
+                "Premium": "$5.99"
+            },
+            "Redwood City": {
+                "Regular": "$5.55",
+                "Premium": "$5.99"
+            },
+            "Danville": {
+                "Regular": "$5.69",
+                "Premium": "$6.09"
+            }
+        }
+    },
+    "2023-10-05 09:54": {
+        "CA": {
+            "Modesto": {
+                "Regular": "$4.99",
+                "Premium": "$5.29"
+            },
+            "Tracy": {
+                "Regular": "$4.99",
+                "Premium": "$5.29"
+            },
+            "Hayward Business Center": {
+                "Regular": "$4.99",
+                "Premium": "$5.29"
+            },
+            "Turlock": {
+                "Regular": "$5.09",
+                "Premium": "$5.39"
+            },
+            "Manteca": {
+                "Regular": "$5.09",
+                "Premium": "$5.39"
+            },
+            "Livermore": {
+                "Regular": "$5.09",
+                "Premium": "$5.39"
+            },
+            "Danville": {
+                "Regular": "$5.09",
+                "Premium": "$5.39"
+            },
+            "Hayward": {
+                "Regular": "$5.09",
+                "Premium": "$5.39"
+            },
+            "Fremont": {
+                "Regular": "$5.09",
+                "Premium": "$5.39"
+            },
+            "NE San Jose": {
+                "Regular": "$5.09",
+                "Premium": "$5.39"
+            },
+            "Redwood City": {
+                "Regular": "$5.15",
+                "Premium": "$5.45"
+            }
+        }
+    },
+    "2023-11-02 08:24": {
+        "CA": {
+            "NE San Jose": {
+                "Regular": "$4.29",
+                "Premium": "$4.59"
+            },
+            "Tracy": {
+                "Regular": "$4.39",
+                "Premium": "$4.79"
+            },
+            "Hayward Business Center": {
+                "Regular": "$4.39",
+                "Premium": "$4.89"
+            },
+            "Hayward": {
+                "Regular": "$4.39",
+                "Premium": "$4.89"
+            },
+            "Manteca": {
+                "Regular": "$4.45",
+                "Premium": "$4.85"
+            },
+            "Livermore": {
+                "Regular": "$4.49",
+                "Premium": "$4.99"
+            },
+            "Modesto": {
+                "Regular": "$4.59",
+                "Premium": "$4.99"
+            },
+            "Redwood City": {
+                "Regular": "$4.59",
+                "Premium": "$4.99"
+            },
+            "Turlock": {
+                "Regular": "$4.69",
+                "Premium": "$5.09"
+            },
+            "Danville": {
+                "Regular": "$4.75",
+                "Premium": "$5.15"
+            },
+            "Fremont": {
+                "Regular": "$4.79",
+                "Premium": "$5.19"
+            }
+        }
+    },
+    "2023-11-02 17:07": {
+        "CA": {
+            "NE San Jose": {
+                "Regular": "$4.29",
+                "Premium": "$4.59"
+            },
+            "Tracy": {
+                "Regular": "$4.39",
+                "Premium": "$4.79"
+            },
+            "Hayward Business Center": {
+                "Regular": "$4.39",
+                "Premium": "$4.89"
+            },
+            "Hayward": {
+                "Regular": "$4.39",
+                "Premium": "$4.89"
+            },
+            "Manteca": {
+                "Regular": "$4.45",
+                "Premium": "$4.85"
+            },
+            "Livermore": {
+                "Regular": "$4.49",
+                "Premium": "$4.99"
+            },
+            "Modesto": {
+                "Regular": "$4.59",
+                "Premium": "$4.99"
+            },
+            "Redwood City": {
+                "Regular": "$4.59",
+                "Premium": "$4.99"
+            },
+            "Turlock": {
+                "Regular": "$4.69",
+                "Premium": "$5.09"
+            },
+            "Danville": {
+                "Regular": "$4.75",
+                "Premium": "$5.15"
+            },
+            "Fremont": {
+                "Regular": "$4.79",
+                "Premium": "$5.19"
+            }
+        }
+    },
+    "2023-11-05 20:43": {
+        "CA": {
+            "NE San Jose": {
+                "Regular": "$4.25",
+                "Premium": "$4.55"
+            },
+            "Hayward Business Center": {
+                "Regular": "$4.29",
+                "Premium": "$4.89"
+            },
+            "Hayward": {
+                "Regular": "$4.29",
+                "Premium": "$4.89"
+            },
+            "Tracy": {
+                "Regular": "$4.39",
+                "Premium": "$4.79"
+            },
+            "Manteca": {
+                "Regular": "$4.45",
+                "Premium": "$4.85"
+            },
+            "Livermore": {
+                "Regular": "$4.49",
+                "Premium": "$4.99"
+            },
+            "Modesto": {
+                "Regular": "$4.55",
+                "Premium": "$4.99"
+            },
+            "Redwood City": {
+                "Regular": "$4.59",
+                "Premium": "$4.99"
+            },
+            "Turlock": {
+                "Regular": "$4.69",
+                "Premium": "$5.09"
+            },
+            "Danville": {
+                "Regular": "$4.75",
+                "Premium": "$5.15"
+            },
+            "Fremont": {
+                "Regular": "$4.79",
+                "Premium": "$5.19"
+            }
+        }
+    },
+    "2023-11-06 14:08": {
+        "CA": {
+            "Hayward Business Center": {
+                "Regular": "$4.25",
+                "Premium": "$4.75"
+            },
+            "Hayward": {
+                "Regular": "$4.25",
+                "Premium": "$4.75"
+            },
+            "NE San Jose": {
+                "Regular": "$4.25",
+                "Premium": "$4.55"
+            },
+            "Manteca": {
+                "Regular": "$4.45",
+                "Premium": "$4.85"
+            },
+            "Tracy": {
+                "Regular": "$4.45",
+                "Premium": "$4.79"
+            },
+            "Livermore": {
+                "Regular": "$4.49",
+                "Premium": "$4.99"
+            },
+            "Modesto": {
+                "Regular": "$4.55",
+                "Premium": "$4.99"
+            },
+            "Redwood City": {
+                "Regular": "$4.59",
+                "Premium": "$4.99"
+            },
+            "Turlock": {
+                "Regular": "$4.69",
+                "Premium": "$5.09"
+            },
+            "Danville": {
+                "Regular": "$4.75",
+                "Premium": "$5.15"
+            },
+            "Fremont": {
+                "Regular": "$4.79",
+                "Premium": "$5.19"
+            }
+        }
+    },
+    "2023-11-10 13:29": {
+        "CA": {
+            "NE San Jose": {
+                "Regular": "$4.19",
+                "Premium": "$4.49"
+            },
+            "Tracy": {
+                "Regular": "$4.25",
+                "Premium": "$4.55"
+            },
+            "Hayward Business Center": {
+                "Regular": "$4.25",
+                "Premium": "$4.75"
+            },
+            "Hayward": {
+                "Regular": "$4.25",
+                "Premium": "$4.75"
+            },
+            "Manteca": {
+                "Regular": "$4.35",
+                "Premium": "$4.75"
+            },
+            "Modesto": {
+                "Regular": "$4.49",
+                "Premium": "$4.89"
+            },
+            "Livermore": {
+                "Regular": "$4.49",
+                "Premium": "$4.99"
+            },
+            "Turlock": {
+                "Regular": "$4.59",
+                "Premium": "$4.99"
+            },
+            "Redwood City": {
+                "Regular": "$4.59",
+                "Premium": "$4.99"
+            },
+            "Fremont": {
+                "Regular": "$4.65",
+                "Premium": "$5.05"
+            },
+            "Danville": {
+                "Regular": "$4.75",
+                "Premium": "$5.15"
+            }
+        }
+    },
+    "2023-11-16 18:06": {
+        "CA": {
+            "NE San Jose": {
+                "Regular": "$4.07",
+                "Premium": "$4.37"
+            },
+            "Hayward Business Center": {
+                "Regular": "$4.15",
+                "Premium": "$4.67"
+            },
+            "Hayward": {
+                "Regular": "$4.15",
+                "Premium": "$4.65"
+            },
+            "Tracy": {
+                "Regular": "$4.23",
+                "Premium": "$4.55"
+            },
+            "Manteca": {
+                "Regular": "$4.34",
+                "Premium": "$4.75"
+            },
+            "Modesto": {
+                "Regular": "$4.39",
+                "Premium": "$4.79"
+            },
+            "Fremont": {
+                "Regular": "$4.45",
+                "Premium": "$4.79"
+            },
+            "Livermore": {
+                "Regular": "$4.49",
+                "Premium": "$4.89"
+            },
+            "Turlock": {
+                "Regular": "$4.55",
+                "Premium": "$4.95"
+            },
+            "Redwood City": {
+                "Regular": "$4.59",
+                "Premium": "$4.89"
+            },
+            "Danville": {
+                "Regular": "$4.75",
+                "Premium": "$5.15"
+            }
+        }
+    },
+    "2023-11-17 14:19": {
+        "CA": {
+            "NE San Jose": {
+                "Regular": "$4.07",
+                "Premium": "$4.37"
+            },
+            "Hayward Business Center": {
+                "Regular": "$4.15",
+                "Premium": "$4.67"
+            },
+            "Hayward": {
+                "Regular": "$4.15",
+                "Premium": "$4.65"
+            },
+            "Tracy": {
+                "Regular": "$4.23",
+                "Premium": "$4.55"
+            },
+            "Manteca": {
+                "Regular": "$4.34",
+                "Premium": "$4.75"
+            },
+            "Modesto": {
+                "Regular": "$4.35",
+                "Premium": "$4.79"
+            },
+            "Fremont": {
+                "Regular": "$4.39",
+                "Premium": "$4.69"
+            },
+            "Livermore": {
+                "Regular": "$4.49",
+                "Premium": "$4.89"
+            },
+            "Redwood City": {
+                "Regular": "$4.49",
+                "Premium": "$4.89"
+            },
+            "Turlock": {
+                "Regular": "$4.55",
+                "Premium": "$4.95"
+            },
+            "Danville": {
+                "Regular": "$4.75",
+                "Premium": "$5.15"
+            }
+        }
+    },
+    "2023-11-22 09:16": {
+        "CA": {
+            "NE San Jose": {
+                "Regular": "$4.03",
+                "Premium": "$4.33"
+            },
+            "Manteca": {
+                "Regular": "$4.09",
+                "Premium": "$4.59"
+            },
+            "Hayward Business Center": {
+                "Regular": "$4.09",
+                "Premium": "$4.55"
+            },
+            "Hayward": {
+                "Regular": "$4.09",
+                "Premium": "$4.55"
+            },
+            "Tracy": {
+                "Regular": "$4.21",
+                "Premium": "$4.55"
+            },
+            "Modesto": {
+                "Regular": "$4.25",
+                "Premium": "$4.69"
+            },
+            "Fremont": {
+                "Regular": "$4.29",
+                "Premium": "$4.59"
+            },
+            "Redwood City": {
+                "Regular": "$4.29",
+                "Premium": "$4.69"
+            },
+            "Turlock": {
+                "Regular": "$4.49",
+                "Premium": "$4.89"
+            },
+            "Livermore": {
+                "Regular": "$4.49",
+                "Premium": "$4.89"
+            },
+            "Danville": {
+                "Regular": "$4.59",
+                "Premium": "$4.99"
+            }
+        }
+    },
+    "2023-12-03 16:41": {
+        "CA": {
+            "Manteca": {
+                "Regular": "$3.95",
+                "Premium": "$4.45"
+            },
+            "NE San Jose": {
+                "Regular": "$3.95",
+                "Premium": "$4.25"
+            },
+            "Hayward Business Center": {
+                "Regular": "$3.97",
+                "Premium": "$4.39"
+            },
+            "Hayward": {
+                "Regular": "$3.97",
+                "Premium": "$4.39"
+            },
+            "Tracy": {
+                "Regular": "$3.99",
+                "Premium": "$4.39"
+            },
+            "Redwood City": {
+                "Regular": "$4.07",
+                "Premium": "$4.47"
+            },
+            "Modesto": {
+                "Regular": "$4.09",
+                "Premium": "$4.49"
+            },
+            "Fremont": {
+                "Regular": "$4.09",
+                "Premium": "$4.49"
+            },
+            "Livermore": {
+                "Regular": "$4.29",
+                "Premium": "$4.69"
+            },
+            "Danville": {
+                "Regular": "$4.29",
+                "Premium": "$4.69"
+            },
+            "Turlock": {
+                "Regular": "$4.35",
+                "Premium": "$4.85"
+            }
+        }
+    },
+    "2023-12-05 12:01": {
+        "CA": {
+            "Turlock": {
+                "Regular": "$4.35",
+                "Premium": "$4.85"
+            },
+            "Modesto": {
+                "Regular": "$4.09",
+                "Premium": "$4.49"
+            },
+            "Manteca": {
+                "Regular": "$3.95",
+                "Premium": "$4.35"
+            },
+            "Tracy": {
+                "Regular": "$3.99",
+                "Premium": "$4.39"
+            },
+            "Livermore": {
+                "Regular": "$4.29",
+                "Premium": "$4.69"
+            },
+            "Danville": {
+                "Regular": "$4.29",
+                "Premium": "$4.69"
+            },
+            "Hayward Business Center": {
+                "Regular": "$3.99",
+                "Premium": "$4.29"
+            },
+            "Hayward": {
+                "Regular": "$3.99",
+                "Premium": "$4.29"
+            },
+            "Fremont": {
+                "Regular": "$4.09",
+                "Premium": "$4.49"
+            },
+            "NE San Jose": {
+                "Regular": "$3.91",
+                "Premium": "$4.21"
+            },
+            "Redwood City": {
+                "Regular": "$4.07",
+                "Premium": "$4.47"
+            }
+        }
+    },
+    "2023-12-05 12:06": {
+        "CA": {
+            "Turlock": {
+                "Regular": "$4.35",
+                "Premium": "$4.85"
+            },
+            "Modesto": {
+                "Regular": "$4.09",
+                "Premium": "$4.49"
+            },
+            "Manteca": {
+                "Regular": "$3.95",
+                "Premium": "$4.35"
+            },
+            "Tracy": {
+                "Regular": "$3.99",
+                "Premium": "$4.39"
+            },
+            "Livermore": {
+                "Regular": "$4.29",
+                "Premium": "$4.69"
+            },
+            "Danville": {
+                "Regular": "$4.29",
+                "Premium": "$4.69"
+            },
+            "Hayward Business Center": {
+                "Regular": "$3.99",
+                "Premium": "$4.29"
+            },
+            "Hayward": {
+                "Regular": "$3.99",
+                "Premium": "$4.29"
+            },
+            "Fremont": {
+                "Regular": "$4.09",
+                "Premium": "$4.49"
+            },
+            "NE San Jose": {
+                "Regular": "$3.91",
+                "Premium": "$4.21"
+            },
+            "Redwood City": {
+                "Regular": "$4.07",
+                "Premium": "$4.47"
+            }
+        }
+    },
+    "2023-12-12 08:20": {
+        "CA": {
+            "Hayward Business Center": {
+                "Regular": "$3.87",
+                "Premium": "$4.27"
+            },
+            "Hayward": {
+                "Regular": "$3.87",
+                "Premium": "$4.29"
+            },
+            "NE San Jose": {
+                "Regular": "$3.91",
+                "Premium": "$4.21"
+            },
+            "Manteca": {
+                "Regular": "$3.95",
+                "Premium": "$4.35"
+            },
+            "Tracy": {
+                "Regular": "$3.95",
+                "Premium": "$4.35"
+            },
+            "Modesto": {
+                "Regular": "$3.99",
+                "Premium": "$4.39"
+            },
+            "Redwood City": {
+                "Regular": "$3.99",
+                "Premium": "$4.33"
+            },
+            "Fremont": {
+                "Regular": "$4.09",
+                "Premium": "$4.49"
+            },
+            "Turlock": {
+                "Regular": "$4.19",
+                "Premium": "$4.59"
+            },
+            "Livermore": {
+                "Regular": "$4.19",
+                "Premium": "$4.59"
+            },
+            "Danville": {
+                "Regular": "$4.29",
+                "Premium": "$4.69"
+            }
+        }
+    },
+    "2023-12-13 19:10": {
+        "CA": {
+            "Hayward": {
+                "Regular": "$3.85",
+                "Premium": "$4.25"
+            },
+            "Hayward Business Center": {
+                "Regular": "$3.87",
+                "Premium": "$4.27"
+            },
+            "NE San Jose": {
+                "Regular": "$3.89",
+                "Premium": "$4.19"
+            },
+            "Manteca": {
+                "Regular": "$3.95",
+                "Premium": "$4.35"
+            },
+            "Tracy": {
+                "Regular": "$3.95",
+                "Premium": "$4.35"
+            },
+            "Modesto": {
+                "Regular": "$3.99",
+                "Premium": "$4.39"
+            },
+            "Redwood City": {
+                "Regular": "$3.99",
+                "Premium": "$4.29"
+            },
+            "Turlock": {
+                "Regular": "$4.09",
+                "Premium": "$4.49"
+            },
+            "Livermore": {
+                "Regular": "$4.09",
+                "Premium": "$4.49"
+            },
+            "Fremont": {
+                "Regular": "$4.09",
+                "Premium": "$4.49"
+            },
+            "Danville": {
+                "Regular": "$4.19",
+                "Premium": "$4.59"
+            }
+        }
+    },
+    "2023-12-15 07:17": {
+        "CA": {
+            "Hayward Business Center": {
+                "Regular": "$3.75",
+                "Premium": "$4.25"
+            },
+            "Hayward": {
+                "Regular": "$3.75",
+                "Premium": "$4.25"
+            },
+            "Manteca": {
+                "Regular": "$3.89",
+                "Premium": "$4.29"
+            },
+            "NE San Jose": {
+                "Regular": "$3.89",
+                "Premium": "$4.19"
+            },
+            "Tracy": {
+                "Regular": "$3.93",
+                "Premium": "$4.33"
+            },
+            "Modesto": {
+                "Regular": "$3.95",
+                "Premium": "$4.35"
+            },
+            "Redwood City": {
+                "Regular": "$3.99",
+                "Premium": "$4.29"
+            },
+            "Fremont": {
+                "Regular": "$4.05",
+                "Premium": "$4.45"
+            },
+            "Turlock": {
+                "Regular": "$4.09",
+                "Premium": "$4.49"
+            },
+            "Livermore": {
+                "Regular": "$4.09",
+                "Premium": "$4.49"
+            },
+            "Danville": {
+                "Regular": "$4.19",
+                "Premium": "$4.59"
+            }
+        }
+    },
+    "2023-12-21 16:17": {
+        "CA": {
+            "Modesto": {
+                "Regular": "$3.84",
+                "Premium": "$4.24"
+            },
+            "Tracy": {
+                "Regular": "$3.84",
+                "Premium": "$4.23"
+            },
+            "Manteca": {
+                "Regular": "$3.85",
+                "Premium": "$4.15"
+            },
+            "NE San Jose": {
+                "Regular": "$3.85",
+                "Premium": "$4.24"
+            },
+            "Hayward Business Center": {
+                "Regular": "$3.94",
+                "Premium": "$4.25"
+            },
+            "Hayward": {
+                "Regular": "$3.94",
+                "Premium": "$4.25"
+            },
+            "Turlock": {
+                "Regular": "$3.99",
+                "Premium": "$4.29"
+            },
+            "Livermore": {
+                "Regular": "$3.99",
+                "Premium": "$4.39"
+            },
+            "Fremont": {
+                "Regular": "$3.99",
+                "Premium": "$4.35"
+            },
+            "Redwood City": {
+                "Regular": "$4.09",
+                "Premium": "$4.39"
+            },
+            "Danville": {
+                "Regular": "$4.19",
+                "Premium": "$4.59"
+            }
+        }
+    },
+    "2023-12-22 17:54": {
+        "CA": {
+            "Modesto": {
+                "Regular": "$3.84",
+                "Premium": "$4.24"
+            },
+            "Tracy": {
+                "Regular": "$3.84",
+                "Premium": "$4.29"
+            },
+            "Manteca": {
+                "Regular": "$3.85",
+                "Premium": "$4.25"
+            },
+            "NE San Jose": {
+                "Regular": "$3.85",
+                "Premium": "$4.24"
+            },
+            "Hayward Business Center": {
+                "Regular": "$3.94",
+                "Premium": "$4.25"
+            },
+            "Hayward": {
+                "Regular": "$3.94",
+                "Premium": "$4.25"
+            },
+            "Turlock": {
+                "Regular": "$3.99",
+                "Premium": "$4.39"
+            },
+            "Fremont": {
+                "Regular": "$4.05",
+                "Premium": "$4.35"
+            },
+            "Livermore": {
+                "Regular": "$4.09",
+                "Premium": "$4.49"
+            },
+            "Redwood City": {
+                "Regular": "$4.17",
+                "Premium": "$4.39"
+            },
+            "Danville": {
+                "Regular": "$4.19",
+                "Premium": "$4.59"
+            }
+        }
+    },
+    "2023-12-23 15:24": {
+        "CA": {
+            "Modesto": {
+                "Regular": "$3.84",
+                "Premium": "$4.24"
+            },
+            "Tracy": {
+                "Regular": "$3.84",
+                "Premium": "$4.29"
+            },
+            "Manteca": {
+                "Regular": "$3.85",
+                "Premium": "$4.25"
+            },
+            "NE San Jose": {
+                "Regular": "$3.85",
+                "Premium": "$4.24"
+            },
+            "Hayward Business Center": {
+                "Regular": "$3.94",
+                "Premium": "$4.25"
+            },
+            "Hayward": {
+                "Regular": "$3.94",
+                "Premium": "$4.25"
+            },
+            "Turlock": {
+                "Regular": "$3.99",
+                "Premium": "$4.39"
+            },
+            "Fremont": {
+                "Regular": "$4.05",
+                "Premium": "$4.35"
+            },
+            "Livermore": {
+                "Regular": "$4.09",
+                "Premium": "$4.49"
+            },
+            "Redwood City": {
+                "Regular": "$4.09",
+                "Premium": "$4.39"
+            },
+            "Danville": {
+                "Regular": "$4.19",
+                "Premium": "$4.59"
+            }
+        }
+    },
+    "2024-02-01 22:02": {
+        "CA": {
+            "Hayward Business Center": {
+                "Regular": "$3.85",
+                "Premium": "$4.15"
+            },
+            "Hayward": {
+                "Regular": "$3.85",
+                "Premium": "$4.15"
+            },
+            "Manteca": {
+                "Regular": "$3.87",
+                "Premium": "$4.49"
+            },
+            "Tracy": {
+                "Regular": "$3.89",
+                "Premium": "$4.39"
+            },
+            "NE San Jose": {
+                "Regular": "$3.89",
+                "Premium": "$4.19"
+            },
+            "Modesto": {
+                "Regular": "$3.94",
+                "Premium": "$4.34"
+            },
+            "Turlock": {
+                "Regular": "$3.99",
+                "Premium": "$4.49"
+            },
+            "Livermore": {
+                "Regular": "$4.09",
+                "Premium": "$4.59"
+            },
+            "Danville": {
+                "Regular": "$4.09",
+                "Premium": "$4.59"
+            },
+            "Fremont": {
+                "Regular": "$4.17",
+                "Premium": "$4.49"
+            },
+            "Redwood City": {
+                "Regular": "$4.19",
+                "Premium": "$4.59"
+            }
+        }
+    },
+    "2024-02-16 11:17": {
+        "CA": {
+            "Tracy": {
+                "Regular": "$3.79",
+                "Premium": "$4.19"
+            },
+            "Hayward Business Center": {
+                "Regular": "$3.83",
+                "Premium": "$4.25"
+            },
+            "Hayward": {
+                "Regular": "$3.83",
+                "Premium": "$4.29"
+            },
+            "NE San Jose": {
+                "Regular": "$3.95",
+                "Premium": "$4.33"
+            },
+            "Modesto": {
+                "Regular": "$3.98",
+                "Premium": "$4.49"
+            },
+            "Turlock": {
+                "Regular": "$3.99",
+                "Premium": "$4.59"
+            },
+            "Fremont": {
+                "Regular": "$3.99",
+                "Premium": "$4.39"
+            },
+            "Manteca": {
+                "Regular": "$4.04",
+                "Premium": "$4.55"
+            },
+            "Livermore": {
+                "Regular": "$4.09",
+                "Premium": "$4.59"
+            },
+            "Danville": {
+                "Regular": "$4.09",
+                "Premium": "$4.59"
+            },
+            "Redwood City": {
+                "Regular": "$4.29",
+                "Premium": "$4.59"
+            }
+        }
+    },
+    "2024-02-18 19:30": {
+        "CA": {
+            "Hayward Business Center": {
+                "Regular": "$3.85",
+                "Premium": "$4.29"
+            },
+            "Hayward": {
+                "Regular": "$3.85",
+                "Premium": "$4.29"
+            },
+            "Tracy": {
+                "Regular": "$3.89",
+                "Premium": "$4.29"
+            },
+            "NE San Jose": {
+                "Regular": "$3.89",
+                "Premium": "$4.21"
+            },
+            "Turlock": {
+                "Regular": "$4.03",
+                "Premium": "$4.59"
+            },
+            "Fremont": {
+                "Regular": "$4.05",
+                "Premium": "$4.45"
+            },
+            "Modesto": {
+                "Regular": "$4.09",
+                "Premium": "$4.49"
+            },
+            "Manteca": {
+                "Regular": "$4.09",
+                "Premium": "$4.55"
+            },
+            "Livermore": {
+                "Regular": "$4.09",
+                "Premium": "$4.39"
+            },
+            "Danville": {
+                "Regular": "$4.09",
+                "Premium": "$4.59"
+            },
+            "Redwood City": {
+                "Regular": "$4.23",
+                "Premium": "$4.59"
+            }
+        }
+    },
+    "2024-02-28 18:33": {
+        "CA": {
+            "Manteca": {
+                "Regular": "$3.95",
+                "Premium": "$4.35"
+            },
+            "Hayward Business Center": {
+                "Regular": "$3.95",
+                "Premium": "$4.25"
+            },
+            "Turlock": {
+                "Regular": "$3.99",
+                "Premium": "$4.39"
+            },
+            "Hayward": {
+                "Regular": "$3.99",
+                "Premium": "$4.29"
+            },
+            "NE San Jose": {
+                "Regular": "$3.99",
+                "Premium": "$4.29"
+            },
+            "Tracy": {
+                "Regular": "$4.04",
+                "Premium": "$4.42"
+            },
+            "Fremont": {
+                "Regular": "$4.09",
+                "Premium": "$4.39"
+            },
+            "Modesto": {
+                "Regular": "$4.15",
+                "Premium": "$4.69"
+            },
+            "Livermore": {
+                "Regular": "$4.19",
+                "Premium": "$4.57"
+            },
+            "Danville": {
+                "Regular": "$4.19",
+                "Premium": "$4.69"
+            },
+            "Redwood City": {
+                "Regular": "$4.25",
+                "Premium": "$4.65"
+            }
+        }
+    },
+    "2024-02-29 17:28": {
+        "CA": {
+            "Hayward Business Center": {
+                "Regular": "$3.95",
+                "Premium": "$4.25"
+            },
+            "Turlock": {
+                "Regular": "$3.99",
+                "Premium": "$4.39"
+            },
+            "Hayward": {
+                "Regular": "$3.99",
+                "Premium": "$4.49"
+            },
+            "NE San Jose": {
+                "Regular": "$3.99",
+                "Premium": "$4.39"
+            },
+            "Tracy": {
+                "Regular": "$4.04",
+                "Premium": "$4.47"
+            },
+            "Manteca": {
+                "Regular": "$4.05",
+                "Premium": "$4.39"
+            },
+            "Fremont": {
+                "Regular": "$4.09",
+                "Premium": "$4.39"
+            },
+            "Modesto": {
+                "Regular": "$4.15",
+                "Premium": "$4.59"
+            },
+            "Danville": {
+                "Regular": "$4.24",
+                "Premium": "$4.69"
+            },
+            "Livermore": {
+                "Regular": "$4.29",
+                "Premium": "$4.61"
+            },
+            "Redwood City": {
+                "Regular": "$4.29",
+                "Premium": "$4.73"
+            }
+        }
+    },
+    "2024-03-02 14:11": {
+        "CA": {
+            "Hayward": {
+                "Regular": "$3.99",
+                "Premium": "$4.53"
+            },
+            "Turlock": {
+                "Regular": "$4.09",
+                "Premium": "$4.49"
+            },
+            "Manteca": {
+                "Regular": "$4.09",
+                "Premium": "$4.39"
+            },
+            "Tracy": {
+                "Regular": "$4.09",
+                "Premium": "$4.49"
+            },
+            "NE San Jose": {
+                "Regular": "$4.09",
+                "Premium": "$4.39"
+            },
+            "Hayward Business Center": {
+                "Regular": "$4.15",
+                "Premium": "$4.45"
+            },
+            "Modesto": {
+                "Regular": "$4.19",
+                "Premium": "$4.59"
+            },
+            "Livermore": {
+                "Regular": "$4.29",
+                "Premium": "$4.61"
+            },
+            "Danville": {
+                "Regular": "$4.35",
+                "Premium": "$4.79"
+            },
+            "Fremont": {
+                "Regular": "$4.39",
+                "Premium": "$4.59"
+            },
+            "Redwood City": {
+                "Regular": "$4.39",
+                "Premium": "$4.79"
+            }
+        }
+    },
+    "2024-03-14 20:04": {
+        "CA": {
+            "Tracy": {
+                "Regular": "$4.27",
+                "Premium": "$4.67"
+            },
+            "Manteca": {
+                "Regular": "$4.29",
+                "Premium": "$4.79"
+            },
+            "NE San Jose": {
+                "Regular": "$4.29",
+                "Premium": "$4.69"
+            },
+            "Hayward Business Center": {
+                "Regular": "$4.35",
+                "Premium": "$4.75"
+            },
+            "Modesto": {
+                "Regular": "$4.39",
+                "Premium": "$4.79"
+            },
+            "Hayward": {
+                "Regular": "$4.39",
+                "Premium": "$4.69"
+            },
+            "Livermore": {
+                "Regular": "$4.45",
+                "Premium": "$4.87"
+            },
+            "Turlock": {
+                "Regular": "$4.49",
+                "Premium": "$4.95"
+            },
+            "Danville": {
+                "Regular": "$4.49",
+                "Premium": "$4.89"
+            },
+            "Fremont": {
+                "Regular": "$4.49",
+                "Premium": "$4.89"
+            },
+            "Redwood City": {
+                "Regular": "$4.49",
+                "Premium": "$4.99"
+            }
+        }
+    },
+    "2024-03-15 15:20": {
+        "CA": {
+            "Tracy": {
+                "Regular": "$4.27",
+                "Premium": "$4.67"
+            },
+            "Manteca": {
+                "Regular": "$4.35",
+                "Premium": "$4.79"
+            },
+            "Hayward Business Center": {
+                "Regular": "$4.35",
+                "Premium": "$4.65"
+            },
+            "NE San Jose": {
+                "Regular": "$4.35",
+                "Premium": "$4.69"
+            },
+            "Turlock": {
+                "Regular": "$4.39",
+                "Premium": "$4.79"
+            },
+            "Modesto": {
+                "Regular": "$4.39",
+                "Premium": "$4.79"
+            },
+            "Hayward": {
+                "Regular": "$4.39",
+                "Premium": "$4.69"
+            },
+            "Livermore": {
+                "Regular": "$4.49",
+                "Premium": "$4.89"
+            },
+            "Fremont": {
+                "Regular": "$4.49",
+                "Premium": "$4.89"
+            },
+            "Redwood City": {
+                "Regular": "$4.49",
+                "Premium": "$4.99"
+            },
+            "Danville": {
+                "Regular": "$4.55",
+                "Premium": "$4.95"
+            }
+        }
+    },
+    "2024-03-22 11:30": {
+        "CA": {
+            "NE San Jose": {
+                "Regular": "$4.33",
+                "Premium": "$4.69"
+            },
+            "Manteca": {
+                "Regular": "$4.34",
+                "Premium": "$4.74"
+            },
+            "Tracy": {
+                "Regular": "$4.49",
+                "Premium": "$4.89"
+            },
+            "Hayward Business Center": {
+                "Regular": "$4.55",
+                "Premium": "$4.95"
+            },
+            "Hayward": {
+                "Regular": "$4.55",
+                "Premium": "$4.95"
+            },
+            "Turlock": {
+                "Regular": "$4.59",
+                "Premium": "$5.09"
+            },
+            "Modesto": {
+                "Regular": "$4.59",
+                "Premium": "$4.89"
+            },
+            "Danville": {
+                "Regular": "$4.59",
+                "Premium": "$4.99"
+            },
+            "Fremont": {
+                "Regular": "$4.59",
+                "Premium": "$5.04"
+            },
+            "Redwood City": {
+                "Regular": "$4.59",
+                "Premium": "$4.99"
+            },
+            "Livermore": {
+                "Regular": "$4.67",
+                "Premium": "$4.97"
+            }
+        }
+    },
+    "2024-04-13 14:24": {
+        "CA": {
+            "Manteca": {
+                "Regular": "$4.99",
+                "Premium": "$5.49"
+            },
+            "Turlock": {
+                "Regular": "$5.07",
+                "Premium": "$5.39"
+            },
+            "Hayward Business Center": {
+                "Regular": "$5.15",
+                "Premium": "$5.55"
+            },
+            "Danville": {
+                "Regular": "$5.16",
+                "Premium": "$5.69"
+            },
+            "Modesto": {
+                "Regular": "$5.19",
+                "Premium": "$5.69"
+            },
+            "Tracy": {
+                "Regular": "$5.19",
+                "Premium": "$5.59"
+            },
+            "Fremont": {
+                "Regular": "$5.19",
+                "Premium": "$5.49"
+            },
+            "NE San Jose": {
+                "Regular": "$5.19",
+                "Premium": "$5.45"
+            },
+            "Livermore": {
+                "Regular": "$5.25",
+                "Premium": "$5.59"
+            },
+            "Redwood City": {
+                "Regular": "$5.29",
+                "Premium": "$5.73"
+            },
+            "Hayward": {
+                "Regular": "$5.39",
+                "Premium": "$5.69"
+            }
+        }
+    },
+    "2024-04-14 19:30": {
+        "CA": {
+            "Manteca": {
+                "Regular": "$4.99",
+                "Premium": "$5.49"
+            },
+            "Hayward Business Center": {
+                "Regular": "$5.05",
+                "Premium": "$5.55"
+            },
+            "Turlock": {
+                "Regular": "$5.07",
+                "Premium": "$5.37"
+            },
+            "Danville": {
+                "Regular": "$5.16",
+                "Premium": "$5.69"
+            },
+            "Modesto": {
+                "Regular": "$5.19",
+                "Premium": "$5.69"
+            },
+            "Tracy": {
+                "Regular": "$5.19",
+                "Premium": "$5.59"
+            },
+            "NE San Jose": {
+                "Regular": "$5.19",
+                "Premium": "$5.45"
+            },
+            "Livermore": {
+                "Regular": "$5.25",
+                "Premium": "$5.75"
+            },
+            "Fremont": {
+                "Regular": "$5.25",
+                "Premium": "$5.53"
+            },
+            "Redwood City": {
+                "Regular": "$5.33",
+                "Premium": "$5.73"
+            },
+            "Hayward": {
+                "Regular": "$5.39",
+                "Premium": "$5.69"
+            }
+        }
+    },
+    "2024-04-20 11:29": {
+        "CA": {
+            "Hayward Business Center": {
+                "Regular": "$4.95",
+                "Premium": "$5.35"
+            },
+            "Tracy": {
+                "Regular": "$4.97",
+                "Premium": "$5.39"
+            },
+            "Manteca": {
+                "Regular": "$4.99",
+                "Premium": "$5.39"
+            },
+            "Hayward": {
+                "Regular": "$5.09",
+                "Premium": "$5.69"
+            },
+            "NE San Jose": {
+                "Regular": "$5.09",
+                "Premium": "$5.48"
+            },
+            "Fremont": {
+                "Regular": "$5.15",
+                "Premium": "$5.63"
+            },
+            "Modesto": {
+                "Regular": "$5.19",
+                "Premium": "$5.69"
+            },
+            "Livermore": {
+                "Regular": "$5.19",
+                "Premium": "$5.42"
+            },
+            "Danville": {
+                "Regular": "$5.19",
+                "Premium": "$5.65"
+            },
+            "Turlock": {
+                "Regular": "$5.35",
+                "Premium": "$5.75"
+            },
+            "Redwood City": {
+                "Regular": "$5.39",
+                "Premium": "$5.69"
+            }
+        }
+    },
+    "2024-04-21 08:56": {
+        "CA": {
+            "Hayward Business Center": {
+                "Regular": "$4.89",
+                "Premium": "$5.25"
+            },
+            "Tracy": {
+                "Regular": "$4.97",
+                "Premium": "$5.39"
+            },
+            "Manteca": {
+                "Regular": "$4.99",
+                "Premium": "$5.39"
+            },
+            "Hayward": {
+                "Regular": "$5.09",
+                "Premium": "$5.69"
+            },
+            "NE San Jose": {
+                "Regular": "$5.09",
+                "Premium": "$5.48"
+            },
+            "Fremont": {
+                "Regular": "$5.15",
+                "Premium": "$5.63"
+            },
+            "Modesto": {
+                "Regular": "$5.19",
+                "Premium": "$5.69"
+            },
+            "Livermore": {
+                "Regular": "$5.19",
+                "Premium": "$5.42"
+            },
+            "Danville": {
+                "Regular": "$5.19",
+                "Premium": "$5.65"
+            },
+            "Turlock": {
+                "Regular": "$5.35",
+                "Premium": "$5.75"
+            },
+            "Redwood City": {
+                "Regular": "$5.39",
+                "Premium": "$5.69"
+            }
+        }
+    },
+    "2024-04-26 17:11": {
+        "CA": {
+            "Hayward Business Center": {
+                "Regular": "$4.89",
+                "Premium": "$5.19"
+            },
+            "Tracy": {
+                "Regular": "$4.97",
+                "Premium": "$5.37"
+            },
+            "Manteca": {
+                "Regular": "$4.99",
+                "Premium": "$5.39"
+            },
+            "Hayward": {
+                "Regular": "$4.99",
+                "Premium": "$5.45"
+            },
+            "NE San Jose": {
+                "Regular": "$4.99",
+                "Premium": "$5.39"
+            },
+            "Modesto": {
+                "Regular": "$5.05",
+                "Premium": "$5.65"
+            },
+            "Livermore": {
+                "Regular": "$5.12",
+                "Premium": "$5.34"
+            },
+            "Fremont": {
+                "Regular": "$5.15",
+                "Premium": "$5.69"
+            },
+            "Turlock": {
+                "Regular": "$5.19",
+                "Premium": "$5.49"
+            },
+            "Danville": {
+                "Regular": "$5.19",
+                "Premium": "$5.69"
+            },
+            "Redwood City": {
+                "Regular": "$5.25",
+                "Premium": "$5.69"
+            }
+        }
+    },
+    "2024-04-29 14:29": {
+        "CA": {
+            "Hayward Business Center": {
+                "Regular": "$4.79",
+                "Premium": "$5.19"
+            },
+            "Hayward": {
+                "Regular": "$4.79",
+                "Premium": "$5.19"
+            },
+            "Tracy": {
+                "Regular": "$4.95",
+                "Premium": "$5.35"
+            },
+            "NE San Jose": {
+                "Regular": "$4.95",
+                "Premium": "$5.29"
+            },
+            "Manteca": {
+                "Regular": "$4.99",
+                "Premium": "$5.49"
+            },
+            "Modesto": {
+                "Regular": "$5.05",
+                "Premium": "$5.63"
+            },
+            "Turlock": {
+                "Regular": "$5.09",
+                "Premium": "$5.49"
+            },
+            "Fremont": {
+                "Regular": "$5.15",
+                "Premium": "$5.51"
+            },
+            "Danville": {
+                "Regular": "$5.19",
+                "Premium": "$5.59"
+            },
+            "Livermore": {
+                "Regular": "$5.25",
+                "Premium": "$5.65"
+            },
+            "Redwood City": {
+                "Regular": "$5.29",
+                "Premium": "$5.69"
+            }
+        }
+    },
+    "2024-05-02 20:21": {
+        "CA": {
+            "Hayward": {
+                "Regular": "$4.85",
+                "Premium": "$5.15"
+            },
+            "Manteca": {
+                "Regular": "$4.89",
+                "Premium": "$5.19"
+            },
+            "Hayward Business Center": {
+                "Regular": "$4.89",
+                "Premium": "$5.19"
+            },
+            "NE San Jose": {
+                "Regular": "$4.89",
+                "Premium": "$5.29"
+            },
+            "Tracy": {
+                "Regular": "$4.91",
+                "Premium": "$5.31"
+            },
+            "Modesto": {
+                "Regular": "$5.05",
+                "Premium": "$5.49"
+            },
+            "Livermore": {
+                "Regular": "$5.05",
+                "Premium": "$5.45"
+            },
+            "Fremont": {
+                "Regular": "$5.05",
+                "Premium": "$5.45"
+            },
+            "Turlock": {
+                "Regular": "$5.09",
+                "Premium": "$5.49"
+            },
+            "Danville": {
+                "Regular": "$5.19",
+                "Premium": "$5.69"
+            },
+            "Redwood City": {
+                "Regular": "$5.19",
+                "Premium": "$5.49"
+            }
+        }
+    },
+    "2024-05-08 16:25": {
+        "CA": {
+            "Manteca": {
+                "Regular": "$4.79",
+                "Premium": "$5.19"
+            },
+            "Hayward Business Center": {
+                "Regular": "$4.79",
+                "Premium": "$5.09"
+            },
+            "Hayward": {
+                "Regular": "$4.79",
+                "Premium": "$5.09"
+            },
+            "NE San Jose": {
+                "Regular": "$4.79",
+                "Premium": "$5.19"
+            },
+            "Tracy": {
+                "Regular": "$4.87",
+                "Premium": "$5.27"
+            },
+            "Modesto": {
+                "Regular": "$4.95",
+                "Premium": "$5.39"
+            },
+            "Livermore": {
+                "Regular": "$4.95",
+                "Premium": "$5.45"
+            },
+            "Fremont": {
+                "Regular": "$4.97",
+                "Premium": "$5.39"
+            },
+            "Turlock": {
+                "Regular": "$4.99",
+                "Premium": "$5.39"
+            },
+            "Redwood City": {
+                "Regular": "$5.03",
+                "Premium": "$5.43"
+            },
+            "Danville": {
+                "Regular": "$5.19",
+                "Premium": "$5.59"
+            }
+        }
+    },
+    "2024-05-10 21:11": {
+        "CA": {
+            "NE San Jose": {
+                "Regular": "$4.75",
+                "Premium": "$5.15"
+            },
+            "Manteca": {
+                "Regular": "$4.79",
+                "Premium": "$5.19"
+            },
+            "Hayward Business Center": {
+                "Regular": "$4.79",
+                "Premium": "$5.09"
+            },
+            "Hayward": {
+                "Regular": "$4.79",
+                "Premium": "$5.09"
+            },
+            "Tracy": {
+                "Regular": "$4.87",
+                "Premium": "$5.27"
+            },
+            "Modesto": {
+                "Regular": "$4.89",
+                "Premium": "$5.35"
+            },
+            "Fremont": {
+                "Regular": "$4.89",
+                "Premium": "$5.29"
+            },
+            "Redwood City": {
+                "Regular": "$4.93",
+                "Premium": "$5.33"
+            },
+            "Turlock": {
+                "Regular": "$4.95",
+                "Premium": "$5.45"
+            },
+            "Livermore": {
+                "Regular": "$4.95",
+                "Premium": "$5.39"
+            },
+            "Danville": {
+                "Regular": "$4.99",
+                "Premium": "$5.49"
+            }
+        }
+    },
+    "2024-05-19 08:23": {
+        "CA": {
+            "Hayward Business Center": {
+                "Regular": "$4.59",
+                "Premium": "$4.89"
+            },
+            "Manteca": {
+                "Regular": "$4.65",
+                "Premium": "$5.05"
+            },
+            "Hayward": {
+                "Regular": "$4.69",
+                "Premium": "$5.09"
+            },
+            "NE San Jose": {
+                "Regular": "$4.69",
+                "Premium": "$5.09"
+            },
+            "Tracy": {
+                "Regular": "$4.75",
+                "Premium": "$5.15"
+            },
+            "Modesto": {
+                "Regular": "$4.79",
+                "Premium": "$5.09"
+            },
+            "Redwood City": {
+                "Regular": "$4.83",
+                "Premium": "$5.19"
+            },
+            "Turlock": {
+                "Regular": "$4.89",
+                "Premium": "$5.29"
+            },
+            "Fremont": {
+                "Regular": "$4.89",
+                "Premium": "$5.19"
+            },
+            "Livermore": {
+                "Regular": "$4.95",
+                "Premium": "$5.19"
+            },
+            "Danville": {
+                "Regular": "$4.95",
+                "Premium": "$5.25"
+            }
+        }
+    },
+    "2024-05-24 13:04": {
+        "CA": {
+            "Hayward Business Center": {
+                "Regular": "$4.59",
+                "Premium": "$4.89"
+            },
+            "Hayward": {
+                "Regular": "$4.63",
+                "Premium": "$5.05"
+            },
+            "Manteca": {
+                "Regular": "$4.65",
+                "Premium": "$4.99"
+            },
+            "NE San Jose": {
+                "Regular": "$4.65",
+                "Premium": "$5.03"
+            },
+            "Modesto": {
+                "Regular": "$4.69",
+                "Premium": "$5.05"
+            },
+            "Tracy": {
+                "Regular": "$4.73",
+                "Premium": "$5.13"
+            },
+            "Redwood City": {
+                "Regular": "$4.73",
+                "Premium": "$5.13"
+            },
+            "Turlock": {
+                "Regular": "$4.79",
+                "Premium": "$5.19"
+            },
+            "Fremont": {
+                "Regular": "$4.83",
+                "Premium": "$5.19"
+            },
+            "Livermore": {
+                "Regular": "$4.87",
+                "Premium": "$5.15"
+            },
+            "Danville": {
+                "Regular": "$4.89",
+                "Premium": "$5.25"
+            }
+        }
+    },
+    "2024-05-30 08:11": {
+        "CA": {
+            "Manteca": {
+                "Regular": "$4.54",
+                "Premium": "$4.89"
+            },
+            "Hayward Business Center": {
+                "Regular": "$4.59",
+                "Premium": "$4.89"
+            },
+            "Hayward": {
+                "Regular": "$4.59",
+                "Premium": "$4.89"
+            },
+            "Modesto": {
+                "Regular": "$4.65",
+                "Premium": "$4.99"
+            },
+            "NE San Jose": {
+                "Regular": "$4.65",
+                "Premium": "$5.03"
+            },
+            "Tracy": {
+                "Regular": "$4.67",
+                "Premium": "$5.07"
+            },
+            "Fremont": {
+                "Regular": "$4.69",
+                "Premium": "$5.09"
+            },
+            "Redwood City": {
+                "Regular": "$4.73",
+                "Premium": "$5.13"
+            },
+            "Turlock": {
+                "Regular": "$4.75",
+                "Premium": "$5.05"
+            },
+            "Danville": {
+                "Regular": "$4.85",
+                "Premium": "$5.25"
+            },
+            "Livermore": {
+                "Regular": "$4.87",
+                "Premium": "$5.19"
+            }
+        }
+    },
+    "2024-06-10 20:39": {
+        "CA": {
+            "Tracy": {
+                "Regular": "$4.29",
+                "Premium": "$4.69"
+            },
+            "Hayward Business Center": {
+                "Regular": "$4.29",
+                "Premium": "$4.65"
+            },
+            "Hayward": {
+                "Regular": "$4.29",
+                "Premium": "$4.65"
+            },
+            "Manteca": {
+                "Regular": "$4.39",
+                "Premium": "$4.69"
+            },
+            "Modesto": {
+                "Regular": "$4.45",
+                "Premium": "$4.75"
+            },
+            "Livermore": {
+                "Regular": "$4.49",
+                "Premium": "$4.69"
+            },
+            "Fremont": {
+                "Regular": "$4.49",
+                "Premium": "$4.79"
+            },
+            "NE San Jose": {
+                "Regular": "$4.49",
+                "Premium": "$4.79"
+            },
+            "Turlock": {
+                "Regular": "$4.59",
+                "Premium": "$4.79"
+            },
+            "Danville": {
+                "Regular": "$4.59",
+                "Premium": "$4.89"
+            },
+            "Redwood City": {
+                "Regular": "$4.65",
+                "Premium": "$4.95"
+            }
+        }
+    },
+    "2024-06-14 11:22": {
+        "CA": {
+            "Modesto": {
+                "Regular": "$4.19",
+                "Premium": "$4.49"
+            },
+            "Manteca": {
+                "Regular": "$4.25",
+                "Premium": "$4.55"
+            },
+            "Hayward Business Center": {
+                "Regular": "$4.25",
+                "Premium": "$4.65"
+            },
+            "Hayward": {
+                "Regular": "$4.25",
+                "Premium": "$4.65"
+            },
+            "Tracy": {
+                "Regular": "$4.29",
+                "Premium": "$4.59"
+            },
+            "Fremont": {
+                "Regular": "$4.39",
+                "Premium": "$4.69"
+            },
+            "NE San Jose": {
+                "Regular": "$4.39",
+                "Premium": "$4.69"
+            },
+            "Turlock": {
+                "Regular": "$4.45",
+                "Premium": "$4.65"
+            },
+            "Livermore": {
+                "Regular": "$4.49",
+                "Premium": "$4.69"
+            },
+            "Danville": {
+                "Regular": "$4.49",
+                "Premium": "$4.79"
+            },
+            "Redwood City": {
+                "Regular": "$4.59",
+                "Premium": "$4.89"
+            }
+        }
+    },
+    "2024-07-07 19:59": {
+        "CA": {
+            "Modesto": {
+                "Regular": "$3.98",
+                "Premium": "$4.30"
+            },
+            "Manteca": {
+                "Regular": "$4.08",
+                "Premium": "$4.38"
+            },
+            "Tracy": {
+                "Regular": "$4.08",
+                "Premium": "$4.48"
+            },
+            "Hayward Business Center": {
+                "Regular": "$4.16",
+                "Premium": "$4.46"
+            },
+            "Hayward": {
+                "Regular": "$4.16",
+                "Premium": "$4.46"
+            },
+            "Livermore": {
+                "Regular": "$4.26",
+                "Premium": "$4.66"
+            },
+            "Turlock": {
+                "Regular": "$4.30",
+                "Premium": "$4.70"
+            },
+            "NE San Jose": {
+                "Regular": "$4.30",
+                "Premium": "$4.70"
+            },
+            "Fremont": {
+                "Regular": "$4.35",
+                "Premium": "$4.68"
+            },
+            "Redwood City": {
+                "Regular": "$4.44",
+                "Premium": "$4.84"
+            },
+            "Danville": {
+                "Regular": "$4.50",
+                "Premium": "$4.90"
+            }
+        }
+    },
+    "2024-07-23 20:58": {
+        "CA": {
+            "Tracy": {
+                "Regular": "$3.80",
+                "Premium": "$4.20"
+            },
+            "NE San Jose": {
+                "Regular": "$3.80",
+                "Premium": "$4.20"
+            },
+            "Manteca": {
+                "Regular": "$3.92",
+                "Premium": "$4.28"
+            },
+            "Modesto": {
+                "Regular": "$3.98",
+                "Premium": "$4.30"
+            },
+            "Hayward Business Center": {
+                "Regular": "$4.00",
+                "Premium": "$4.36"
+            },
+            "Hayward": {
+                "Regular": "$4.00",
+                "Premium": "$4.36"
+            },
+            "Turlock": {
+                "Regular": "$4.10",
+                "Premium": "$4.57"
+            },
+            "Livermore": {
+                "Regular": "$4.10",
+                "Premium": "$4.64"
+            },
+            "Fremont": {
+                "Regular": "$4.10",
+                "Premium": "$4.50"
+            },
+            "Danville": {
+                "Regular": "$4.30",
+                "Premium": "$4.70"
+            },
+            "Redwood City": {
+                "Regular": "$4.34",
+                "Premium": "$4.74"
+            }
+        }
+    },
+    "2024-08-12 17:25": {
+        "CA": {
+            "Turlock": {
+                "Regular": "N/A",
+                "Premium": "N/A"
+            },
+            "Modesto": {
+                "Regular": "N/A",
+                "Premium": "N/A"
+            },
+            "Manteca": {
+                "Regular": "N/A",
+                "Premium": "N/A"
+            },
+            "Tracy": {
+                "Regular": "N/A",
+                "Premium": "N/A"
+            },
+            "Livermore": {
+                "Regular": "N/A",
+                "Premium": "N/A"
+            },
+            "Danville": {
+                "Regular": "N/A",
+                "Premium": "N/A"
+            },
+            "Hayward Business Center": {
+                "Regular": "N/A",
+                "Premium": "N/A"
+            },
+            "Hayward": {
+                "Regular": "N/A",
+                "Premium": "N/A"
+            },
+            "Fremont": {
+                "Regular": "N/A",
+                "Premium": "N/A"
+            },
+            "NE San Jose": {
+                "Regular": "N/A",
+                "Premium": "N/A"
+            },
+            "Redwood City": {
+                "Regular": "N/A",
+                "Premium": "N/A"
+            }
+        }
+    },
+    "2024-08-12 17:30": {
+        "CA": {
+            "Tracy": {
+                "Regular": "$3.85",
+                "Premium": "$4.25"
+            },
+            "NE San Jose": {
+                "Regular": "$3.86",
+                "Premium": "$4.26"
+            },
+            "Manteca": {
+                "Regular": "$3.88",
+                "Premium": "$4.22"
+            },
+            "Modesto": {
+                "Regular": "$3.94",
+                "Premium": "$4.30"
+            },
+            "Hayward Business Center": {
+                "Regular": "$4.00",
+                "Premium": "$4.36"
+            },
+            "Hayward": {
+                "Regular": "$4.00",
+                "Premium": "$4.40"
+            },
+            "Redwood City": {
+                "Regular": "$4.00",
+                "Premium": "$4.40"
+            },
+            "Turlock": {
+                "Regular": "$4.07",
+                "Premium": "$4.50"
+            },
+            "Fremont": {
+                "Regular": "$4.10",
+                "Premium": "$4.50"
+            },
+            "Danville": {
+                "Regular": "$4.30",
+                "Premium": "$4.70"
+            },
+            "Livermore": {
+                "Regular": "$4.38",
+                "Premium": "$4.86"
+            }
+        }
+    },
+    "2024-08-24 12:27": {
+        "CA": {
+            "Manteca": {
+                "Regular": "$3.92",
+                "Premium": "$4.32"
+            },
+            "NE San Jose": {
+                "Regular": "$3.94",
+                "Premium": "$4.24"
+            },
+            "Tracy": {
+                "Regular": "$3.96",
+                "Premium": "$4.36"
+            },
+            "Hayward Business Center": {
+                "Regular": "$4.00",
+                "Premium": "$4.36"
+            },
+            "Hayward": {
+                "Regular": "$4.05",
+                "Premium": "$4.45"
+            },
+            "Turlock": {
+                "Regular": "$4.10",
+                "Premium": "$4.50"
+            },
+            "Modesto": {
+                "Regular": "$4.10",
+                "Premium": "$4.50"
+            },
+            "Fremont": {
+                "Regular": "$4.25",
+                "Premium": "$4.65"
+            },
+            "Redwood City": {
+                "Regular": "$4.30",
+                "Premium": "$4.80"
+            },
+            "Danville": {
+                "Regular": "$4.40",
+                "Premium": "$4.80"
+            },
+            "Livermore": {
+                "Regular": "$4.50",
+                "Premium": "$4.90"
+            }
+        }
+    },
+    "2024-10-14 14:57": {
+        "CA": {
+            "Manteca": {
+                "Regular": "$4.10",
+                "Premium": "$4.45"
+            },
+            "Tracy": {
+                "Regular": "$4.14",
+                "Premium": "$4.50"
+            },
+            "Turlock": {
+                "Regular": "$4.17",
+                "Premium": "$4.47"
+            },
+            "Modesto": {
+                "Regular": "$4.20",
+                "Premium": "$4.80"
+            },
+            "Hayward Business Center": {
+                "Regular": "$4.20",
+                "Premium": "$4.50"
+            },
+            "Hayward": {
+                "Regular": "$4.35",
+                "Premium": "$4.65"
+            },
+            "Livermore": {
+                "Regular": "$4.36",
+                "Premium": "$4.70"
+            },
+            "Danville": {
+                "Regular": "$4.50",
+                "Premium": "$5.00"
+            }
+        }
+    },
+    "2024-11-04 20:59": {
+        "CA": {
+            "Tracy": {
+                "Regular": "$3.80",
+                "Premium": "$4.30"
+            },
+            "Manteca": {
+                "Regular": "$3.85",
+                "Premium": "$4.17"
+            },
+            "Livermore": {
+                "Regular": "$3.90",
+                "Premium": "$4.40"
+            },
+            "Turlock": {
+                "Regular": "$3.98",
+                "Premium": "$4.28"
+            },
+            "Modesto": {
+                "Regular": "$4.00",
+                "Premium": "$4.60"
+            },
+            "Hayward Business Center": {
+                "Regular": "$4.06",
+                "Premium": "$4.38"
+            },
+            "Hayward": {
+                "Regular": "$4.20",
+                "Premium": "$4.55"
+            },
+            "Danville": {
+                "Regular": "$4.30",
+                "Premium": "$4.70"
+            }
+        }
+    },
+    "2024-11-14 18:13": {
+        "CA": {
+            "Manteca": {
+                "Regular": "$3.65",
+                "Premium": "$4.00"
+            },
+            "Tracy": {
+                "Regular": "$3.70",
+                "Premium": "$4.10"
+            },
+            "Turlock": {
+                "Regular": "$3.86",
+                "Premium": "$4.28"
+            },
+            "Livermore": {
+                "Regular": "$3.86",
+                "Premium": "$4.40"
+            },
+            "Hayward Business Center": {
+                "Regular": "$3.87",
+                "Premium": "$4.18"
+            },
+            "Modesto": {
+                "Regular": "$3.96",
+                "Premium": "$4.36"
+            },
+            "Hayward": {
+                "Regular": "$4.20",
+                "Premium": "$4.60"
+            },
+            "Danville": {
+                "Regular": "$4.30",
+                "Premium": "$4.80"
+            }
+        }
+    },
+    "2024-12-07 08:24": {
+        "CA": {
+            "Manteca": {
+                "Regular": "$3.50",
+                "Premium": "$3.82"
+            },
+            "Livermore": {
+                "Regular": "$3.59",
+                "Premium": "$3.79"
+            },
+            "Tracy": {
+                "Regular": "$3.60",
+                "Premium": "$4.00"
+            },
+            "Modesto": {
+                "Regular": "$3.69",
+                "Premium": "$4.20"
+            },
+            "Hayward Business Center": {
+                "Regular": "$3.70",
+                "Premium": "$4.00"
+            },
+            "Turlock": {
+                "Regular": "$3.72",
+                "Premium": "$4.26"
+            },
+            "Danville": {
+                "Regular": "$3.80",
+                "Premium": "$4.10"
+            },
+            "Hayward": {
+                "Regular": "$3.90",
+                "Premium": "$4.40"
+            }
+        }
+    },
+    "2024-12-07 08:33": {
+        "CA": {
+            "Manteca": {
+                "Regular": "$3.50",
+                "Premium": "$3.82"
+            },
+            "Livermore": {
+                "Regular": "$3.59",
+                "Premium": "$3.79"
+            },
+            "Tracy": {
+                "Regular": "$3.60",
+                "Premium": "$4.00"
+            },
+            "Modesto": {
+                "Regular": "$3.69",
+                "Premium": "$4.20"
+            },
+            "Hayward Business Center": {
+                "Regular": "$3.70",
+                "Premium": "$4.00"
+            },
+            "Pleasanton": {
+                "Regular": "$3.70",
+                "Premium": "$4.00"
+            },
+            "Turlock": {
+                "Regular": "$3.72",
+                "Premium": "$4.26"
+            },
+            "Danville": {
+                "Regular": "$3.80",
+                "Premium": "$4.10"
+            },
+            "Hayward": {
+                "Regular": "$3.90",
+                "Premium": "$4.40"
+            }
+        }
+    },
+    "2024-12-20 12:10": {
+        "CA": {
+            "Manteca": {
+                "Regular": "$3.46",
+                "Premium": "$3.76"
+            },
+            "Tracy": {
+                "Regular": "$3.50",
+                "Premium": "$3.90"
+            },
+            "Livermore": {
+                "Regular": "$3.65",
+                "Premium": "$4.00"
+            },
+            "Turlock": {
+                "Regular": "$3.66",
+                "Premium": "$4.26"
+            },
+            "Hayward Business Center": {
+                "Regular": "$3.66",
+                "Premium": "$3.90"
+            },
+            "Danville": {
+                "Regular": "$3.70",
+                "Premium": "$4.00"
+            },
+            "Pleasanton": {
+                "Regular": "$3.70",
+                "Premium": "$4.00"
+            },
+            "Hayward": {
+                "Regular": "$3.76",
+                "Premium": "$4.18"
+            },
+            "Modesto": {
+                "Regular": "$3.80",
+                "Premium": "$4.20"
+            }
+        }
+    },
+    "2024-12-24 07:07": {
+        "CA": {
+            "Manteca": {
+                "Regular": "$3.46",
+                "Premium": "$3.76"
+            },
+            "Tracy": {
+                "Regular": "$3.50",
+                "Premium": "$3.90"
+            },
+            "Livermore": {
+                "Regular": "$3.65",
+                "Premium": "$4.10"
+            },
+            "Turlock": {
+                "Regular": "$3.66",
+                "Premium": "$4.26"
+            },
+            "Hayward Business Center": {
+                "Regular": "$3.66",
+                "Premium": "$3.98"
+            },
+            "Danville": {
+                "Regular": "$3.70",
+                "Premium": "$4.00"
+            },
+            "Pleasanton": {
+                "Regular": "$3.70",
+                "Premium": "$4.00"
+            },
+            "Modesto": {
+                "Regular": "$3.76",
+                "Premium": "$4.10"
+            },
+            "Hayward": {
+                "Regular": "$3.76",
+                "Premium": "$4.00"
+            }
+        }
+    },
+    "2024-12-28 18:24": {
+        "CA": {
+            "Manteca": {
+                "Regular": "$3.48",
+                "Premium": "$3.76"
+            },
+            "Tracy": {
+                "Regular": "$3.60",
+                "Premium": "$4.00"
+            },
+            "Hayward Business Center": {
+                "Regular": "$3.68",
+                "Premium": "$3.98"
+            },
+            "Livermore": {
+                "Regular": "$3.70",
+                "Premium": "$4.10"
+            },
+            "Danville": {
+                "Regular": "$3.70",
+                "Premium": "$4.00"
+            },
+            "Pleasanton": {
+                "Regular": "$3.70",
+                "Premium": "$4.00"
+            },
+            "Turlock": {
+                "Regular": "$3.80",
+                "Premium": "$4.30"
+            },
+            "Modesto": {
+                "Regular": "$3.80",
+                "Premium": "$4.30"
+            },
+            "Hayward": {
+                "Regular": "$3.80",
+                "Premium": "$4.10"
+            }
+        }
+    },
+    "2025-01-05 14:50": {
+        "CA": {
+            "Manteca": {
+                "Regular": "$3.54",
+                "Premium": "$3.86"
+            },
+            "Tracy": {
+                "Regular": "$3.60",
+                "Premium": "$3.96"
+            },
+            "Livermore": {
+                "Regular": "$3.70",
+                "Premium": "$4.30"
+            },
+            "Danville": {
+                "Regular": "$3.70",
+                "Premium": "$4.00"
+            },
+            "Hayward": {
+                "Regular": "$3.70",
+                "Premium": "$4.18"
+            },
+            "Pleasanton": {
+                "Regular": "$3.70",
+                "Premium": "$4.00"
+            },
+            "Hayward Business Center": {
+                "Regular": "$3.78",
+                "Premium": "$4.08"
+            },
+            "Turlock": {
+                "Regular": "$3.86",
+                "Premium": "$4.37"
+            },
+            "Modesto": {
+                "Regular": "$3.90",
+                "Premium": "$4.38"
+            }
+        }
+    },
+    "2025-01-09 17:20": {
+        "CA": {
+            "Manteca": {
+                "Regular": "$3.60",
+                "Premium": "$4.00"
+            },
+            "Tracy": {
+                "Regular": "$3.70",
+                "Premium": "$4.10"
+            },
+            "Hayward Business Center": {
+                "Regular": "$3.70",
+                "Premium": "$4.10"
+            },
+            "Pleasanton": {
+                "Regular": "$3.70",
+                "Premium": "$4.00"
+            },
+            "Danville": {
+                "Regular": "$3.80",
+                "Premium": "$4.40"
+            },
+            "Hayward": {
+                "Regular": "$3.80",
+                "Premium": "$4.10"
+            },
+            "Turlock": {
+                "Regular": "$3.86",
+                "Premium": "$4.38"
+            },
+            "Modesto": {
+                "Regular": "$3.86",
+                "Premium": "$4.36"
+            },
+            "Livermore": {
+                "Regular": "$3.90",
+                "Premium": "$4.30"
+            }
+        }
+    },
+    "2025-01-22 11:57": {
+        "CA": {
+            "Pleasanton": {
+                "Regular": "$3.70",
+                "Premium": "$4.00"
+            },
+            "Manteca": {
+                "Regular": "$3.80",
+                "Premium": "$4.10"
+            },
+            "Tracy": {
+                "Regular": "$3.80",
+                "Premium": "$4.20"
+            },
+            "Modesto": {
+                "Regular": "$3.86",
+                "Premium": "$4.46"
+            },
+            "Hayward Business Center": {
+                "Regular": "$3.88",
+                "Premium": "$4.18"
+            },
+            "Hayward": {
+                "Regular": "$3.93",
+                "Premium": "$4.34"
+            },
+            "Turlock": {
+                "Regular": "$4.00",
+                "Premium": "$4.50"
+            },
+            "Livermore": {
+                "Regular": "$4.00",
+                "Premium": "$4.40"
+            },
+            "Danville": {
+                "Regular": "$4.00",
+                "Premium": "$4.60"
+            }
+        }
+    },
+    "2026-04-13 12:03": {
+        "CA": {
+            "Modesto": {
+                "Regular": "$5.10",
+                "Premium": "$5.60"
+            },
+            "Manteca": {
+                "Regular": "$5.10",
+                "Premium": "$5.56"
+            },
+            "Hayward": {
+                "Regular": "$5.16",
+                "Premium": "$5.56"
+            },
+            "Tracy": {
+                "Regular": "$5.20",
+                "Premium": "$5.60"
+            },
+            "Turlock": {
+                "Regular": "$5.30",
+                "Premium": "$5.90"
+            },
+            "Hayward Business Center": {
+                "Regular": "$5.30",
+                "Premium": "$5.70"
+            },
+            "Livermore": {
+                "Regular": "$5.40",
+                "Premium": "$5.80"
+            },
+            "Danville": {
+                "Regular": "$5.40",
+                "Premium": "$5.80"
+            },
+            "Pleasanton": {
+                "Regular": "$5.46",
+                "Premium": "$5.86"
+            }
+        }
+    },
+    "2026-04-14 14:41": {
+        "CA": {
+            "Manteca": {
+                "Regular": "$5.00",
+                "Premium": "$5.56"
+            },
+            "Modesto": {
+                "Regular": "$5.10",
+                "Premium": "$5.60"
+            },
+            "Hayward": {
+                "Regular": "$5.16",
+                "Premium": "$5.56"
+            },
+            "Tracy": {
+                "Regular": "$5.20",
+                "Premium": "$5.60"
+            },
+            "Turlock": {
+                "Regular": "$5.30",
+                "Premium": "$5.86"
+            },
+            "Hayward Business Center": {
+                "Regular": "$5.30",
+                "Premium": "$5.70"
+            },
+            "Livermore": {
+                "Regular": "$5.40",
+                "Premium": "$5.80"
+            },
+            "Danville": {
+                "Regular": "$5.40",
+                "Premium": "$5.80"
+            },
+            "Pleasanton": {
+                "Regular": "$5.46",
+                "Premium": "$5.86"
+            }
+        }
+    },
+    "2026-04-14 17:45": {
+        "CA": {
+            "Manteca": {
+                "Regular": "$5.00",
+                "Premium": "$5.56"
+            },
+            "Modesto": {
+                "Regular": "$5.10",
+                "Premium": "$5.60"
+            },
+            "Hayward": {
+                "Regular": "$5.16",
+                "Premium": "$5.56"
+            },
+            "Tracy": {
+                "Regular": "$5.20",
+                "Premium": "$5.60"
+            },
+            "Turlock": {
+                "Regular": "$5.30",
+                "Premium": "$5.86"
+            },
+            "Hayward Business Center": {
+                "Regular": "$5.30",
+                "Premium": "$5.70"
+            },
+            "Livermore": {
+                "Regular": "$5.40",
+                "Premium": "$5.80"
+            },
+            "Danville": {
+                "Regular": "$5.40",
+                "Premium": "$5.80"
+            },
+            "Pleasanton": {
+                "Regular": "$5.46",
+                "Premium": "$5.86"
+            }
+        }
+    },
+    "2026-04-15 16:25": {
+        "CA": {
+            "Manteca": {
+                "Regular": "$5.00",
+                "Premium": "$5.56"
+            },
+            "Modesto": {
+                "Regular": "$5.10",
+                "Premium": "$5.56"
+            },
+            "Hayward": {
+                "Regular": "$5.16",
+                "Premium": "$5.56"
+            },
+            "Tracy": {
+                "Regular": "$5.20",
+                "Premium": "$5.60"
+            },
+            "Turlock": {
+                "Regular": "$5.30",
+                "Premium": "$5.86"
+            },
+            "Hayward Business Center": {
+                "Regular": "$5.30",
+                "Premium": "$5.70"
+            },
+            "Livermore": {
+                "Regular": "$5.40",
+                "Premium": "$5.80"
+            },
+            "Danville": {
+                "Regular": "$5.40",
+                "Premium": "$5.80"
+            },
+            "Pleasanton": {
+                "Regular": "$5.46",
+                "Premium": "$5.86"
+            }
+        }
+    },
+    "2026-04-17 07:59": {
+        "CA": {
+            "Manteca": {
+                "Regular": "$5.00",
+                "Premium": "$5.56"
+            },
+            "Modesto": {
+                "Regular": "$5.10",
+                "Premium": "$5.56"
+            },
+            "Hayward": {
+                "Regular": "$5.16",
+                "Premium": "$5.56"
+            },
+            "Tracy": {
+                "Regular": "$5.20",
+                "Premium": "$5.60"
+            },
+            "Turlock": {
+                "Regular": "$5.30",
+                "Premium": "$5.86"
+            },
+            "Hayward Business Center": {
+                "Regular": "$5.30",
+                "Premium": "$5.70"
+            },
+            "Livermore": {
+                "Regular": "$5.40",
+                "Premium": "$5.80"
+            },
+            "Danville": {
+                "Regular": "$5.40",
+                "Premium": "$5.80"
+            },
+            "Pleasanton": {
+                "Regular": "$5.46",
+                "Premium": "$5.86"
+            }
+        }
+    },
+    "2026-04-21 12:58": {
+        "CA": {
+            "Manteca": {
+                "Regular": "$5.00",
+                "Premium": "$5.56"
+            },
+            "Modesto": {
+                "Regular": "$5.10",
+                "Premium": "$5.56"
+            },
+            "Tracy": {
+                "Regular": "$5.10",
+                "Premium": "$5.50"
+            },
+            "Hayward": {
+                "Regular": "$5.16",
+                "Premium": "$5.56"
+            },
+            "Hayward Business Center": {
+                "Regular": "$5.27",
+                "Premium": "$5.60"
+            },
+            "Turlock": {
+                "Regular": "$5.30",
+                "Premium": "$5.86"
+            },
+            "Livermore": {
+                "Regular": "$5.35",
+                "Premium": "$5.80"
+            },
+            "Danville": {
+                "Regular": "$5.40",
+                "Premium": "$5.80"
+            },
+            "Pleasanton": {
+                "Regular": "$5.50",
+                "Premium": "$5.90"
+            }
+        }
+    },
+    "2026-04-24 08:26": {
+        "CA": {
+            "Manteca": {
+                "Regular": "$5.06",
+                "Premium": "$5.56"
+            },
+            "Tracy": {
+                "Regular": "$5.20",
+                "Premium": "$5.60"
+            },
+            "Hayward": {
+                "Regular": "$5.26",
+                "Premium": "$5.66"
+            },
+            "Hayward Business Center": {
+                "Regular": "$5.28",
+                "Premium": "$5.66"
+            },
+            "Modesto": {
+                "Regular": "$5.30",
+                "Premium": "$5.70"
+            },
+            "Turlock": {
+                "Regular": "$5.36",
+                "Premium": "$5.90"
+            },
+            "Livermore": {
+                "Regular": "$5.40",
+                "Premium": "$5.80"
+            },
+            "Danville": {
+                "Regular": "$5.50",
+                "Premium": "$5.90"
+            },
+            "Pleasanton": {
+                "Regular": "$5.50",
+                "Premium": "$6.00"
+            }
+        }
+    },
+    "2026-04-28 07:05": {
+        "CA": {
+            "Manteca": {
+                "Regular": "$5.25",
+                "Premium": "$5.76"
+            },
+            "Tracy": {
+                "Regular": "$5.36",
+                "Premium": "$5.80"
+            },
+            "Modesto": {
+                "Regular": "$5.40",
+                "Premium": "$6.00"
+            },
+            "Turlock": {
+                "Regular": "$5.46",
+                "Premium": "$5.96"
+            },
+            "Hayward Business Center": {
+                "Regular": "$5.46",
+                "Premium": "$5.86"
+            },
+            "Hayward": {
+                "Regular": "$5.46",
+                "Premium": "$5.86"
+            },
+            "Livermore": {
+                "Regular": "$5.60",
+                "Premium": "$6.10"
+            },
+            "Pleasanton": {
+                "Regular": "$5.70",
+                "Premium": "$6.10"
+            },
+            "Danville": {
+                "Regular": "$5.76",
+                "Premium": "$6.30"
+            }
+        }
+    },
+    "2026-04-29 09:26": {
+        "CA": {
+            "Manteca": {
+                "Regular": "$5.30",
+                "Premium": "$5.80"
+            },
+            "Tracy": {
+                "Regular": "$5.36",
+                "Premium": "$5.80"
+            },
+            "Modesto": {
+                "Regular": "$5.46",
+                "Premium": "$6.00"
+            },
+            "Hayward Business Center": {
+                "Regular": "$5.46",
+                "Premium": "$5.86"
+            },
+            "Hayward": {
+                "Regular": "$5.46",
+                "Premium": "$5.86"
+            },
+            "Turlock": {
+                "Regular": "$5.50",
+                "Premium": "$6.00"
+            },
+            "Livermore": {
+                "Regular": "$5.68",
+                "Premium": "$6.10"
+            },
+            "Pleasanton": {
+                "Regular": "$5.80",
+                "Premium": "$6.20"
+            },
+            "Danville": {
+                "Regular": "$5.86",
+                "Premium": "$6.46"
+            }
+        }
+    },
+    "2026-05-05 18:31": {
+        "CA": {
+            "Manteca": {
+                "Regular": "$5.60",
+                "Premium": "$6.10"
+            },
+            "Tracy": {
+                "Regular": "$5.60",
+                "Premium": "$6.00"
+            },
+            "Hayward Business Center": {
+                "Regular": "$5.66",
+                "Premium": "$6.06"
+            },
+            "Hayward": {
+                "Regular": "$5.66",
+                "Premium": "$6.30"
+            },
+            "Turlock": {
+                "Regular": "$5.70",
+                "Premium": "$6.36"
+            },
+            "Modesto": {
+                "Regular": "$5.70",
+                "Premium": "$6.30"
+            },
+            "Livermore": {
+                "Regular": "$5.90",
+                "Premium": "$6.40"
+            },
+            "Pleasanton": {
+                "Regular": "$6.15",
+                "Premium": "$6.60"
+            },
+            "Danville": {
+                "Regular": "$6.20",
+                "Premium": "$6.80"
+            }
+        }
+    },
+    "2026-05-07 21:13": {
+        "CA": {
+            "Manteca": {
+                "Regular": "$5.50",
+                "Premium": "$6.00"
+            },
+            "Modesto": {
+                "Regular": "$5.60",
+                "Premium": "$6.26"
+            },
+            "Tracy": {
+                "Regular": "$5.60",
+                "Premium": "$6.00"
+            },
+            "Hayward": {
+                "Regular": "$5.60",
+                "Premium": "$6.16"
+            },
+            "Turlock": {
+                "Regular": "$5.66",
+                "Premium": "$6.30"
+            },
+            "Hayward Business Center": {
+                "Regular": "$5.66",
+                "Premium": "$6.10"
+            },
+            "Danville": {
+                "Regular": "$5.76",
+                "Premium": "$6.36"
+            },
+            "Livermore": {
+                "Regular": "$5.98",
+                "Premium": "$6.40"
+            },
+            "Pleasanton": {
+                "Regular": "$6.15",
+                "Premium": "$6.60"
+            }
+        }
+    },
+    "2026-05-08 13:11": {
+        "CA": {
+            "Manteca": {
+                "Regular": "$5.46",
+                "Premium": "$5.90"
+            },
+            "Tracy": {
+                "Regular": "$5.56",
+                "Premium": "$5.96"
+            },
+            "Hayward": {
+                "Regular": "$5.56",
+                "Premium": "$6.16"
+            },
+            "Turlock": {
+                "Regular": "$5.60",
+                "Premium": "$6.30"
+            },
+            "Modesto": {
+                "Regular": "$5.60",
+                "Premium": "$6.16"
+            },
+            "Hayward Business Center": {
+                "Regular": "$5.66",
+                "Premium": "$6.06"
+            },
+            "Danville": {
+                "Regular": "$5.76",
+                "Premium": "$6.36"
+            },
+            "Livermore": {
+                "Regular": "$5.90",
+                "Premium": "$6.36"
+            },
+            "Pleasanton": {
+                "Regular": "$6.08",
+                "Premium": "$6.60"
+            }
+        }
+    },
+    "2026-05-12 15:51": {
+        "CA": {
+            "Turlock": {
+                "Regular": "$5.74",
+                "Premium": "$6.30"
+            },
+            "Modesto": {
+                "Regular": "$5.56",
+                "Premium": "$6.20"
+            },
+            "Manteca": {
+                "Regular": "$5.46",
+                "Premium": "$6.00"
+            },
+            "Tracy": {
+                "Regular": "$5.50",
+                "Premium": "$5.90"
+            },
+            "Livermore": {
+                "Regular": "$5.80",
+                "Premium": "$6.20"
+            },
+            "Danville": {
+                "Regular": "$5.80",
+                "Premium": "$6.36"
+            },
+            "Hayward Business Center": {
+                "Regular": "$5.56",
+                "Premium": "$5.96"
+            },
+            "Hayward": {
+                "Regular": "$5.46",
+                "Premium": "$6.06"
+            },
+            "Pleasanton": {
+                "Regular": "$6.00",
+                "Premium": "$6.50"
+            }
+        }
+    },
+    "2026-05-13 17:41": {
+        "CA": {
+            "Turlock": {
+                "Regular": "$5.74",
+                "Premium": "$6.26"
+            },
+            "Modesto": {
+                "Regular": "$5.56",
+                "Premium": "$6.20"
+            },
+            "Manteca": {
+                "Regular": "$5.46",
+                "Premium": "$5.96"
+            },
+            "Tracy": {
+                "Regular": "$5.50",
+                "Premium": "$5.90"
+            },
+            "Livermore": {
+                "Regular": "$5.80",
+                "Premium": "$6.10"
+            },
+            "Danville": {
+                "Regular": "$5.80",
+                "Premium": "$6.30"
+            },
+            "Hayward Business Center": {
+                "Regular": "$5.56",
+                "Premium": "$5.96"
+            },
+            "Hayward": {
+                "Regular": "$5.46",
+                "Premium": "$6.06"
+            },
+            "Pleasanton": {
+                "Regular": "$6.00",
+                "Premium": "$6.50"
+            }
+        }
+    },
+    "2026-05-14 16:24": {
+        "CA": {
+            "Turlock": {
+                "Regular": "$5.74",
+                "Premium": "$6.26"
+            },
+            "Modesto": {
+                "Regular": "$5.60",
+                "Premium": "$6.20"
+            },
+            "Manteca": {
+                "Regular": "$5.40",
+                "Premium": "$5.90"
+            },
+            "Tracy": {
+                "Regular": "$5.56",
+                "Premium": "$6.00"
+            },
+            "Livermore": {
+                "Regular": "$5.80",
+                "Premium": "$6.10"
+            },
+            "Danville": {
+                "Regular": "$5.80",
+                "Premium": "$6.30"
+            },
+            "Hayward Business Center": {
+                "Regular": "$5.56",
+                "Premium": "$5.96"
+            },
+            "Hayward": {
+                "Regular": "$5.46",
+                "Premium": "$6.00"
+            },
+            "Pleasanton": {
+                "Regular": "$6.00",
+                "Premium": "$6.50"
+            }
+        }
+    },
+    "2026-05-15 14:49": {
+        "CA": {
+            "Turlock": {
+                "Regular": "$5.76",
+                "Premium": "$6.26"
+            },
+            "Modesto": {
+                "Regular": "$5.60",
+                "Premium": "$6.20"
+            },
+            "Manteca": {
+                "Regular": "$5.46",
+                "Premium": "$5.99"
+            },
+            "Tracy": {
+                "Regular": "$5.56",
+                "Premium": "$6.00"
+            },
+            "Livermore": {
+                "Regular": "$5.80",
+                "Premium": "$6.20"
+            },
+            "Danville": {
+                "Regular": "$5.80",
+                "Premium": "$6.25"
+            },
+            "Hayward Business Center": {
+                "Regular": "$5.56",
+                "Premium": "$5.96"
+            },
+            "Hayward": {
+                "Regular": "$5.46",
+                "Premium": "$5.96"
+            },
+            "Pleasanton": {
+                "Regular": "$5.90",
+                "Premium": "$6.30"
+            }
+        }
+    },
+    "2026-05-16 09:12": {
+        "CA": {
+            "Turlock": {
+                "Regular": "$5.76",
+                "Premium": "$6.26"
+            },
+            "Modesto": {
+                "Regular": "$5.70",
+                "Premium": "$6.00"
+            },
+            "Manteca": {
+                "Regular": "$5.46",
+                "Premium": "$5.96"
+            },
+            "Tracy": {
+                "Regular": "$5.50",
+                "Premium": "$5.90"
+            },
+            "Livermore": {
+                "Regular": "$5.80",
+                "Premium": "$6.20"
+            },
+            "Danville": {
+                "Regular": "$5.80",
+                "Premium": "$6.25"
+            },
+            "Hayward Business Center": {
+                "Regular": "$5.56",
+                "Premium": "$5.96"
+            },
+            "Hayward": {
+                "Regular": "$5.56",
+                "Premium": "$5.96"
+            },
+            "Pleasanton": {
+                "Regular": "$5.90",
+                "Premium": "$6.30"
+            }
+        }
+    },
+    "2026-05-17 16:22": {
+        "CA": {
+            "Turlock": {
+                "Regular": "$5.76",
+                "Premium": "$6.32"
+            },
+            "Modesto": {
+                "Regular": "$5.70",
+                "Premium": "$6.00"
+            },
+            "Manteca": {
+                "Regular": "$5.46",
+                "Premium": "$5.96"
+            },
+            "Tracy": {
+                "Regular": "$5.60",
+                "Premium": "$6.00"
+            },
+            "Livermore": {
+                "Regular": "$5.80",
+                "Premium": "$6.20"
+            },
+            "Danville": {
+                "Regular": "$5.80",
+                "Premium": "$6.25"
+            },
+            "Hayward Business Center": {
+                "Regular": "$5.56",
+                "Premium": "$5.96"
+            },
+            "Hayward": {
+                "Regular": "$5.46",
+                "Premium": "$5.86"
+            },
+            "Pleasanton": {
+                "Regular": "$5.90",
+                "Premium": "$6.26"
+            }
+        }
+    },
+    "2026-05-19 20:49": {
+        "CA": {
+            "Turlock": {
+                "Regular": "$5.76",
+                "Premium": "$6.32"
+            },
+            "Modesto": {
+                "Regular": "$5.60",
+                "Premium": "$6.00"
+            },
+            "Manteca": {
+                "Regular": "$5.46",
+                "Premium": "$5.96"
+            },
+            "Tracy": {
+                "Regular": "$5.66",
+                "Premium": "$6.10"
+            },
+            "Livermore": {
+                "Regular": "$5.80",
+                "Premium": "$6.20"
+            },
+            "Danville": {
+                "Regular": "$5.90",
+                "Premium": "$6.20"
+            },
+            "Hayward Business Center": {
+                "Regular": "$5.60",
+                "Premium": "$6.00"
+            },
+            "Hayward": {
+                "Regular": "$5.50",
+                "Premium": "$6.00"
+            },
+            "Pleasanton": {
+                "Regular": "$5.80",
+                "Premium": "$6.16"
+            }
+        }
+    },
+    "2026-05-24 19:22": {
+        "CA": {
+            "Turlock": {
+                "Regular": "$5.70",
+                "Premium": "$6.30"
+            },
+            "Modesto": {
+                "Regular": "$5.56",
+                "Premium": "$5.88"
+            },
+            "Manteca": {
+                "Regular": "$5.40",
+                "Premium": "$5.95"
+            },
+            "Tracy": {
+                "Regular": "$5.60",
+                "Premium": "$6.00"
+            },
+            "Livermore": {
+                "Regular": "$5.80",
+                "Premium": "$6.00"
+            },
+            "Danville": {
+                "Regular": "$5.80",
+                "Premium": "$6.00"
+            },
+            "Hayward Business Center": {
+                "Regular": "$5.56",
+                "Premium": "$5.96"
+            },
+            "Hayward": {
+                "Regular": "$5.46",
+                "Premium": "$5.86"
+            },
+            "Pleasanton": {
+                "Regular": "$5.70",
+                "Premium": "$5.90"
+            }
+        }
+    },
+    "2026-05-27 13:48": {
+        "CA": {
+            "Turlock": {
+                "Regular": "$5.70",
+                "Premium": "$6.26"
+            },
+            "Modesto": {
+                "Regular": "$5.56",
+                "Premium": "$5.96"
+            },
+            "Manteca": {
+                "Regular": "$5.40",
+                "Premium": "$5.90"
+            },
+            "Tracy": {
+                "Regular": "$5.66",
+                "Premium": "$6.00"
+            },
+            "Livermore": {
+                "Regular": "$5.80",
+                "Premium": "$6.00"
+            },
+            "Danville": {
+                "Regular": "$5.80",
+                "Premium": "$6.00"
+            },
+            "Hayward Business Center": {
+                "Regular": "$5.56",
+                "Premium": "$5.96"
+            },
+            "Hayward": {
+                "Regular": "$5.46",
+                "Premium": "$5.86"
+            },
+            "Pleasanton": {
+                "Regular": "$5.80",
+                "Premium": "$6.00"
+            }
+        }
+    },
+    "2026-05-29 21:26": {
+        "CA": {
+            "Turlock": {
+                "Regular": "$5.66",
+                "Premium": "$6.20"
+            },
+            "Modesto": {
+                "Regular": "$5.46",
+                "Premium": "$5.86"
+            },
+            "Manteca": {
+                "Regular": "$5.40",
+                "Premium": "$5.90"
+            },
+            "Tracy": {
+                "Regular": "$5.56",
+                "Premium": "$5.96"
+            },
+            "Livermore": {
+                "Regular": "$5.80",
+                "Premium": "$6.00"
+            },
+            "Danville": {
+                "Regular": "$5.70",
+                "Premium": "$6.00"
+            },
+            "Hayward Business Center": {
+                "Regular": "$5.56",
+                "Premium": "$5.96"
+            },
+            "Hayward": {
+                "Regular": "$5.46",
+                "Premium": "$5.86"
+            },
+            "Pleasanton": {
+                "Regular": "$5.70",
+                "Premium": "$5.90"
+            }
+        }
+    },
+    "2026-05-30 15:56": {
+        "CA": {
+            "Turlock": {
+                "Regular": "$5.66",
+                "Premium": "$6.10"
+            },
+            "Modesto": {
+                "Regular": "$5.46",
+                "Premium": "$5.86"
+            },
+            "Manteca": {
+                "Regular": "$5.36",
+                "Premium": "$5.86"
+            },
+            "Tracy": {
+                "Regular": "$5.46",
+                "Premium": "$5.96"
+            },
+            "Livermore": {
+                "Regular": "$5.80",
+                "Premium": "$6.00"
+            },
+            "Danville": {
+                "Regular": "$5.70",
+                "Premium": "$6.00"
+            },
+            "Hayward Business Center": {
+                "Regular": "$5.56",
+                "Premium": "$5.96"
+            },
+            "Hayward": {
+                "Regular": "$5.46",
+                "Premium": "$5.86"
+            },
+            "Pleasanton": {
+                "Regular": "$5.60",
+                "Premium": "$5.90"
+            }
+        }
+    },
+    "2026-06-01 20:40": {
+        "CA": {
+            "Turlock": {
+                "Regular": "$5.60",
+                "Premium": "$6.00"
+            },
+            "Modesto": {
+                "Regular": "$5.40",
+                "Premium": "$5.80"
+            },
+            "Manteca": {
+                "Regular": "$5.36",
+                "Premium": "$5.86"
+            },
+            "Tracy": {
+                "Regular": "$5.46",
+                "Premium": "$5.86"
+            },
+            "Livermore": {
+                "Regular": "$5.70",
+                "Premium": "$5.90"
+            },
+            "Danville": {
+                "Regular": "$5.60",
+                "Premium": "$6.00"
+            },
+            "Hayward Business Center": {
+                "Regular": "$5.56",
+                "Premium": "$5.96"
+            },
+            "Hayward": {
+                "Regular": "$5.46",
+                "Premium": "$5.96"
+            },
+            "Pleasanton": {
+                "Regular": "$5.56",
+                "Premium": "$5.90"
+            }
+        }
+    },
+    "2026-06-05 11:56": {
+        "CA": {
+            "Turlock": {
+                "Regular": "$5.60",
+                "Premium": "$6.00"
+            },
+            "Modesto": {
+                "Regular": "$5.40",
+                "Premium": "$5.80"
+            },
+            "Manteca": {
+                "Regular": "$5.30",
+                "Premium": "$5.70"
+            },
+            "Tracy": {
+                "Regular": "$5.46",
+                "Premium": "$5.86"
+            },
+            "Livermore": {
+                "Regular": "$5.66",
+                "Premium": "$5.90"
+            },
+            "Danville": {
+                "Regular": "$5.60",
+                "Premium": "$5.96"
+            },
+            "Hayward Business Center": {
+                "Regular": "$5.56",
+                "Premium": "$5.90"
+            },
+            "Hayward": {
+                "Regular": "$5.46",
+                "Premium": "$5.86"
+            },
+            "Pleasanton": {
+                "Regular": "$5.50",
+                "Premium": "$5.90"
+            }
+        }
+    },
+    "2026-06-08 19:37": {
+        "CA": {
+            "Turlock": {
+                "Regular": "$5.60",
+                "Premium": "$6.00"
+            },
+            "Modesto": {
+                "Regular": "$5.28",
+                "Premium": "$5.70"
+            },
+            "Manteca": {
+                "Regular": "$5.26",
+                "Premium": "$5.76"
+            },
+            "Tracy": {
+                "Regular": "$5.30",
+                "Premium": "$5.90"
+            },
+            "Livermore": {
+                "Regular": "$5.50",
+                "Premium": "$6.00"
+            },
+            "Danville": {
+                "Regular": "$5.50",
+                "Premium": "$6.00"
+            },
+            "Hayward Business Center": {
+                "Regular": "$5.46",
+                "Premium": "$5.90"
+            },
+            "Hayward": {
+                "Regular": "$5.46",
+                "Premium": "$5.90"
+            },
+            "Pleasanton": {
+                "Regular": "$5.40",
+                "Premium": "$5.90"
+            }
+        }
+    },
+    "2026-06-09 15:49": {
+        "CA": {
+            "Turlock": {
+                "Regular": "$5.60",
+                "Premium": "$6.00"
+            },
+            "Modesto": {
+                "Regular": "$5.28",
+                "Premium": "$5.60"
+            },
+            "Manteca": {
+                "Regular": "$5.20",
+                "Premium": "$5.70"
+            },
+            "Tracy": {
+                "Regular": "$5.30",
+                "Premium": "$5.70"
+            },
+            "Livermore": {
+                "Regular": "$5.40",
+                "Premium": "$5.90"
+            },
+            "Danville": {
+                "Regular": "$5.40",
+                "Premium": "$5.90"
+            },
+            "Hayward Business Center": {
+                "Regular": "$5.46",
+                "Premium": "$5.86"
+            },
+            "Hayward": {
+                "Regular": "$5.46",
+                "Premium": "$5.86"
+            },
+            "Pleasanton": {
+                "Regular": "$5.40",
+                "Premium": "$5.90"
+            }
+        }
+    },
+    "2026-06-11 17:59": {
+        "CA": {
+            "Danville": {
+                "Regular": "$5.30",
+                "Premium": "$5.70"
+            },
+            "Hayward": {
+                "Regular": "$5.40",
+                "Premium": "$5.80"
+            },
+            "Hayward Business Center": {
+                "Regular": "$5.40",
+                "Premium": "$5.80"
+            },
+            "Livermore": {
+                "Regular": "$5.30",
+                "Premium": "$5.70"
+            },
+            "Manteca": {
+                "Regular": "$5.20",
+                "Premium": "$5.70"
+            },
+            "Modesto": {
+                "Regular": "$5.16",
+                "Premium": "$5.60"
+            },
+            "Pleasanton": {
+                "Regular": "$5.26",
+                "Premium": "$5.66"
+            },
+            "Tracy": {
+                "Regular": "$5.30",
+                "Premium": "$5.70"
+            },
+            "Turlock": {
+                "Regular": "$5.60",
+                "Premium": "$6.00"
+            }
+        }
+    },
+    "2026-06-12 13:05": {
+        "CA": {
+            "Danville": {
+                "Regular": "$5.30",
+                "Premium": "$5.70"
+            },
+            "Hayward": {
+                "Regular": "$5.40",
+                "Premium": "$5.80"
+            },
+            "Hayward Business Center": {
+                "Regular": "$5.40",
+                "Premium": "$5.80"
+            },
+            "Livermore": {
+                "Regular": "$5.30",
+                "Premium": "$5.70"
+            },
+            "Manteca": {
+                "Regular": "$5.20",
+                "Premium": "$5.70"
+            },
+            "Modesto": {
+                "Regular": "$5.16",
+                "Premium": "$5.60"
+            },
+            "Pleasanton": {
+                "Regular": "$5.30",
+                "Premium": "$5.70"
+            },
+            "Tracy": {
+                "Regular": "$5.30",
+                "Premium": "$5.70"
+            },
+            "Turlock": {
+                "Regular": "$5.56",
+                "Premium": "$5.96"
+            }
+        }
+    },
+    "2026-06-14 06:58": {
+        "CA": {
+            "Danville": {
+                "Regular": "$5.30",
+                "Premium": "$5.70"
+            },
+            "Hayward": {
+                "Regular": "$5.40",
+                "Premium": "$5.80"
+            },
+            "Hayward Business Center": {
+                "Regular": "$5.30",
+                "Premium": "$5.70"
+            },
+            "Livermore": {
+                "Regular": "$5.30",
+                "Premium": "$5.70"
+            },
+            "Manteca": {
+                "Regular": "$5.20",
+                "Premium": "$5.70"
+            },
+            "Modesto": {
+                "Regular": "$5.16",
+                "Premium": "$5.60"
+            },
+            "Pleasanton": {
+                "Regular": "$5.30",
+                "Premium": "$5.70"
+            },
+            "Tracy": {
+                "Regular": "$5.20",
+                "Premium": "$5.60"
+            },
+            "Turlock": {
+                "Regular": "$5.56",
+                "Premium": "$5.96"
+            }
+        }
+    },
+    "2026-06-16 12:09": {
+        "CA": {
+            "Danville": {
+                "Regular": "$5.30",
+                "Premium": "$5.70"
+            },
+            "Hayward": {
+                "Regular": "$5.30",
+                "Premium": "$5.76"
+            },
+            "Hayward Business Center": {
+                "Regular": "$5.30",
+                "Premium": "$5.70"
+            },
+            "Livermore": {
+                "Regular": "$5.35",
+                "Premium": "$5.75"
+            },
+            "Manteca": {
+                "Regular": "$5.16",
+                "Premium": "$5.66"
+            },
+            "Modesto": {
+                "Regular": "$5.16",
+                "Premium": "$5.46"
+            },
+            "Pleasanton": {
+                "Regular": "$5.30",
+                "Premium": "$5.70"
+            },
+            "Tracy": {
+                "Regular": "$5.16",
+                "Premium": "$5.58"
+            },
+            "Turlock": {
+                "Regular": "$5.60",
+                "Premium": "$6.00"
+            }
+        }
+    },
+    "2026-06-29 05:39": {
+        "CA": {
+            "Danville": {
+                "Regular": "$5.00",
+                "Premium": "$5.50"
+            },
+            "Hayward": {
+                "Regular": "$4.96",
+                "Premium": "$5.36"
+            },
+            "Hayward Business Center": {
+                "Regular": "$5.00",
+                "Premium": "$5.40"
+            },
+            "Livermore": {
+                "Regular": "$5.06",
+                "Premium": "$5.56"
+            },
+            "Manteca": {
+                "Regular": "$4.86",
+                "Premium": "$5.36"
+            },
+            "Modesto": {
+                "Regular": "$4.90",
+                "Premium": "$5.10"
+            },
+            "Pleasanton": {
+                "Regular": "$5.00",
+                "Premium": "$5.40"
+            },
+            "Tracy": {
+                "Regular": "$4.90",
+                "Premium": "$5.30"
+            },
+            "Turlock": {
+                "Regular": "$5.20",
+                "Premium": "$5.70"
+            }
+        }
+    }
+}

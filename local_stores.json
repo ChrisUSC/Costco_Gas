@@ -1,0 +1,13 @@
+{
+    "CA": {
+      "Turlock": "https://www.costco.com/AjaxGetGasPricesService?warehouseid=782",
+      "Modesto": "https://www.costco.com/AjaxGetGasPricesService?warehouseid=661",
+      "Manteca": "https://www.costco.com/AjaxGetGasPricesService?warehouseid=1031",
+      "Tracy": "https://www.costco.com/AjaxGetGasPricesService?warehouseid=658",
+      "Livermore": "https://www.costco.com/AjaxGetGasPricesService?warehouseid=146",
+      "Danville": "https://www.costco.com/AjaxGetGasPricesService?warehouseid=21",
+      "Hayward Business Center": "https://www.costco.com/AjaxGetGasPricesService?warehouseid=823",
+      "Hayward": "https://www.costco.com/AjaxGetGasPricesService?warehouseid=1061",
+      "Pleasanton": "https://www.costco.com/AjaxGetGasPricesService?warehouseid=1341"
+    }
+}
