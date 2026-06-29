@@ -36747,5 +36747,485 @@
                 "Premium": "$5.30"
             }
         }
+    },
+    "2026-06-29 19:16": {
+        "CA": {
+            "Alhambra": {
+                "Regular": "$4.84",
+                "Premium": "$5.20"
+            },
+            "Antioch": {
+                "Regular": "$5.10",
+                "Premium": "$5.50"
+            },
+            "Azusa": {
+                "Regular": "$4.90",
+                "Premium": "$5.30"
+            },
+            "Bakersfield": {
+                "Regular": "$5.00",
+                "Premium": "$5.60"
+            },
+            "Burbank": {
+                "Regular": "$4.98",
+                "Premium": "$5.30"
+            },
+            "Cal Expo (Sacramento)": {
+                "Regular": "$5.00",
+                "Premium": "$5.60"
+            },
+            "Carlsbad": {
+                "Regular": "$4.96",
+                "Premium": "$5.30"
+            },
+            "Carmel Mountain": {
+                "Regular": "$4.90",
+                "Premium": "$5.10"
+            },
+            "Chico": {
+                "Regular": "$5.00",
+                "Premium": "$5.50"
+            },
+            "Chino Hills": {
+                "Regular": "$4.76",
+                "Premium": "$4.98"
+            },
+            "Chula Vista": {
+                "Regular": "$5.10",
+                "Premium": "$5.46"
+            },
+            "Citrus Heights": {
+                "Regular": "$5.00",
+                "Premium": "$5.30"
+            },
+            "City Of Industry": {
+                "Regular": "$4.50",
+                "Premium": "$5.10"
+            },
+            "Clovis": {
+                "Regular": "$4.48",
+                "Premium": "$4.80"
+            },
+            "Commerce Business Center": {
+                "Regular": "$4.66",
+                "Premium": "$5.10"
+            },
+            "Concord": {
+                "Regular": "$4.96",
+                "Premium": "$5.36"
+            },
+            "Corona": {
+                "Regular": "$5.00",
+                "Premium": "$5.30"
+            },
+            "Culver City": {
+                "Regular": "$4.66",
+                "Premium": "$5.10"
+            },
+            "Cypress CA": {
+                "Regular": "$5.36",
+                "Premium": "$5.66"
+            },
+            "Danville": {
+                "Regular": "$5.00",
+                "Premium": "$5.50"
+            },
+            "Eastvale": {
+                "Regular": "$4.80",
+                "Premium": "$5.20"
+            },
+            "El Camino": {
+                "Regular": "$5.10",
+                "Premium": "$5.50"
+            },
+            "El Centro": {
+                "Regular": "$4.70",
+                "Premium": "$5.10"
+            },
+            "Elk Grove": {
+                "Regular": "$5.00",
+                "Premium": "$5.36"
+            },
+            "Eureka": {
+                "Regular": "$5.50",
+                "Premium": "$5.80"
+            },
+            "Fairfield": {
+                "Regular": "$5.06",
+                "Premium": "$5.60"
+            },
+            "Folsom": {
+                "Regular": "$4.67",
+                "Premium": "$5.17"
+            },
+            "Fontana": {
+                "Regular": "$4.70",
+                "Premium": "$5.00"
+            },
+            "Fountain Valley": {
+                "Regular": "$4.60",
+                "Premium": "$5.00"
+            },
+            "Fremont": {
+                "Regular": "$4.89",
+                "Premium": "$5.29"
+            },
+            "Fresno": {
+                "Regular": "$4.68",
+                "Premium": "$5.10"
+            },
+            "Fullerton": {
+                "Regular": "$4.44",
+                "Premium": "$4.74"
+            },
+            "Garden Grove": {
+                "Regular": "$4.60",
+                "Premium": "$5.00"
+            },
+            "Gilroy": {
+                "Regular": "$5.30",
+                "Premium": "$5.50"
+            },
+            "Great Oaks": {
+                "Regular": "$4.80",
+                "Premium": "$5.30"
+            },
+            "Hanford": {
+                "Regular": "$4.66",
+                "Premium": "$5.30"
+            },
+            "Hawthorne": {
+                "Regular": "$4.60",
+                "Premium": "$4.80"
+            },
+            "Hawthorne Business Center": {
+                "Regular": "$4.60",
+                "Premium": "$4.80"
+            },
+            "Hayward": {
+                "Regular": "$4.96",
+                "Premium": "$5.36"
+            },
+            "Hayward Business Center": {
+                "Regular": "$4.60",
+                "Premium": "$4.80"
+            },
+            "Huntington Beach": {
+                "Regular": "$4.60",
+                "Premium": "$5.00"
+            },
+            "Inglewood": {
+                "Regular": "$4.80",
+                "Premium": "$5.10"
+            },
+            "Irvine": {
+                "Regular": "$5.00",
+                "Premium": "$5.30"
+            },
+            "La Habra": {
+                "Regular": "$4.38",
+                "Premium": "$4.68"
+            },
+            "La Mesa": {
+                "Regular": "$5.00",
+                "Premium": "$5.20"
+            },
+            "La Quinta": {
+                "Regular": "$4.38",
+                "Premium": "$4.90"
+            },
+            "Laguna Marketplace": {
+                "Regular": "$4.70",
+                "Premium": "$5.00"
+            },
+            "Laguna Niguel": {
+                "Regular": "$4.70",
+                "Premium": "$5.00"
+            },
+            "Lake Elsinore": {
+                "Regular": "$4.67",
+                "Premium": "$5.09"
+            },
+            "Lakewood": {
+                "Regular": "$4.67",
+                "Premium": "$5.09"
+            },
+            "Lancaster CA": {
+                "Regular": "$5.10",
+                "Premium": "$5.40"
+            },
+            "Livermore": {
+                "Regular": "$5.00",
+                "Premium": "$5.60"
+            },
+            "Lodi": {
+                "Regular": "$5.06",
+                "Premium": "$5.40"
+            },
+            "Manteca": {
+                "Regular": "$4.86",
+                "Premium": "$5.36"
+            },
+            "Marysville CA": {
+                "Regular": "$4.55",
+                "Premium": "$5.09"
+            },
+            "Merced": {
+                "Regular": "$5.30",
+                "Premium": "$5.80"
+            },
+            "Mission Valley": {
+                "Regular": "$5.06",
+                "Premium": "$5.40"
+            },
+            "Modesto": {
+                "Regular": "$4.90",
+                "Premium": "$5.10"
+            },
+            "Montclair": {
+                "Regular": "$4.68",
+                "Premium": "$4.98"
+            },
+            "Monterey Park": {
+                "Regular": "$4.56",
+                "Premium": "$4.86"
+            },
+            "Morena": {
+                "Regular": "$4.96",
+                "Premium": "$5.26"
+            },
+            "Moreno Valley": {
+                "Regular": "$4.76",
+                "Premium": "$5.16"
+            },
+            "Murrieta": {
+                "Regular": "$5.00",
+                "Premium": "$5.40"
+            },
+            "N Fresno": {
+                "Regular": "$4.48",
+                "Premium": "$4.90"
+            },
+            "NE San Jose": {
+                "Regular": "$4.80",
+                "Premium": "$5.20"
+            },
+            "Newark": {
+                "Regular": "$4.89",
+                "Premium": "$5.29"
+            },
+            "Northridge": {
+                "Regular": "$4.90",
+                "Premium": "$5.30"
+            },
+            "Norwalk CA": {
+                "Regular": "$4.60",
+                "Premium": "$5.00"
+            },
+            "Oxnard": {
+                "Regular": "$4.80",
+                "Premium": "$5.04"
+            },
+            "Pacoima": {
+                "Regular": "$5.06",
+                "Premium": "$5.30"
+            },
+            "Palm Desert": {
+                "Regular": "$4.40",
+                "Premium": "$4.90"
+            },
+            "Pleasanton": {
+                "Regular": "$5.00",
+                "Premium": "$5.40"
+            },
+            "Poway": {
+                "Regular": "$4.90",
+                "Premium": "$5.10"
+            },
+            "Rancho Cordova": {
+                "Regular": "$5.10",
+                "Premium": "$5.55"
+            },
+            "Rancho Cucamonga": {
+                "Regular": "$4.56",
+                "Premium": "$4.99"
+            },
+            "Rancho Del Rey": {
+                "Regular": "$5.10",
+                "Premium": "$5.46"
+            },
+            "Redding": {
+                "Regular": "$4.80",
+                "Premium": "$5.00"
+            },
+            "Redwood City": {
+                "Regular": "$5.26",
+                "Premium": "$5.60"
+            },
+            "Richmond CA": {
+                "Regular": "$5.20",
+                "Premium": "$5.50"
+            },
+            "Rohnert Park": {
+                "Regular": "$5.30",
+                "Premium": "$5.80"
+            },
+            "Roseville CA": {
+                "Regular": "$4.90",
+                "Premium": "$5.20"
+            },
+            "SE San Diego": {
+                "Regular": "$4.90",
+                "Premium": "$5.20"
+            },
+            "SW Bakersfield": {
+                "Regular": "$5.00",
+                "Premium": "$5.36"
+            },
+            "Sacramento": {
+                "Regular": "$4.96",
+                "Premium": "$5.36"
+            },
+            "San Bernardino": {
+                "Regular": "$4.66",
+                "Premium": "$5.00"
+            },
+            "San Dimas": {
+                "Regular": "$4.98",
+                "Premium": "$5.20"
+            },
+            "San Jose": {
+                "Regular": "$4.98",
+                "Premium": "$5.20"
+            },
+            "San Juan Capistrano": {
+                "Regular": "$4.70",
+                "Premium": "$5.00"
+            },
+            "San Leandro": {
+                "Regular": "$4.88",
+                "Premium": "$5.46"
+            },
+            "San Luis Obispo": {
+                "Regular": "$5.00",
+                "Premium": "$5.60"
+            },
+            "San Marcos": {
+                "Regular": "$4.70",
+                "Premium": "$5.14"
+            },
+            "Sand City": {
+                "Regular": "$4.90",
+                "Premium": "$5.20"
+            },
+            "Santa Clara": {
+                "Regular": "$4.80",
+                "Premium": "$5.10"
+            },
+            "Santa Clarita": {
+                "Regular": "$5.00",
+                "Premium": "$5.50"
+            },
+            "Santa Cruz": {
+                "Regular": "$5.30",
+                "Premium": "$5.70"
+            },
+            "Santa Maria": {
+                "Regular": "$5.30",
+                "Premium": "$5.70"
+            },
+            "Santa Rosa": {
+                "Regular": "$5.20",
+                "Premium": "$5.60"
+            },
+            "Santee": {
+                "Regular": "$5.00",
+                "Premium": "$5.30"
+            },
+            "Signal Hill": {
+                "Regular": "$4.69",
+                "Premium": "$5.09"
+            },
+            "Simi Valley": {
+                "Regular": "$4.76",
+                "Premium": "$5.06"
+            },
+            "South San Francisco": {
+                "Regular": "$5.10",
+                "Premium": "$5.50"
+            },
+            "Stockton": {
+                "Regular": "$4.76",
+                "Premium": "$5.26"
+            },
+            "Sunnyvale": {
+                "Regular": "$4.86",
+                "Premium": "$5.06"
+            },
+            "Temecula": {
+                "Regular": "$5.00",
+                "Premium": "$5.40"
+            },
+            "Torrance": {
+                "Regular": "$4.80",
+                "Premium": "$5.20"
+            },
+            "Tracy": {
+                "Regular": "$4.90",
+                "Premium": "$5.30"
+            },
+            "Turlock": {
+                "Regular": "$5.20",
+                "Premium": "$5.70"
+            },
+            "Tustin": {
+                "Regular": "$4.88",
+                "Premium": "$5.26"
+            },
+            "Tustin Ranch": {
+                "Regular": "$4.90",
+                "Premium": "$5.26"
+            },
+            "Ukiah": {
+                "Regular": "$4.85",
+                "Premium": "$5.40"
+            },
+            "Vacaville": {
+                "Regular": "$4.85",
+                "Premium": "$5.40"
+            },
+            "Vallejo": {
+                "Regular": "$5.06",
+                "Premium": "$5.50"
+            },
+            "Van Nuys": {
+                "Regular": "$5.00",
+                "Premium": "$5.30"
+            },
+            "Victorville": {
+                "Regular": "$4.96",
+                "Premium": "$5.30"
+            },
+            "Visalia": {
+                "Regular": "$4.50",
+                "Premium": "$5.10"
+            },
+            "Vista": {
+                "Regular": "$4.96",
+                "Premium": "$5.20"
+            },
+            "Woodland": {
+                "Regular": "$5.00",
+                "Premium": "$5.60"
+            },
+            "Woodland Hills": {
+                "Regular": "$4.90",
+                "Premium": "$5.30"
+            },
+            "Yorba Linda": {
+                "Regular": "$4.90",
+                "Premium": "$5.30"
+            }
+        }
     }
 }
