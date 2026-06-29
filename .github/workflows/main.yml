@@ -2,13 +2,16 @@ name: Update Gas Prices
 
 on:
   schedule:
-    # Runs at 7am, 12pm, and 6pm UTC daily
-    # Adjust these if you want them in a specific timezone offset
-    - cron: '0 7,12,18 * * *'
-  workflow_dispatch: # Allows you to trigger a manual run from the GitHub UI
+    # Times are in UTC — 15:00, 20:00, 01:00 UTC = 8am, 1pm, 6pm PT (PST, UTC-8)
+    # During PDT (summer, UTC-7): 8am, 1pm, 6pm shifts 1hr earlier
+    - cron: '0 15,20,1 * * *'
+  workflow_dispatch:
 
 permissions:
-  contents: write # Required so the action can commit the updated JSON files back
+  contents: write
+
+env:
+  TZ: America/Los_Angeles  # Makes time.localtime() in gas.py use Pacific time
 
 jobs:
   scrape:
@@ -42,6 +45,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add local_prices.json ca_prices.json us_prices.json
-          # Only commits if there are actual changes — skips if prices haven't changed
-          git diff --staged --quiet || git commit -m "chore: auto-update gas prices [$(date -u '+%Y-%m-%d %H:%M UTC')]"
+          git diff --staged --quiet || git commit -m "chore: auto-update gas prices [$(TZ=America/Los_Angeles date '+%Y-%m-%d %H:%M PT')]"
           git push
