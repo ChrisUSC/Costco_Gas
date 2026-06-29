@@ -4,7 +4,7 @@ on:
   schedule:
     # Times are in UTC — 15:00, 20:00, 01:00 UTC = 8am, 1pm, 6pm PT (PST, UTC-8)
     # During PDT (summer, UTC-7): 8am, 1pm, 6pm shifts 1hr earlier
-    - cron: '0 15,20,1 * * *'
+    - cron: '0 8,16,0 * * *'
   workflow_dispatch:
 
 permissions:
