@@ -3,3 +3,10 @@
 .idea/modules.xml
 .idea/inspectionProfiles/profiles_settings.xml
 .idea/Costco_Gas.iml
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
+.env*
+!.env.example
