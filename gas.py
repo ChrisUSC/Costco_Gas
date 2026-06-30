@@ -17,7 +17,7 @@ USER_AGENTS = [
     'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36'
 ]
 
-MAX_FETCH_ATTEMPTS = 3
+MAX_FETCH_ATTEMPTS = 5
 EXCLUDED_STATES = {"PR"}
 
 
@@ -87,8 +87,9 @@ def save_data(data: dict, file_path: str) -> None:
     raw_states_data = data[timestamp_str]
     # Sort states and cities alphabetically
     sorted_states_data = {
-        state: dict(sorted(cities.items()))
+        str(state): dict(sorted(cities.items()))
         for state, cities in sorted(raw_states_data.items())
+        if isinstance(cities, dict)
     }
 
     save_prices = {}
@@ -111,7 +112,8 @@ def save_data(data: dict, file_path: str) -> None:
 
     # Save the combined data back to the file
     write_pretty_top_level(save_prices, file_path)
-    
+
+
 def write_pretty_top_level(data: dict, file_path: str) -> None:
     """Writes JSON with one line per top-level key, compact nested content."""
     with open(file_path, "w", encoding='utf-8') as fp:
@@ -160,8 +162,12 @@ def extract_store_metadata(html_content: str) -> dict | None:
     scripts = soup.find_all('script', type='application/ld+json')
 
     for script in scripts:
+        script_content = script.string
+        if not script_content:
+            continue
         try:
-            data = json.loads(script.string)
+            data = json.loads(script_content)
+
             if data.get('@type') == 'LocalBusiness':
                 lat = float(data['geo']['latitude'])
                 lng = float(data['geo']['longitude'])
@@ -181,24 +187,26 @@ def extract_store_metadata(html_content: str) -> dict | None:
                         has_gas = True
 
                 return {"lat": lat, "lng": lng, "address": address, "has_gas": has_gas}
-        except Exception:
+        except (json.JSONDecodeError, KeyError, ValueError, TypeError):
             continue
+
     return None
 
 
 def enrich_store_list(state_urls: dict) -> dict:
-    """Visits each store URL concurrently, extracts coordinates, and removes stores without gas."""
     enriched_data = {}
     session = create_session()
 
-    def fetch_single_store(state, city, url):
+    # Changed parameter names to avoid shadowing the loop below
+    def fetch_single_store(target_state, target_city, target_url):
         try:
-            resp = session.get(url, headers={'User-Agent': random.choice(USER_AGENTS)}, timeout=10)
+            resp = session.get(target_url, headers={'User-Agent': random.choice(USER_AGENTS)}, timeout=10)
             resp.raise_for_status()
             metadata = extract_store_metadata(resp.text)
-            return (state, city, url, metadata)
-        except Exception:
-            return (state, city, url, None)
+            # No parentheses!
+            return target_state, target_city, target_url, metadata
+        except (requests.exceptions.RequestException, ValueError, KeyError):
+            return target_state, target_city, target_url, None
 
     print("Fetching exact store metadata (Coordinates & Addresses)...")
 
@@ -210,20 +218,21 @@ def enrich_store_list(state_urls: dict) -> dict:
                 futures.append(executor.submit(fetch_single_store, state, city, url))
 
         for future in as_completed(futures):
-            state, city, url, meta = future.result()
+            # Renamed these variables so they don't shadow the 'state' and 'city' loops above
+            res_state, res_city, res_url, meta = future.result()
 
             if meta and meta["has_gas"]:
-                wh_id = get_warehouse_id(url)
-                enriched_data[state][city] = {
-                    "url": url,
+                wh_id = get_warehouse_id(res_url)
+                enriched_data[res_state][res_city] = {
+                    "url": res_url,
                     "warehouse_id": wh_id,
                     "lat": meta["lat"],
                     "lng": meta["lng"],
                     "address": meta["address"]
                 }
-                print(f"Added {city}, {state} (ID: {wh_id})")
+                print(f"Added {res_city}, {res_state} (ID: {wh_id})")
             elif meta and not meta["has_gas"]:
-                print(f"Skipping {city}, {state} - No Gas Station.")
+                print(f"Skipping {res_city}, {res_state} - No Gas Station.")
 
     return {k: v for k, v in enriched_data.items() if v}
 
@@ -233,9 +242,9 @@ def get_gas_prices_ajax(locations: dict, source_filepath: str | None = None) -> 
     fetched_prices = {}
     session = create_session()
 
-    def fetch_price(state, city, info):
+    def fetch_price(target_state, target_city, target_info):
         # Handle backwards compatibility if location file is in the old string URL format
-        wh_id = info.get("warehouse_id") if isinstance(info, dict) else get_warehouse_id(info)
+        wh_id = target_info.get("warehouse_id") if isinstance(target_info, dict) else get_warehouse_id(target_info)
 
         ajax_url = f"https://www.costco.com/AjaxGetGasPricesService?warehouseid={wh_id}"
 
@@ -256,11 +265,12 @@ def get_gas_prices_ajax(locations: dict, source_filepath: str | None = None) -> 
                 prem = format_price(normalized.get('premium'))
 
                 if reg is not None or prem is not None:
-                    return (state, city, [reg, prem])  # Space-saving Array!
-            except Exception:
+                    return target_state, target_city, [reg, prem]  # Space-saving Array!
+
+            except (requests.exceptions.RequestException, json.JSONDecodeError, ValueError, KeyError):
                 pass
 
-        return (state, city, None)
+        return target_state, target_city, None
 
     print("Fetching live gas prices...")
     with ThreadPoolExecutor(max_workers=10) as executor:
@@ -307,7 +317,7 @@ def extract_stores_from_html(html_content: str) -> dict:
 
     links = soup.find_all('a', href=True)
     for link in links:
-        url = link['href']
+        url = str(link.get('href', ''))
         if '/warehouse-locations/' in url or '/w/-/' in url:
             name = link.get_text(strip=True)
             if not url.startswith('http'):
@@ -315,6 +325,46 @@ def extract_stores_from_html(html_content: str) -> dict:
             store_dict[name] = url
 
     return store_dict
+
+
+def discover_new_stores(states_to_check: list, existing_stores: dict, output_filepath: str) -> dict:
+    """Cheap scan of state directories; only enriches stores not already in the master file."""
+    existing_urls = {
+        info["url"] for cities in existing_stores.values() for info in cities.values()
+    }
+
+    new_stores_by_state = {}
+    for state in states_to_check:
+        print(f"\n--- Checking {state} for new stores ---")
+        url = f"https://www.costco.com/sitemaps/warehouses-by-state/{state}"
+        html = fetch_directory_html(url)
+        if not html:
+            continue
+
+        all_stores = extract_stores_from_html(html)
+        new_in_state = {
+            name: store_url for name, store_url in all_stores.items()
+            if store_url not in existing_urls
+        }
+        if new_in_state:
+            print(f"Found {len(new_in_state)} potential new store(s) in {state}.")
+            new_stores_by_state[state] = new_in_state
+
+    if not new_stores_by_state:
+        print("No new stores found.")
+        return existing_stores
+
+    enriched_new = enrich_store_list(new_stores_by_state)  # confirms has_gas, gets coords
+
+    for state, cities in enriched_new.items():
+        existing_stores.setdefault(state, {}).update(cities)
+
+    with open(output_filepath, 'w', encoding='utf-8') as f:
+        json.dump(existing_stores, f, indent=4)
+
+    total_added = sum(len(c) for c in enriched_new.values())
+    print(f"\nAdded {total_added} new store(s) with gas to '{output_filepath}'.")
+    return existing_stores
 
 
 def build_and_save_master_db(states_to_update: list, output_filepath: str):
@@ -337,7 +387,7 @@ def build_and_save_master_db(states_to_update: list, output_filepath: str):
     print(f"\nMaster database '{output_filepath}' updated successfully.")
 
 
-if __name__ == '__main__':
+def main():
     nearby_stores = load_store_locations('local_stores.json')
     ca_stores = load_store_locations('ca_stores.json')
     us_stores = load_store_locations('us_stores.json')
@@ -383,18 +433,43 @@ if __name__ == '__main__':
     elif run_type == 5:
         target_url = "https://www.costco.com/sitemaps/warehouses-by-state"
         raw_html = fetch_directory_html(target_url)
-        soup = BeautifulSoup(raw_html, 'html.parser')
+        if not raw_html:
+            print("Failed to fetch the main state directory. Exiting.")
+            sys.exit(1)
 
+        soup = BeautifulSoup(raw_html, 'html.parser')
         states_to_scrape = set()
         for link in soup.find_all('a', href=True):
             if "/sitemaps/warehouses-by-state/" in link['href']:
-                state_code = link['href'].rstrip('/').split('/')[-1]
+                state_code = str(link.get('href', '')).rstrip('/').split('/')[-1]
                 if len(state_code) == 2 and state_code not in EXCLUDED_STATES:
                     states_to_scrape.add(state_code)
 
         print(f"Found {len(states_to_scrape)} states to process.")
         build_and_save_master_db(list(states_to_scrape), "us_stores.json")
-        us_stores = load_store_locations('us_stores.json')
+        us_stores = load_store_locations('us_stores.json') or {}
         prices = get_gas_prices_ajax(us_stores, 'us_stores.json')
         save_data(prices, 'us_prices.json')
         print_lowest_prices(prices)
+
+    elif run_type == 6:
+        target_url = "https://www.costco.com/sitemaps/warehouses-by-state"
+        raw_html = fetch_directory_html(target_url)
+        if not raw_html:
+            print("Failed to fetch the main state directory. Exiting.")
+            sys.exit(1)
+        soup = BeautifulSoup(raw_html, 'html.parser')
+
+        states_to_scrape = set()
+        for link in soup.find_all('a', href=True):
+            if "/sitemaps/warehouses-by-state/" in link['href']:
+                state_code = str(link.get('href', '')).rstrip('/').split('/')[-1]
+                if len(state_code) == 2 and state_code not in EXCLUDED_STATES:
+                    states_to_scrape.add(state_code)
+
+        us_stores = load_store_locations('us_stores.json') or {}
+        discover_new_stores(list(states_to_scrape), us_stores, 'us_stores.json')
+
+
+if __name__ == '__main__':
+    main()

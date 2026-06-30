@@ -1,0 +1,46 @@
+name: Discover New Costco Gas Stations
+
+on:
+  schedule:
+    - cron: '0 8 * * 1'   # every Monday
+  workflow_dispatch:
+
+# REQUIRED: Without this, the bot will get a 403 error when trying to push the commit
+permissions:
+  contents: write
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # ADDED: Caching dependencies (matches your main.yml for faster runs)
+      - name: Cache pip dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - run: pip install -r requirements.txt
+
+      - run: python scraper.py 6
+
+      - name: Commit updated store list
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add us_stores.json
+          git diff --staged --quiet || git commit -m "chore: auto-discover new Costco gas stations"
+          
+          # ADDED: Pull with rebase before pushing. 
+          # If your main.yml runs at the exact same time (0 8 * * 1), 
+          # this prevents a race condition that would cause the push to fail.
+          git pull --rebase origin main
+          git push
