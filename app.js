@@ -95,7 +95,7 @@
 
     // Triggered on zoom to toggle the visibility of the text badges
     function checkZoomLevel() {
-        if (map.getZoom() >= 10) {
+        if (map.getZoom() >= 9) {
             document.getElementById('map').classList.add('map-show-prices');
         } else {
             document.getElementById('map').classList.remove('map-show-prices');
