@@ -21,14 +21,15 @@ MAX_FETCH_ATTEMPTS = 3
 EXCLUDED_STATES = {"PR"}
 
 
-def format_price(v) -> str:
-    """Format a raw price value into an '$X.XX' string, or 'N/A' if invalid."""
+def format_price(v) -> float | None:
+    """Format a raw price string into a float rounded to 2 decimals, or None if invalid."""
     if v is None or str(v).strip().lower() in ("", "n/a"):
-        return "N/A"
+        return None
     try:
-        return f"${float(str(v).replace('$', '').strip()):.2f}"
+        val = float(str(v).replace('$', '').strip())
+        return round(val, 2)
     except ValueError:
-        return "N/A"
+        return None
 
 
 def create_session() -> requests.Session:
@@ -61,11 +62,10 @@ def print_lowest_prices(prices: dict) -> None:
 
         for state, cities in states_data.items():
             for city, gas_prices in cities.items():
-                for gas_type in ("Regular", "Premium"):
-                    price_str = gas_prices.get(gas_type, "N/A")
-                    if price_str == "N/A":
+                for idx, gas_type in enumerate(["Regular", "Premium"]):
+                    price = gas_prices[idx]
+                    if price is None:
                         continue
-                    price = float(price_str.replace('$', ''))
                     cur_low, cur_cities = lowest[gas_type]
                     if price < cur_low:
                         lowest[gas_type] = (price, [f"{city} ({state})"])
@@ -95,20 +95,42 @@ def save_data(data: dict, file_path: str) -> None:
         try:
             with open(file_path, 'r') as json_file:
                 save_prices = json.load(json_file)
+
+            # Auto-Migrate and enforce 2 decimals on historical data
+            for ts, s_data in save_prices.items():
+                for s, c_data in s_data.items():
+                    for c, p_data in c_data.items():
+                        if isinstance(p_data, dict):
+                            # Fix old dictionary formats
+                            r = p_data.get("Regular", "N/A")
+                            p = p_data.get("Premium", "N/A")
+                            r_f = round(float(r.replace('$', '')), 2) if r not in ("N/A", None, "") else None
+                            p_f = round(float(p.replace('$', '')), 2) if p not in ("N/A", None, "") else None
+                            c_data[c] = [r_f, p_f]
+                        elif isinstance(p_data, list):
+                            # Clean up floating point errors in already converted arrays
+                            r_f = round(p_data[0], 2) if p_data[0] is not None else None
+                            p_f = round(p_data[1], 2) if p_data[1] is not None else None
+                            c_data[c] = [r_f, p_f]
+
         except json.JSONDecodeError:
             pass
 
     save_prices[timestamp_str] = sorted_states_data
+    write_pretty_top_level(save_prices, file_path)
 
-    # Write one compact JSON line per timestamp, sorted chronologically
+
+def write_pretty_top_level(data: dict, file_path: str) -> None:
+    """Writes JSON with one line per top-level key, compact nested content."""
     with open(file_path, "w", encoding='utf-8') as fp:
         fp.write("{\n")
-        items = list(save_prices.items())
-        for i, (ts, snapshot) in enumerate(items):
-            line = json.dumps(ts) + ":" + json.dumps(snapshot, separators=(',', ':'))
+        items = list(data.items())
+        for i, (key, value) in enumerate(items):
+            compact_value = json.dumps(value, separators=(',', ':'))
             comma = "," if i < len(items) - 1 else ""
-            fp.write(line + comma + "\n")
+            fp.write(f'  {json.dumps(key)}: {compact_value}{comma}\n')
         fp.write("}\n")
+
 
 def load_store_locations(file_path: str) -> dict | None:
     try:
@@ -238,11 +260,11 @@ def get_gas_prices_ajax(locations: dict, source_filepath: str | None = None) -> 
                 inner_data = next(iter(raw_data.values()))
                 normalized = {k.lower(): v for k, v in inner_data.items()}
 
-                reg = format_price(normalized.get('regular', "N/A"))
-                prem = format_price(normalized.get('premium', "N/A"))
+                reg = format_price(normalized.get('regular'))
+                prem = format_price(normalized.get('premium'))
 
-                if reg != "N/A" or prem != "N/A":
-                    return (state, city, {'Regular': reg, 'Premium': prem})
+                if reg is not None or prem is not None:
+                    return (state, city, [reg, prem])  # Space-saving Array!
             except Exception:
                 pass
 
@@ -328,12 +350,10 @@ if __name__ == '__main__':
     ca_stores = load_store_locations('ca_stores.json')
     us_stores = load_store_locations('us_stores.json')
 
-    # Check if a computer passed an argument (e.g., python backend.py 4)
     if len(sys.argv) > 1:
         run_type = int(sys.argv[1])
         print(f"Automated run detected. Executing Option {run_type}")
     else:
-        # Fallback for when you run it manually
         print("1: Update Local Prices")
         print("2: Update CA Prices")
         print("3: Update US Prices")
@@ -345,7 +365,6 @@ if __name__ == '__main__':
             print("Invalid input. Exiting.")
             sys.exit(1)
 
-    # --- The rest of your logic remains exactly the same ---
     if run_type == 1 and nearby_stores:
         prices = get_gas_prices_ajax(nearby_stores, 'local_stores.json')
         save_data(prices, 'local_prices.json')
