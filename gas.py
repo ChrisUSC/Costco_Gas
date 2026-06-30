@@ -85,41 +85,33 @@ def save_data(data: dict, file_path: str) -> None:
         return
 
     raw_states_data = data[timestamp_str]
+    # Sort states and cities alphabetically
     sorted_states_data = {
         state: dict(sorted(cities.items()))
         for state, cities in sorted(raw_states_data.items())
     }
 
     save_prices = {}
-    if os.path.exists(file_path):
+
+    # Load existing data to append to
+    if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
         try:
-            with open(file_path, 'r') as json_file:
+            with open(file_path, 'r', encoding='utf-8') as json_file:
                 save_prices = json.load(json_file)
+        except json.JSONDecodeError as e:
+            print(f"⚠️ ERROR: {file_path} contains invalid JSON ({e}).")
+            print("Skipping save to prevent deleting historical data.")
+            return
+        except Exception as e:
+            print(f"⚠️ ERROR reading {file_path}: {e}")
+            return
 
-            # Auto-Migrate and enforce 2 decimals on historical data
-            for ts, s_data in save_prices.items():
-                for s, c_data in s_data.items():
-                    for c, p_data in c_data.items():
-                        if isinstance(p_data, dict):
-                            # Fix old dictionary formats
-                            r = p_data.get("Regular", "N/A")
-                            p = p_data.get("Premium", "N/A")
-                            r_f = round(float(r.replace('$', '')), 2) if r not in ("N/A", None, "") else None
-                            p_f = round(float(p.replace('$', '')), 2) if p not in ("N/A", None, "") else None
-                            c_data[c] = [r_f, p_f]
-                        elif isinstance(p_data, list):
-                            # Clean up floating point errors in already converted arrays
-                            r_f = round(p_data[0], 2) if p_data[0] is not None else None
-                            p_f = round(p_data[1], 2) if p_data[1] is not None else None
-                            c_data[c] = [r_f, p_f]
-
-        except json.JSONDecodeError:
-            pass
-
+    # Add the new timestamp block
     save_prices[timestamp_str] = sorted_states_data
+
+    # Save the combined data back to the file
     write_pretty_top_level(save_prices, file_path)
-
-
+    
 def write_pretty_top_level(data: dict, file_path: str) -> None:
     """Writes JSON with one line per top-level key, compact nested content."""
     with open(file_path, "w", encoding='utf-8') as fp:
