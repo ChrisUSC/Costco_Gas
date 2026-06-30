@@ -4468,5 +4468,45 @@
                 "Premium": "$5.70"
             }
         }
+    },
+    "2026-06-29 19:30": {
+        "CA": {
+            "Danville": {
+                "Regular": "$5.00",
+                "Premium": "$5.50"
+            },
+            "Hayward": {
+                "Regular": "$4.96",
+                "Premium": "$5.36"
+            },
+            "Hayward Business Center": {
+                "Regular": "$5.06",
+                "Premium": "$5.40"
+            },
+            "Livermore": {
+                "Regular": "$5.00",
+                "Premium": "$5.60"
+            },
+            "Manteca": {
+                "Regular": "$4.86",
+                "Premium": "$5.36"
+            },
+            "Modesto": {
+                "Regular": "$4.90",
+                "Premium": "$5.10"
+            },
+            "Pleasanton": {
+                "Regular": "$5.00",
+                "Premium": "$5.40"
+            },
+            "Tracy": {
+                "Regular": "$4.90",
+                "Premium": "$5.30"
+            },
+            "Turlock": {
+                "Regular": "$5.20",
+                "Premium": "$5.70"
+            }
+        }
     }
 }

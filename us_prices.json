@@ -72295,5 +72295,2391 @@
                 "Premium": "$4.34"
             }
         }
+    },
+    "2026-06-29 19:32": {
+        "AK": {
+            "Anchorage": {
+                "Regular": "$4.70",
+                "Premium": "$5.00"
+            },
+            "Fairbanks": {
+                "Regular": "$4.00",
+                "Premium": "$4.70"
+            },
+            "NE Anchorage": {
+                "Regular": "$4.70",
+                "Premium": "$5.06"
+            }
+        },
+        "AL": {
+            "Hoover": {
+                "Regular": "$3.18",
+                "Premium": "$4.00"
+            },
+            "Huntsville": {
+                "Regular": "$3.18",
+                "Premium": "$3.90"
+            },
+            "Madison": {
+                "Regular": "$3.18",
+                "Premium": "$3.90"
+            },
+            "Mobile": {
+                "Regular": "$3.07",
+                "Premium": "$3.70"
+            },
+            "Montgomery": {
+                "Regular": "$3.18",
+                "Premium": "$3.80"
+            }
+        },
+        "AR": {
+            "Little Rock": {
+                "Regular": "$3.24",
+                "Premium": "$3.90"
+            }
+        },
+        "AZ": {
+            "Avondale": {
+                "Regular": "$3.50",
+                "Premium": "$4.00"
+            },
+            "Buckeye": {
+                "Regular": "$3.50",
+                "Premium": "$4.00"
+            },
+            "Cave Creek": {
+                "Regular": "$3.60",
+                "Premium": "$4.10"
+            },
+            "Chandler": {
+                "Regular": "$3.66",
+                "Premium": "$4.16"
+            },
+            "Gilbert": {
+                "Regular": "$3.40",
+                "Premium": "$3.90"
+            },
+            "Glendale": {
+                "Regular": "$3.66",
+                "Premium": "$4.16"
+            },
+            "Mesa": {
+                "Regular": "$3.50",
+                "Premium": "$4.10"
+            },
+            "N Phoenix": {
+                "Regular": "$3.60",
+                "Premium": "$4.10"
+            },
+            "NW Tucson": {
+                "Regular": "$3.35",
+                "Premium": "$4.10"
+            },
+            "Paradise Valley": {
+                "Regular": "$3.66",
+                "Premium": "$4.16"
+            },
+            "Prescott": {
+                "Regular": "$3.80",
+                "Premium": "$4.50"
+            },
+            "Queen Creek": {
+                "Regular": "$3.66",
+                "Premium": "$4.16"
+            },
+            "SE Gilbert": {
+                "Regular": "$3.66",
+                "Premium": "$4.16"
+            },
+            "SW Tucson": {
+                "Regular": "$3.30",
+                "Premium": "$4.06"
+            },
+            "Scottsdale": {
+                "Regular": "$3.70",
+                "Premium": "$4.20"
+            },
+            "Surprise": {
+                "Regular": "$3.60",
+                "Premium": "$4.10"
+            },
+            "Tempe": {
+                "Regular": "$3.66",
+                "Premium": "$4.16"
+            },
+            "Thomas Road": {
+                "Regular": "$3.60",
+                "Premium": "$4.10"
+            },
+            "Tucson": {
+                "Regular": "$3.50",
+                "Premium": "$4.10"
+            }
+        },
+        "CA": {
+            "Alhambra": {
+                "Regular": "$4.84",
+                "Premium": "$5.20"
+            },
+            "Antioch": {
+                "Regular": "$5.10",
+                "Premium": "$5.50"
+            },
+            "Azusa": {
+                "Regular": "$5.10",
+                "Premium": "$5.50"
+            },
+            "Bakersfield": {
+                "Regular": "$5.00",
+                "Premium": "$5.60"
+            },
+            "Brentwood CA": {
+                "Regular": "$5.10",
+                "Premium": "$5.46"
+            },
+            "Burbank": {
+                "Regular": "$4.98",
+                "Premium": "$5.30"
+            },
+            "Cal Expo": {
+                "Regular": "$5.00",
+                "Premium": "$5.60"
+            },
+            "Carlsbad": {
+                "Regular": "$4.96",
+                "Premium": "$5.30"
+            },
+            "Carmel Mountain": {
+                "Regular": "$4.90",
+                "Premium": "$5.10"
+            },
+            "Chico": {
+                "Regular": "$5.00",
+                "Premium": "$5.50"
+            },
+            "Chino Hills": {
+                "Regular": "$4.76",
+                "Premium": "$4.98"
+            },
+            "Chula Vista": {
+                "Regular": "$5.10",
+                "Premium": "$5.46"
+            },
+            "Citrus Heights": {
+                "Regular": "$5.00",
+                "Premium": "$5.30"
+            },
+            "City Of Industry": {
+                "Regular": "$4.60",
+                "Premium": "$5.10"
+            },
+            "Clovis": {
+                "Regular": "$4.48",
+                "Premium": "$4.80"
+            },
+            "Concord": {
+                "Regular": "$4.96",
+                "Premium": "$5.36"
+            },
+            "Corona": {
+                "Regular": "$4.80",
+                "Premium": "$5.18"
+            },
+            "Culver City": {
+                "Regular": "$4.86",
+                "Premium": "$5.26"
+            },
+            "Cypress CA": {
+                "Regular": "$5.36",
+                "Premium": "$5.66"
+            },
+            "Danville": {
+                "Regular": "$5.00",
+                "Premium": "$5.50"
+            },
+            "Eastvale": {
+                "Regular": "$4.80",
+                "Premium": "$5.10"
+            },
+            "El Camino": {
+                "Regular": "$5.10",
+                "Premium": "$5.50"
+            },
+            "El Centro": {
+                "Regular": "$4.70",
+                "Premium": "$5.10"
+            },
+            "Elk Grove": {
+                "Regular": "$5.00",
+                "Premium": "$5.36"
+            },
+            "Eureka": {
+                "Regular": "$5.50",
+                "Premium": "$5.80"
+            },
+            "Fairfield": {
+                "Regular": "$5.06",
+                "Premium": "$5.60"
+            },
+            "Folsom": {
+                "Regular": "$4.67",
+                "Premium": "$5.17"
+            },
+            "Fontana": {
+                "Regular": "$4.70",
+                "Premium": "$5.00"
+            },
+            "Fountain Valley": {
+                "Regular": "$4.60",
+                "Premium": "$4.96"
+            },
+            "Fremont": {
+                "Regular": "$4.89",
+                "Premium": "$5.29"
+            },
+            "Fresno": {
+                "Regular": "$5.10",
+                "Premium": "$5.46"
+            },
+            "Fullerton": {
+                "Regular": "$4.44",
+                "Premium": "$4.74"
+            },
+            "Garden Grove": {
+                "Regular": "$4.60",
+                "Premium": "$5.00"
+            },
+            "Gilroy": {
+                "Regular": "$5.30",
+                "Premium": "$5.50"
+            },
+            "Great Oaks": {
+                "Regular": "$4.80",
+                "Premium": "$5.30"
+            },
+            "Hanford": {
+                "Regular": "$4.66",
+                "Premium": "$5.30"
+            },
+            "Hawthorne": {
+                "Regular": "$4.60",
+                "Premium": "$4.80"
+            },
+            "Hayward": {
+                "Regular": "$4.96",
+                "Premium": "$5.36"
+            },
+            "Highland": {
+                "Regular": "$4.66",
+                "Premium": "$5.10"
+            },
+            "Huntington Beach": {
+                "Regular": "$4.60",
+                "Premium": "$4.96"
+            },
+            "Inglewood": {
+                "Regular": "$4.80",
+                "Premium": "$5.10"
+            },
+            "Irvine": {
+                "Regular": "$5.00",
+                "Premium": "$5.30"
+            },
+            "La Habra": {
+                "Regular": "$4.38",
+                "Premium": "$4.68"
+            },
+            "La Mesa": {
+                "Regular": "$5.00",
+                "Premium": "$5.30"
+            },
+            "La Quinta": {
+                "Regular": "$4.38",
+                "Premium": "$4.90"
+            },
+            "Laguna Marketplace": {
+                "Regular": "$4.70",
+                "Premium": "$5.00"
+            },
+            "Laguna Niguel": {
+                "Regular": "$4.70",
+                "Premium": "$5.00"
+            },
+            "Lake Elsinore": {
+                "Regular": "$5.00",
+                "Premium": "$5.30"
+            },
+            "Lakewood": {
+                "Regular": "$4.67",
+                "Premium": "$5.09"
+            },
+            "Lancaster CA": {
+                "Regular": "$5.00",
+                "Premium": "$5.40"
+            },
+            "Livermore": {
+                "Regular": "$5.00",
+                "Premium": "$5.60"
+            },
+            "Lodi": {
+                "Regular": "$5.06",
+                "Premium": "$5.40"
+            },
+            "Manteca": {
+                "Regular": "$4.86",
+                "Premium": "$5.36"
+            },
+            "Marysville CA": {
+                "Regular": "$4.55",
+                "Premium": "$5.09"
+            },
+            "Merced": {
+                "Regular": "$5.30",
+                "Premium": "$5.80"
+            },
+            "Mission Valley": {
+                "Regular": "$5.10",
+                "Premium": "$5.40"
+            },
+            "Modesto": {
+                "Regular": "$4.90",
+                "Premium": "$5.10"
+            },
+            "Montclair": {
+                "Regular": "$4.68",
+                "Premium": "$4.98"
+            },
+            "Monterey Park": {
+                "Regular": "$4.50",
+                "Premium": "$5.10"
+            },
+            "Morena": {
+                "Regular": "$4.96",
+                "Premium": "$5.26"
+            },
+            "Moreno Valley": {
+                "Regular": "$4.76",
+                "Premium": "$5.16"
+            },
+            "Murrieta": {
+                "Regular": "$4.48",
+                "Premium": "$4.90"
+            },
+            "N Fresno": {
+                "Regular": "$4.48",
+                "Premium": "$4.90"
+            },
+            "N Visalia": {
+                "Regular": "$4.50",
+                "Premium": "$5.10"
+            },
+            "NE San Jose": {
+                "Regular": "$4.80",
+                "Premium": "$5.20"
+            },
+            "Napa": {
+                "Regular": "$5.10",
+                "Premium": "$5.70"
+            },
+            "Newark": {
+                "Regular": "$4.89",
+                "Premium": "$5.29"
+            },
+            "Northridge": {
+                "Regular": "$4.80",
+                "Premium": "$5.30"
+            },
+            "Norwalk CA": {
+                "Regular": "$4.60",
+                "Premium": "$5.00"
+            },
+            "Oxnard": {
+                "Regular": "$4.80",
+                "Premium": "$5.04"
+            },
+            "Pacoima": {
+                "Regular": "$5.06",
+                "Premium": "$5.30"
+            },
+            "Palm Desert": {
+                "Regular": "$4.80",
+                "Premium": "$5.04"
+            },
+            "Pleasanton": {
+                "Regular": "$5.00",
+                "Premium": "$5.40"
+            },
+            "Poway": {
+                "Regular": "$4.90",
+                "Premium": "$5.10"
+            },
+            "Rancho Cordova": {
+                "Regular": "$5.10",
+                "Premium": "$5.55"
+            },
+            "Rancho Cucamonga": {
+                "Regular": "$4.56",
+                "Premium": "$4.99"
+            },
+            "Rancho Del Rey": {
+                "Regular": "$5.10",
+                "Premium": "$5.46"
+            },
+            "Redding": {
+                "Regular": "$4.80",
+                "Premium": "$5.00"
+            },
+            "Redwood City": {
+                "Regular": "$5.26",
+                "Premium": "$5.60"
+            },
+            "Richmond CA": {
+                "Regular": "$5.20",
+                "Premium": "$5.50"
+            },
+            "Riverbank": {
+                "Regular": "$4.90",
+                "Premium": "$5.10"
+            },
+            "Rohnert Park": {
+                "Regular": "$5.30",
+                "Premium": "$5.80"
+            },
+            "Roseville CA": {
+                "Regular": "$4.90",
+                "Premium": "$5.20"
+            },
+            "S San Francisco": {
+                "Regular": "$5.10",
+                "Premium": "$5.50"
+            },
+            "SE San Diego": {
+                "Regular": "$5.10",
+                "Premium": "$5.50"
+            },
+            "SW Bakersfield": {
+                "Regular": "$5.00",
+                "Premium": "$5.36"
+            },
+            "Sacramento": {
+                "Regular": "$4.96",
+                "Premium": "$5.36"
+            },
+            "San Bernardino": {
+                "Regular": "$4.66",
+                "Premium": "$5.00"
+            },
+            "San Dimas": {
+                "Regular": "$4.98",
+                "Premium": "$5.20"
+            },
+            "San Jose": {
+                "Regular": "$4.96",
+                "Premium": "$5.30"
+            },
+            "San Juan Capistrano": {
+                "Regular": "$4.70",
+                "Premium": "$5.00"
+            },
+            "San Leandro": {
+                "Regular": "$4.88",
+                "Premium": "$5.46"
+            },
+            "San Luis Obispo": {
+                "Regular": "$5.00",
+                "Premium": "$5.60"
+            },
+            "San Marcos": {
+                "Regular": "$4.70",
+                "Premium": "$5.14"
+            },
+            "Sand City": {
+                "Regular": "$4.90",
+                "Premium": "$5.20"
+            },
+            "Santa Clara": {
+                "Regular": "$4.80",
+                "Premium": "$5.10"
+            },
+            "Santa Clarita": {
+                "Regular": "$5.30",
+                "Premium": "$5.70"
+            },
+            "Santa Cruz": {
+                "Regular": "$5.30",
+                "Premium": "$5.70"
+            },
+            "Santa Maria": {
+                "Regular": "$5.30",
+                "Premium": "$5.70"
+            },
+            "Santa Rosa": {
+                "Regular": "$5.20",
+                "Premium": "$5.60"
+            },
+            "Santee": {
+                "Regular": "$5.00",
+                "Premium": "$5.30"
+            },
+            "Signal Hill": {
+                "Regular": "$4.69",
+                "Premium": "$5.09"
+            },
+            "Simi Valley": {
+                "Regular": "$4.76",
+                "Premium": "$5.06"
+            },
+            "Stockton": {
+                "Regular": "$4.76",
+                "Premium": "$5.26"
+            },
+            "Sunnyvale": {
+                "Regular": "$4.86",
+                "Premium": "$5.06"
+            },
+            "Temecula": {
+                "Regular": "$5.00",
+                "Premium": "$5.40"
+            },
+            "Torrance": {
+                "Regular": "$4.80",
+                "Premium": "$5.20"
+            },
+            "Tracy": {
+                "Regular": "$4.90",
+                "Premium": "$5.30"
+            },
+            "Turlock": {
+                "Regular": "$5.20",
+                "Premium": "$5.70"
+            },
+            "Tustin": {
+                "Regular": "$4.88",
+                "Premium": "$5.26"
+            },
+            "Tustin Ranch": {
+                "Regular": "$4.88",
+                "Premium": "$5.26"
+            },
+            "Ukiah": {
+                "Regular": "$4.85",
+                "Premium": "$5.40"
+            },
+            "Vacaville": {
+                "Regular": "$4.97",
+                "Premium": "$5.27"
+            },
+            "Vallejo": {
+                "Regular": "$5.06",
+                "Premium": "$5.50"
+            },
+            "Van Nuys": {
+                "Regular": "$5.00",
+                "Premium": "$5.30"
+            },
+            "Victorville": {
+                "Regular": "$4.96",
+                "Premium": "$5.30"
+            },
+            "Visalia": {
+                "Regular": "$4.50",
+                "Premium": "$5.10"
+            },
+            "Vista": {
+                "Regular": "$4.96",
+                "Premium": "$5.20"
+            },
+            "W Roseville CA": {
+                "Regular": "$4.80",
+                "Premium": "$5.14"
+            },
+            "Woodland": {
+                "Regular": "$5.00",
+                "Premium": "$5.60"
+            },
+            "Woodland Hills": {
+                "Regular": "$5.06",
+                "Premium": "$5.50"
+            },
+            "Yorba Linda": {
+                "Regular": "$4.90",
+                "Premium": "$5.30"
+            }
+        },
+        "CO": {
+            "Arvada": {
+                "Regular": "$3.26",
+                "Premium": "$3.86"
+            },
+            "Aurora": {
+                "Regular": "$3.04",
+                "Premium": "$3.70"
+            },
+            "Douglas County": {
+                "Regular": "$3.10",
+                "Premium": "$3.70"
+            },
+            "E Colorado Springs": {
+                "Regular": "$3.18",
+                "Premium": "$3.78"
+            },
+            "Gypsum": {
+                "Regular": "$4.26",
+                "Premium": "$4.80"
+            },
+            "Longmont": {
+                "Regular": "$3.26",
+                "Premium": "$3.88"
+            },
+            "NE Denver": {
+                "Regular": "$3.00",
+                "Premium": "$3.60"
+            },
+            "Parker": {
+                "Regular": "$3.06",
+                "Premium": "$3.65"
+            },
+            "SW Denver": {
+                "Regular": "$3.28",
+                "Premium": "$3.90"
+            },
+            "Sheridan": {
+                "Regular": "$3.27",
+                "Premium": "$3.90"
+            },
+            "Superior": {
+                "Regular": "$3.30",
+                "Premium": "$3.90"
+            },
+            "Thornton": {
+                "Regular": "$3.20",
+                "Premium": "$3.80"
+            },
+            "Timnath": {
+                "Regular": "$3.35",
+                "Premium": "$3.95"
+            },
+            "W Colorado Springs": {
+                "Regular": "$3.20",
+                "Premium": "$3.80"
+            },
+            "Westminster CO": {
+                "Regular": "$3.16",
+                "Premium": "$3.80"
+            }
+        },
+        "CT": {
+            "Brookfield": {
+                "Regular": "$3.60",
+                "Premium": "$4.20"
+            },
+            "E Lyme": {
+                "Regular": "$3.67",
+                "Premium": "$4.48"
+            },
+            "Enfield": {
+                "Regular": "$3.74",
+                "Premium": "$4.54"
+            },
+            "Milford": {
+                "Regular": "$3.43",
+                "Premium": "$4.20"
+            },
+            "New Britain": {
+                "Regular": "$3.40",
+                "Premium": "$4.30"
+            },
+            "South Windsor": {
+                "Regular": "$3.68",
+                "Premium": "$4.50"
+            },
+            "Waterbury": {
+                "Regular": "$3.54",
+                "Premium": "$4.30"
+            }
+        },
+        "DE": {
+            "Christiana": {
+                "Regular": "$3.55",
+                "Premium": "$4.16"
+            }
+        },
+        "FL": {
+            "Altamonte Springs": {
+                "Regular": "$3.36",
+                "Premium": "$4.00"
+            },
+            "Boca Raton": {
+                "Regular": "$3.40",
+                "Premium": "$3.90"
+            },
+            "Bradenton": {
+                "Regular": "$3.36",
+                "Premium": "$3.90"
+            },
+            "Brandon": {
+                "Regular": "$3.40",
+                "Premium": "$3.90"
+            },
+            "Clearwater": {
+                "Regular": "$3.30",
+                "Premium": "$3.90"
+            },
+            "Clermont": {
+                "Regular": "$3.38",
+                "Premium": "$3.93"
+            },
+            "Coral Springs": {
+                "Regular": "$3.30",
+                "Premium": "$3.80"
+            },
+            "Davie": {
+                "Regular": "$3.50",
+                "Premium": "$4.00"
+            },
+            "Daytona": {
+                "Regular": "$3.32",
+                "Premium": "$4.00"
+            },
+            "E Orlando": {
+                "Regular": "$3.30",
+                "Premium": "$4.00"
+            },
+            "Estero": {
+                "Regular": "$3.40",
+                "Premium": "$3.90"
+            },
+            "Fort Myers": {
+                "Regular": "$3.39",
+                "Premium": "$3.90"
+            },
+            "Kendall": {
+                "Regular": "$3.40",
+                "Premium": "$3.85"
+            },
+            "Lantana": {
+                "Regular": "$3.40",
+                "Premium": "$3.90"
+            },
+            "Melbourne": {
+                "Regular": "$3.30",
+                "Premium": "$3.90"
+            },
+            "Miami": {
+                "Regular": "$3.10",
+                "Premium": "$3.56"
+            },
+            "Miami Lakes": {
+                "Regular": "$3.38",
+                "Premium": "$3.85"
+            },
+            "N Miami": {
+                "Regular": "$3.59",
+                "Premium": "$3.95"
+            },
+            "Naples": {
+                "Regular": "$3.40",
+                "Premium": "$3.96"
+            },
+            "North Port": {
+                "Regular": "$3.43",
+                "Premium": "$4.17"
+            },
+            "Palm Beach Gardens": {
+                "Regular": "$3.36",
+                "Premium": "$3.86"
+            },
+            "Pembroke Pines": {
+                "Regular": "$3.54",
+                "Premium": "$4.10"
+            },
+            "Pensacola": {
+                "Regular": "$3.08",
+                "Premium": "$3.70"
+            },
+            "Pompano": {
+                "Regular": "$3.30",
+                "Premium": "$3.80"
+            },
+            "Royal Palm Beach": {
+                "Regular": "$3.67",
+                "Premium": "$4.45"
+            },
+            "S Orlando": {
+                "Regular": "$3.30",
+                "Premium": "$3.90"
+            },
+            "Sarasota Mall": {
+                "Regular": "$3.70",
+                "Premium": "$4.30"
+            },
+            "St Augustine": {
+                "Regular": "$3.38",
+                "Premium": "$4.10"
+            },
+            "Stuart": {
+                "Regular": "$3.36",
+                "Premium": "$3.96"
+            },
+            "Tallahassee": {
+                "Regular": "$3.36",
+                "Premium": "$3.86"
+            },
+            "The Villages": {
+                "Regular": "$3.25",
+                "Premium": "$3.80"
+            },
+            "W Jacksonville": {
+                "Regular": "$3.40",
+                "Premium": "$4.00"
+            },
+            "W Tampa": {
+                "Regular": "$3.40",
+                "Premium": "$3.96"
+            },
+            "Wesley Chapel": {
+                "Regular": "$3.36",
+                "Premium": "$3.94"
+            }
+        },
+        "GA": {
+            "Alpharetta": {
+                "Regular": "$3.40",
+                "Premium": "$4.06"
+            },
+            "Athens": {
+                "Regular": "$3.17",
+                "Premium": "$3.87"
+            },
+            "Augusta": {
+                "Regular": "$3.14",
+                "Premium": "$4.00"
+            },
+            "Brookhaven": {
+                "Regular": "$3.35",
+                "Premium": "$4.10"
+            },
+            "Cumberland Mall": {
+                "Regular": "$3.27",
+                "Premium": "$3.90"
+            },
+            "Cumming": {
+                "Regular": "$3.32",
+                "Premium": "$3.95"
+            },
+            "Dallas GA": {
+                "Regular": "$3.40",
+                "Premium": "$4.10"
+            },
+            "Fort Oglethorpe": {
+                "Regular": "$3.00",
+                "Premium": "$3.60"
+            },
+            "Gwinnett": {
+                "Regular": "$3.20",
+                "Premium": "$3.90"
+            },
+            "Mall Of Georgia": {
+                "Regular": "$3.27",
+                "Premium": "$3.90"
+            },
+            "Perimeter": {
+                "Regular": "$3.50",
+                "Premium": "$4.10"
+            },
+            "Pooler": {
+                "Regular": "$3.30",
+                "Premium": "$3.90"
+            },
+            "Sharpsburg": {
+                "Regular": "$3.49",
+                "Premium": "$4.10"
+            },
+            "Stockbridge": {
+                "Regular": "$3.30",
+                "Premium": "$3.95"
+            },
+            "Town Center": {
+                "Regular": "$3.19",
+                "Premium": "$3.90"
+            },
+            "Woodstock": {
+                "Regular": "$3.34",
+                "Premium": "$4.00"
+            }
+        },
+        "HI": {
+            "Iwilei": {
+                "Regular": "$4.50",
+                "Premium": "$5.00"
+            },
+            "Kapolei": {
+                "Regular": "$4.50",
+                "Premium": "$4.90"
+            },
+            "Kauai": {
+                "Regular": "$5.36",
+                "Premium": "$5.90"
+            },
+            "Kona": {
+                "Regular": "$5.00",
+                "Premium": "$5.60"
+            },
+            "Maui": {
+                "Regular": "$4.45",
+                "Premium": "$5.00"
+            },
+            "Waipio": {
+                "Regular": "$4.50",
+                "Premium": "$4.90"
+            }
+        },
+        "IA": {
+            "Ankeny": {
+                "Regular": "$3.00",
+                "Premium": "$3.70"
+            },
+            "Coralville": {
+                "Regular": "$3.23",
+                "Premium": "$4.00"
+            },
+            "Davenport": {
+                "Regular": "$3.26",
+                "Premium": "$4.10"
+            },
+            "West Des Moines": {
+                "Regular": "$3.25",
+                "Premium": "$3.80"
+            }
+        },
+        "ID": {
+            "Boise": {
+                "Regular": "$4.00",
+                "Premium": "$4.50"
+            },
+            "Coeur d Alene": {
+                "Regular": "$3.84",
+                "Premium": "$4.27"
+            },
+            "Idaho Falls": {
+                "Regular": "$3.80",
+                "Premium": "$4.20"
+            },
+            "Meridian": {
+                "Regular": "$3.85",
+                "Premium": "$4.25"
+            },
+            "Nampa": {
+                "Regular": "$3.85",
+                "Premium": "$4.25"
+            },
+            "Pocatello": {
+                "Regular": "$4.00",
+                "Premium": "$4.50"
+            },
+            "Twin Falls": {
+                "Regular": "$4.06",
+                "Premium": "$4.66"
+            }
+        },
+        "IL": {
+            "Bloomingdale": {
+                "Regular": "$3.70",
+                "Premium": "$4.70"
+            },
+            "Bolingbrook": {
+                "Regular": "$3.98",
+                "Premium": "$5.10"
+            },
+            "Champaign": {
+                "Regular": "$3.64",
+                "Premium": "$4.40"
+            },
+            "Chicago South Loop": {
+                "Regular": "$3.85",
+                "Premium": "$5.00"
+            },
+            "East Peoria": {
+                "Regular": "$3.77",
+                "Premium": "$4.57"
+            },
+            "Glenview": {
+                "Regular": "$3.98",
+                "Premium": "$5.10"
+            },
+            "Lake In The Hills": {
+                "Regular": "$3.80",
+                "Premium": "$4.90"
+            },
+            "Lake Zurich": {
+                "Regular": "$3.80",
+                "Premium": "$4.90"
+            },
+            "Lincoln Park": {
+                "Regular": "$4.25",
+                "Premium": "$5.40"
+            },
+            "Loves Park": {
+                "Regular": "$3.70",
+                "Premium": "$4.54"
+            },
+            "Melrose Park": {
+                "Regular": "$3.78",
+                "Premium": "$4.80"
+            },
+            "Mettawa": {
+                "Regular": "$3.70",
+                "Premium": "$4.90"
+            },
+            "Mt Prospect": {
+                "Regular": "$3.84",
+                "Premium": "$4.98"
+            },
+            "NE Naperville": {
+                "Regular": "$3.84",
+                "Premium": "$4.98"
+            },
+            "Naperville": {
+                "Regular": "$3.74",
+                "Premium": "$4.80"
+            },
+            "Niles": {
+                "Regular": "$3.84",
+                "Premium": "$4.98"
+            },
+            "North Riverside IL": {
+                "Regular": "$3.80",
+                "Premium": "$4.90"
+            },
+            "Oak Brook": {
+                "Regular": "$3.80",
+                "Premium": "$4.90"
+            },
+            "Orland Park": {
+                "Regular": "$3.64",
+                "Premium": "$4.76"
+            },
+            "Plainfield": {
+                "Regular": "$3.48",
+                "Premium": "$4.63"
+            },
+            "Schaumburg": {
+                "Regular": "$3.75",
+                "Premium": "$4.97"
+            },
+            "St Charles": {
+                "Regular": "$3.80",
+                "Premium": "$4.80"
+            },
+            "Yorkville": {
+                "Regular": "$3.75",
+                "Premium": "$4.86"
+            }
+        },
+        "IN": {
+            "Avon IN": {
+                "Regular": "$2.85",
+                "Premium": "$2.85"
+            },
+            "Castleton": {
+                "Regular": "$2.90",
+                "Premium": "$3.90"
+            },
+            "Evansville": {
+                "Regular": "$2.93",
+                "Premium": "$3.76"
+            },
+            "Fort Wayne": {
+                "Regular": "$3.00",
+                "Premium": "$4.00"
+            },
+            "Fortune Park": {
+                "Regular": "$2.80",
+                "Premium": "$3.75"
+            },
+            "Merrillville": {
+                "Regular": "$2.93",
+                "Premium": "$3.76"
+            },
+            "Mishawaka": {
+                "Regular": "$2.99",
+                "Premium": "$3.99"
+            },
+            "Noblesville": {
+                "Regular": "$2.90",
+                "Premium": "$3.90"
+            },
+            "S Indianapolis": {
+                "Regular": "$2.88",
+                "Premium": "$3.95"
+            }
+        },
+        "KS": {
+            "Lenexa": {
+                "Regular": "$3.50",
+                "Premium": "$4.20"
+            },
+            "Overland Park": {
+                "Regular": "$3.50",
+                "Premium": "$4.20"
+            },
+            "Wichita": {
+                "Regular": "$3.25",
+                "Premium": "$3.65"
+            }
+        },
+        "KY": {
+            "Florence": {
+                "Regular": "$3.30",
+                "Premium": "$4.30"
+            },
+            "Lexington": {
+                "Regular": "$3.23",
+                "Premium": "$3.95"
+            },
+            "Louisville": {
+                "Regular": "$2.97",
+                "Premium": "$3.88"
+            },
+            "NE Louisville": {
+                "Regular": "$3.00",
+                "Premium": "$3.96"
+            }
+        },
+        "LA": {
+            "Baton Rouge": {
+                "Regular": "$3.16",
+                "Premium": "$3.74"
+            },
+            "Covington LA": {
+                "Regular": "$3.20",
+                "Premium": "$3.90"
+            },
+            "Lafayette": {
+                "Regular": "$3.23",
+                "Premium": "$3.84"
+            },
+            "New Orleans": {
+                "Regular": "$3.16",
+                "Premium": "$3.96"
+            }
+        },
+        "MA": {
+            "Danvers": {
+                "Regular": "$3.60",
+                "Premium": "$4.46"
+            },
+            "Dedham": {
+                "Regular": "$3.40",
+                "Premium": "$4.29"
+            },
+            "Sharon": {
+                "Regular": "$3.50",
+                "Premium": "$4.39"
+            },
+            "West Springfield": {
+                "Regular": "$3.34",
+                "Premium": "$4.10"
+            }
+        },
+        "MD": {
+            "Arundel Mills": {
+                "Regular": "$3.50",
+                "Premium": "$3.90"
+            },
+            "Beltsville": {
+                "Regular": "$3.38",
+                "Premium": "$3.90"
+            },
+            "Brandywine": {
+                "Regular": "$3.50",
+                "Premium": "$3.90"
+            },
+            "Columbia MD": {
+                "Regular": "$3.70",
+                "Premium": "$4.00"
+            },
+            "Frederick": {
+                "Regular": "$3.59",
+                "Premium": "$3.99"
+            },
+            "Glen Burnie": {
+                "Regular": "$3.50",
+                "Premium": "$3.90"
+            },
+            "Owings Mills": {
+                "Regular": "$3.40",
+                "Premium": "$3.86"
+            },
+            "White Marsh": {
+                "Regular": "$3.50",
+                "Premium": "$3.98"
+            },
+            "Woodmore Towne Centre": {
+                "Regular": "$3.44",
+                "Premium": "$4.35"
+            }
+        },
+        "ME": {
+            "Scarborough ME": {
+                "Regular": "$3.59",
+                "Premium": "$4.56"
+            }
+        },
+        "MI": {
+            "Auburn Hills": {
+                "Regular": "$3.79",
+                "Premium": "$4.85"
+            },
+            "Bloomfield": {
+                "Regular": "$3.80",
+                "Premium": "$4.86"
+            },
+            "Commerce Township": {
+                "Regular": "$3.88",
+                "Premium": "$4.94"
+            },
+            "East Lansing": {
+                "Regular": "$3.88",
+                "Premium": "$5.03"
+            },
+            "Fruitport": {
+                "Regular": "$3.55",
+                "Premium": "$4.86"
+            },
+            "Genesee County": {
+                "Regular": "$3.65",
+                "Premium": "$4.89"
+            },
+            "Grand Rapids": {
+                "Regular": "$3.80",
+                "Premium": "$4.98"
+            },
+            "Green Oak Township": {
+                "Regular": "$3.86",
+                "Premium": "$4.90"
+            },
+            "Haggerty": {
+                "Regular": "$3.90",
+                "Premium": "$4.92"
+            },
+            "Kalamazoo": {
+                "Regular": "$3.78",
+                "Premium": "$5.06"
+            },
+            "Lakeside": {
+                "Regular": "$3.70",
+                "Premium": "$4.94"
+            },
+            "Madison Heights": {
+                "Regular": "$3.56",
+                "Premium": "$4.76"
+            },
+            "Middlebelt": {
+                "Regular": "$3.60",
+                "Premium": "$4.86"
+            },
+            "Midland": {
+                "Regular": "$3.86",
+                "Premium": "$4.88"
+            },
+            "Pittsfield Township": {
+                "Regular": "$3.87",
+                "Premium": "$5.00"
+            },
+            "Roseville MI": {
+                "Regular": "$3.78",
+                "Premium": "$4.94"
+            },
+            "Traverse City": {
+                "Regular": "$3.87",
+                "Premium": "$4.87"
+            },
+            "Wyoming": {
+                "Regular": "$3.94",
+                "Premium": "$5.15"
+            }
+        },
+        "MN": {
+            "Baxter": {
+                "Regular": "$3.32",
+                "Premium": "$3.90"
+            },
+            "Burnsville": {
+                "Regular": "$3.36",
+                "Premium": "$4.07"
+            },
+            "Chaska": {
+                "Regular": "$3.36",
+                "Premium": "$4.25"
+            },
+            "Coon Rapids": {
+                "Regular": "$3.38",
+                "Premium": "$4.20"
+            },
+            "Duluth": {
+                "Regular": "$3.38",
+                "Premium": "$4.20"
+            },
+            "Eagan": {
+                "Regular": "$3.40",
+                "Premium": "$3.99"
+            },
+            "Eden Prairie": {
+                "Regular": "$3.36",
+                "Premium": "$4.24"
+            },
+            "Maple Grove": {
+                "Regular": "$3.20",
+                "Premium": "$3.90"
+            },
+            "Maplewood": {
+                "Regular": "$3.19",
+                "Premium": "$4.05"
+            },
+            "Rochester MN": {
+                "Regular": "$3.56",
+                "Premium": "$4.30"
+            },
+            "St Cloud": {
+                "Regular": "$3.26",
+                "Premium": "$3.94"
+            },
+            "St Louis Park": {
+                "Regular": "$3.45",
+                "Premium": "$4.15"
+            },
+            "Woodbury": {
+                "Regular": "$3.19",
+                "Premium": "$3.99"
+            }
+        },
+        "MO": {
+            "Independence": {
+                "Regular": "$3.35",
+                "Premium": "$3.95"
+            },
+            "Kansas City": {
+                "Regular": "$3.40",
+                "Premium": "$4.00"
+            },
+            "Manchester MO": {
+                "Regular": "$3.49",
+                "Premium": "$4.04"
+            },
+            "N Kansas City": {
+                "Regular": "$3.23",
+                "Premium": "$3.90"
+            },
+            "S St Louis": {
+                "Regular": "$3.47",
+                "Premium": "$3.99"
+            },
+            "Springfield": {
+                "Regular": "$3.10",
+                "Premium": "$3.50"
+            },
+            "St Peters": {
+                "Regular": "$3.40",
+                "Premium": "$4.00"
+            },
+            "University City": {
+                "Regular": "$3.10",
+                "Premium": "$3.70"
+            }
+        },
+        "MS": {
+            "Ridgeland": {
+                "Regular": "$3.27",
+                "Premium": "$3.27"
+            }
+        },
+        "MT": {
+            "Billings": {
+                "Regular": "$3.83",
+                "Premium": "$4.30"
+            },
+            "Bozeman": {
+                "Regular": "$3.84",
+                "Premium": "$4.48"
+            },
+            "Helena": {
+                "Regular": "$3.76",
+                "Premium": "$4.36"
+            },
+            "Kalispell": {
+                "Regular": "$3.70",
+                "Premium": "$4.15"
+            },
+            "Missoula": {
+                "Regular": "$3.76",
+                "Premium": "$4.36"
+            }
+        },
+        "NC": {
+            "Apex": {
+                "Regular": "$3.24",
+                "Premium": "$3.88"
+            },
+            "Charlotte": {
+                "Regular": "$3.25",
+                "Premium": "$3.85"
+            },
+            "Durham": {
+                "Regular": "$3.48",
+                "Premium": "$4.28"
+            },
+            "Garner": {
+                "Regular": "$3.48",
+                "Premium": "$4.28"
+            },
+            "Greensboro": {
+                "Regular": "$3.20",
+                "Premium": "$3.98"
+            },
+            "Matthews": {
+                "Regular": "$3.30",
+                "Premium": "$4.05"
+            },
+            "Mooresville": {
+                "Regular": "$3.30",
+                "Premium": "$4.00"
+            },
+            "Raleigh": {
+                "Regular": "$3.16",
+                "Premium": "$3.88"
+            },
+            "Wilmington": {
+                "Regular": "$3.20",
+                "Premium": "$4.00"
+            },
+            "Winston Salem": {
+                "Regular": "$3.25",
+                "Premium": "$4.06"
+            }
+        },
+        "ND": {
+            "Bismarck": {
+                "Regular": "$3.49",
+                "Premium": "$4.26"
+            },
+            "West Fargo ND": {
+                "Regular": "$3.26",
+                "Premium": "$4.00"
+            }
+        },
+        "NE": {
+            "La Vista": {
+                "Regular": "$3.24",
+                "Premium": "$3.76"
+            },
+            "Lincoln": {
+                "Regular": "$3.40",
+                "Premium": "$4.04"
+            },
+            "NW Omaha": {
+                "Regular": "$3.18",
+                "Premium": "$3.76"
+            },
+            "Omaha": {
+                "Regular": "$3.24",
+                "Premium": "$3.76"
+            }
+        },
+        "NJ": {
+            "Bayonne": {
+                "Regular": "$3.72",
+                "Premium": "$4.52"
+            },
+            "Brick Township": {
+                "Regular": "$3.71",
+                "Premium": "$4.04"
+            },
+            "Cherry Hill": {
+                "Regular": "$3.50",
+                "Premium": "$4.12"
+            },
+            "Clifton": {
+                "Regular": "$3.54",
+                "Premium": "$4.16"
+            },
+            "East Hanover": {
+                "Regular": "$3.66",
+                "Premium": "$4.00"
+            },
+            "Edison": {
+                "Regular": "$3.64",
+                "Premium": "$4.28"
+            },
+            "Flemington": {
+                "Regular": "$3.62",
+                "Premium": "$4.46"
+            },
+            "Hazlet": {
+                "Regular": "$3.64",
+                "Premium": "$4.36"
+            },
+            "Manahawkin": {
+                "Regular": "$3.72",
+                "Premium": "$4.52"
+            },
+            "Marlboro": {
+                "Regular": "$3.52",
+                "Premium": "$4.30"
+            },
+            "Mt Laurel": {
+                "Regular": "$3.53",
+                "Premium": "$4.45"
+            },
+            "North Brunswick": {
+                "Regular": "$3.60",
+                "Premium": "$4.30"
+            },
+            "North Plainfield": {
+                "Regular": "$3.64",
+                "Premium": "$4.28"
+            },
+            "Ocean Township": {
+                "Regular": "$3.68",
+                "Premium": "$4.30"
+            },
+            "Princeton": {
+                "Regular": "$3.56",
+                "Premium": "$4.34"
+            },
+            "Teterboro": {
+                "Regular": "$3.44",
+                "Premium": "$4.18"
+            },
+            "Union": {
+                "Regular": "$3.56",
+                "Premium": "$4.28"
+            },
+            "Wayne": {
+                "Regular": "$3.62",
+                "Premium": "$4.14"
+            },
+            "Wharton": {
+                "Regular": "$3.70",
+                "Premium": "$4.38"
+            }
+        },
+        "NM": {
+            "Albuquerque": {
+                "Regular": "$3.25",
+                "Premium": "$3.77"
+            },
+            "NW Albuquerque": {
+                "Regular": "$3.25",
+                "Premium": "$3.77"
+            },
+            "SE Albuquerque": {
+                "Regular": "$3.44",
+                "Premium": "$4.10"
+            }
+        },
+        "NV": {
+            "Carson City": {
+                "Regular": "$4.10",
+                "Premium": "$4.60"
+            },
+            "Centennial": {
+                "Regular": "$3.70",
+                "Premium": "$4.16"
+            },
+            "Henderson": {
+                "Regular": "$4.00",
+                "Premium": "$4.40"
+            },
+            "Reno": {
+                "Regular": "$4.66",
+                "Premium": "$5.05"
+            },
+            "SW Henderson": {
+                "Regular": "$3.86",
+                "Premium": "$4.50"
+            },
+            "Sparks": {
+                "Regular": "$4.64",
+                "Premium": "$5.06"
+            },
+            "Spring Valley": {
+                "Regular": "$3.86",
+                "Premium": "$4.46"
+            },
+            "Summerlin": {
+                "Regular": "$4.28",
+                "Premium": "$4.80"
+            }
+        },
+        "NY": {
+            "Commack": {
+                "Regular": "$3.50",
+                "Premium": "$4.40"
+            },
+            "Holbrook": {
+                "Regular": "$3.60",
+                "Premium": "$4.40"
+            },
+            "Nanuet": {
+                "Regular": "$3.27",
+                "Premium": "$3.27"
+            },
+            "New Rochelle": {
+                "Regular": "$3.86",
+                "Premium": "$4.76"
+            },
+            "Oceanside": {
+                "Regular": "$3.68",
+                "Premium": "$4.44"
+            },
+            "Riverhead": {
+                "Regular": "$3.86",
+                "Premium": "$4.60"
+            },
+            "Rochester NY": {
+                "Regular": "$3.84",
+                "Premium": "$4.66"
+            },
+            "Staten Island": {
+                "Regular": "$3.70",
+                "Premium": "$4.50"
+            },
+            "Syracuse": {
+                "Regular": "$3.94",
+                "Premium": "$4.86"
+            }
+        },
+        "OH": {
+            "Avon OH": {
+                "Regular": "$3.46",
+                "Premium": "$4.46"
+            },
+            "Boston Heights": {
+                "Regular": "$3.56",
+                "Premium": "$4.56"
+            },
+            "Centerville": {
+                "Regular": "$3.56",
+                "Premium": "$4.64"
+            },
+            "Columbus": {
+                "Regular": "$3.57",
+                "Premium": "$4.57"
+            },
+            "Deerfield": {
+                "Regular": "$3.30",
+                "Premium": "$4.30"
+            },
+            "Easton OH": {
+                "Regular": "$3.50",
+                "Premium": "$4.50"
+            },
+            "Liberty Township": {
+                "Regular": "$3.30",
+                "Premium": "$4.15"
+            },
+            "Mayfield Heights": {
+                "Regular": "$3.48",
+                "Premium": "$4.50"
+            },
+            "NW Columbus": {
+                "Regular": "$3.70",
+                "Premium": "$4.70"
+            },
+            "North Canton": {
+                "Regular": "$3.48",
+                "Premium": "$4.50"
+            },
+            "Perrysburg": {
+                "Regular": "$3.60",
+                "Premium": "$4.76"
+            },
+            "Strongsville": {
+                "Regular": "$3.40",
+                "Premium": "$4.50"
+            },
+            "Toledo": {
+                "Regular": "$3.46",
+                "Premium": "$4.46"
+            }
+        },
+        "OK": {
+            "Moore": {
+                "Regular": "$2.96",
+                "Premium": "$3.56"
+            },
+            "North Tulsa": {
+                "Regular": "$3.27",
+                "Premium": "$3.27"
+            },
+            "Oklahoma City": {
+                "Regular": "$3.04",
+                "Premium": "$3.59"
+            },
+            "Tulsa": {
+                "Regular": "$3.10",
+                "Premium": "$3.50"
+            }
+        },
+        "OR": {
+            "Albany OR": {
+                "Regular": "$4.20",
+                "Premium": "$4.70"
+            },
+            "Aloha": {
+                "Regular": "$4.67",
+                "Premium": "$5.00"
+            },
+            "Bend": {
+                "Regular": "$4.06",
+                "Premium": "$4.56"
+            },
+            "Central Point": {
+                "Regular": "$4.20",
+                "Premium": "$4.70"
+            },
+            "Clackamas": {
+                "Regular": "$4.36",
+                "Premium": "$4.77"
+            },
+            "Eugene": {
+                "Regular": "$4.00",
+                "Premium": "$4.40"
+            },
+            "Hillsboro": {
+                "Regular": "$4.67",
+                "Premium": "$5.10"
+            },
+            "Portland": {
+                "Regular": "$4.55",
+                "Premium": "$4.85"
+            },
+            "Roseburg": {
+                "Regular": "$4.16",
+                "Premium": "$4.70"
+            },
+            "Salem": {
+                "Regular": "$4.30",
+                "Premium": "$4.60"
+            },
+            "Tigard": {
+                "Regular": "$4.46",
+                "Premium": "$4.86"
+            },
+            "Warrenton": {
+                "Regular": "$4.66",
+                "Premium": "$5.16"
+            },
+            "Wilsonville": {
+                "Regular": "$4.46",
+                "Premium": "$4.86"
+            }
+        },
+        "PA": {
+            "Allentown": {
+                "Regular": "$3.46",
+                "Premium": "$3.94"
+            },
+            "Bucks County": {
+                "Regular": "$3.60",
+                "Premium": "$4.30"
+            },
+            "Concordville": {
+                "Regular": "$3.76",
+                "Premium": "$4.36"
+            },
+            "Cranberry Township": {
+                "Regular": "$4.00",
+                "Premium": "$4.70"
+            },
+            "Harrisburg": {
+                "Regular": "$3.20",
+                "Premium": "$4.00"
+            },
+            "Homestead": {
+                "Regular": "$4.10",
+                "Premium": "$4.70"
+            },
+            "Lancaster PA": {
+                "Regular": "$3.53",
+                "Premium": "$4.30"
+            },
+            "Mechanicsburg": {
+                "Regular": "$3.46",
+                "Premium": "$4.20"
+            },
+            "Montgomeryville": {
+                "Regular": "$3.60",
+                "Premium": "$4.24"
+            },
+            "Robinson": {
+                "Regular": "$4.20",
+                "Premium": "$4.76"
+            },
+            "Sanatoga": {
+                "Regular": "$3.66",
+                "Premium": "$4.36"
+            }
+        },
+        "SC": {
+            "Charleston": {
+                "Regular": "$3.30",
+                "Premium": "$4.10"
+            },
+            "Columbia SC": {
+                "Regular": "$3.17",
+                "Premium": "$4.05"
+            },
+            "Greenville": {
+                "Regular": "$3.09",
+                "Premium": "$3.96"
+            },
+            "Indian Land": {
+                "Regular": "$3.10",
+                "Premium": "$3.96"
+            },
+            "Mt Pleasant": {
+                "Regular": "$3.40",
+                "Premium": "$4.20"
+            },
+            "Myrtle Beach": {
+                "Regular": "$3.24",
+                "Premium": "$3.90"
+            },
+            "Spartanburg": {
+                "Regular": "$3.06",
+                "Premium": "$3.59"
+            }
+        },
+        "SD": {
+            "Sioux Falls": {
+                "Regular": "$3.35",
+                "Premium": "$4.20"
+            }
+        },
+        "TN": {
+            "Brentwood TN": {
+                "Regular": "$3.75",
+                "Premium": "$4.30"
+            },
+            "Farragut": {
+                "Regular": "$2.97",
+                "Premium": "$3.70"
+            },
+            "Hendersonville": {
+                "Regular": "$2.97",
+                "Premium": "$3.73"
+            },
+            "Mt Juliet": {
+                "Regular": "$3.00",
+                "Premium": "$3.40"
+            },
+            "Murfreesboro": {
+                "Regular": "$2.95",
+                "Premium": "$3.65"
+            },
+            "NE Memphis": {
+                "Regular": "$3.15",
+                "Premium": "$3.93"
+            },
+            "SE Memphis": {
+                "Regular": "$3.04",
+                "Premium": "$3.89"
+            },
+            "W Nashville": {
+                "Regular": "$3.26",
+                "Premium": "$4.20"
+            }
+        },
+        "TX": {
+            "Allen": {
+                "Regular": "$2.93",
+                "Premium": "$3.45"
+            },
+            "Arlington": {
+                "Regular": "$2.90",
+                "Premium": "$3.43"
+            },
+            "Austin": {
+                "Regular": "$2.90",
+                "Premium": "$3.50"
+            },
+            "Bunker Hill": {
+                "Regular": "$3.07",
+                "Premium": "$3.90"
+            },
+            "Cedar Park TX": {
+                "Regular": "$2.90",
+                "Premium": "$3.56"
+            },
+            "College Station": {
+                "Regular": "$3.17",
+                "Premium": "$3.97"
+            },
+            "Cypress TX": {
+                "Regular": "$3.00",
+                "Premium": "$3.54"
+            },
+            "Dallas": {
+                "Regular": "$2.93",
+                "Premium": "$3.60"
+            },
+            "Duncanville": {
+                "Regular": "$2.90",
+                "Premium": "$3.46"
+            },
+            "E Plano": {
+                "Regular": "$2.90",
+                "Premium": "$3.49"
+            },
+            "El Paso": {
+                "Regular": "$3.34",
+                "Premium": "$4.18"
+            },
+            "Forney": {
+                "Regular": "$2.95",
+                "Premium": "$3.60"
+            },
+            "Fort Worth": {
+                "Regular": "$2.93",
+                "Premium": "$3.40"
+            },
+            "Frisco": {
+                "Regular": "$2.90",
+                "Premium": "$3.45"
+            },
+            "Galleria": {
+                "Regular": "$3.07",
+                "Premium": "$3.97"
+            },
+            "Georgetown": {
+                "Regular": "$3.08",
+                "Premium": "$3.70"
+            },
+            "Humble": {
+                "Regular": "$3.00",
+                "Premium": "$3.85"
+            },
+            "Kyle": {
+                "Regular": "$2.94",
+                "Premium": "$3.47"
+            },
+            "Lewisville": {
+                "Regular": "$2.93",
+                "Premium": "$3.63"
+            },
+            "Liberty Hill": {
+                "Regular": "$2.95",
+                "Premium": "$3.56"
+            },
+            "Lubbock TX": {
+                "Regular": "$2.99",
+                "Premium": "$3.49"
+            },
+            "McKinney": {
+                "Regular": "$2.93",
+                "Premium": "$3.47"
+            },
+            "Midland TX": {
+                "Regular": "$2.90",
+                "Premium": "$3.60"
+            },
+            "N Fort Worth": {
+                "Regular": "$2.88",
+                "Premium": "$3.44"
+            },
+            "NW San Antonio": {
+                "Regular": "$2.90",
+                "Premium": "$3.60"
+            },
+            "New Braunfels": {
+                "Regular": "$2.90",
+                "Premium": "$3.55"
+            },
+            "Pearland": {
+                "Regular": "$3.00",
+                "Premium": "$3.90"
+            },
+            "Pflugerville": {
+                "Regular": "$2.95",
+                "Premium": "$3.45"
+            },
+            "Pharr": {
+                "Regular": "$3.04",
+                "Premium": "$3.56"
+            },
+            "Prosper": {
+                "Regular": "$2.94",
+                "Premium": "$3.49"
+            },
+            "Richmond TX": {
+                "Regular": "$3.00",
+                "Premium": "$3.60"
+            },
+            "Rockwall": {
+                "Regular": "$2.92",
+                "Premium": "$3.47"
+            },
+            "Selma": {
+                "Regular": "$2.88",
+                "Premium": "$3.40"
+            },
+            "Southlake": {
+                "Regular": "$2.93",
+                "Premium": "$3.58"
+            },
+            "Sugar Land": {
+                "Regular": "$3.07",
+                "Premium": "$3.59"
+            },
+            "The Woodlands": {
+                "Regular": "$3.10",
+                "Premium": "$4.10"
+            },
+            "Tomball": {
+                "Regular": "$3.04",
+                "Premium": "$3.90"
+            },
+            "W Katy": {
+                "Regular": "$3.00",
+                "Premium": "$3.60"
+            },
+            "W Plano": {
+                "Regular": "$2.90",
+                "Premium": "$3.45"
+            },
+            "W San Antonio": {
+                "Regular": "$2.85",
+                "Premium": "$3.39"
+            },
+            "Weatherford": {
+                "Regular": "$2.89",
+                "Premium": "$3.50"
+            },
+            "Webster": {
+                "Regular": "$2.99",
+                "Premium": "$3.50"
+            },
+            "Willowbrook": {
+                "Regular": "$3.00",
+                "Premium": "$3.54"
+            }
+        },
+        "UT": {
+            "Bountiful": {
+                "Regular": "$3.60",
+                "Premium": "$4.00"
+            },
+            "Lehi": {
+                "Regular": "$3.54",
+                "Premium": "$3.97"
+            },
+            "Logan": {
+                "Regular": "$3.78",
+                "Premium": "$4.18"
+            },
+            "Murray": {
+                "Regular": "$3.46",
+                "Premium": "$3.90"
+            },
+            "Orem": {
+                "Regular": "$3.60",
+                "Premium": "$4.00"
+            },
+            "Riverton": {
+                "Regular": "$3.44",
+                "Premium": "$3.84"
+            },
+            "S St George": {
+                "Regular": "$3.98",
+                "Premium": "$4.56"
+            },
+            "Salt Lake City": {
+                "Regular": "$3.49",
+                "Premium": "$3.90"
+            },
+            "Sandy": {
+                "Regular": "$3.46",
+                "Premium": "$3.90"
+            },
+            "Saratoga Springs": {
+                "Regular": "$3.54",
+                "Premium": "$3.94"
+            },
+            "South Jordan": {
+                "Regular": "$3.44",
+                "Premium": "$3.84"
+            },
+            "South Ogden": {
+                "Regular": "$3.50",
+                "Premium": "$4.00"
+            },
+            "Spanish Fork": {
+                "Regular": "$3.60",
+                "Premium": "$4.00"
+            },
+            "St George": {
+                "Regular": "$3.98",
+                "Premium": "$4.56"
+            },
+            "Syracuse UT": {
+                "Regular": "$3.50",
+                "Premium": "$4.00"
+            },
+            "West Valley": {
+                "Regular": "$3.49",
+                "Premium": "$3.90"
+            }
+        },
+        "VA": {
+            "Chantilly": {
+                "Regular": "$3.29",
+                "Premium": "$4.07"
+            },
+            "Charlottesville": {
+                "Regular": "$3.38",
+                "Premium": "$4.10"
+            },
+            "Chesterfield": {
+                "Regular": "$3.40",
+                "Premium": "$3.95"
+            },
+            "Fairfax": {
+                "Regular": "$3.39",
+                "Premium": "$4.20"
+            },
+            "Fredericksburg": {
+                "Regular": "$3.23",
+                "Premium": "$3.96"
+            },
+            "Harrisonburg": {
+                "Regular": "$3.35",
+                "Premium": "$4.00"
+            },
+            "Leesburg": {
+                "Regular": "$3.50",
+                "Premium": "$4.46"
+            },
+            "Manassas": {
+                "Regular": "$3.36",
+                "Premium": "$4.06"
+            },
+            "Mt Vernon": {
+                "Regular": "$3.46",
+                "Premium": "$4.25"
+            },
+            "Newport News": {
+                "Regular": "$3.44",
+                "Premium": "$4.05"
+            },
+            "Norfolk": {
+                "Regular": "$3.44",
+                "Premium": "$4.10"
+            },
+            "Potomac Mills": {
+                "Regular": "$3.46",
+                "Premium": "$4.25"
+            },
+            "Sterling": {
+                "Regular": "$3.40",
+                "Premium": "$4.20"
+            },
+            "W Henrico": {
+                "Regular": "$3.40",
+                "Premium": "$4.00"
+            },
+            "Winchester": {
+                "Regular": "$3.19",
+                "Premium": "$3.99"
+            }
+        },
+        "VT": {
+            "Colchester": {
+                "Regular": "$3.90",
+                "Premium": "$4.90"
+            }
+        },
+        "WA": {
+            "Aurora Village": {
+                "Regular": "$4.80",
+                "Premium": "$5.50"
+            },
+            "Bellingham": {
+                "Regular": "$4.23",
+                "Premium": "$4.66"
+            },
+            "Bonney Lake": {
+                "Regular": "$4.73",
+                "Premium": "$5.33"
+            },
+            "Burlington WA": {
+                "Regular": "$4.35",
+                "Premium": "$4.70"
+            },
+            "Clarkston": {
+                "Regular": "$4.20",
+                "Premium": "$4.66"
+            },
+            "Covington WA": {
+                "Regular": "$5.00",
+                "Premium": "$5.50"
+            },
+            "E Vancouver WA": {
+                "Regular": "$4.48",
+                "Premium": "$4.93"
+            },
+            "Everett WA": {
+                "Regular": "$4.76",
+                "Premium": "$5.36"
+            },
+            "Federal Way": {
+                "Regular": "$4.20",
+                "Premium": "$4.66"
+            },
+            "Gig Harbor": {
+                "Regular": "$4.70",
+                "Premium": "$5.30"
+            },
+            "Issaquah": {
+                "Regular": "$4.90",
+                "Premium": "$5.40"
+            },
+            "Kennewick": {
+                "Regular": "$4.77",
+                "Premium": "$5.10"
+            },
+            "Kirkland": {
+                "Regular": "$4.87",
+                "Premium": "$5.30"
+            },
+            "Lacey": {
+                "Regular": "$4.67",
+                "Premium": "$5.26"
+            },
+            "Lake Stevens": {
+                "Regular": "$4.96",
+                "Premium": "$5.60"
+            },
+            "Lynnwood": {
+                "Regular": "$4.90",
+                "Premium": "$5.50"
+            },
+            "Marysville WA": {
+                "Regular": "$4.50",
+                "Premium": "$4.86"
+            },
+            "N Spokane": {
+                "Regular": "$4.47",
+                "Premium": "$4.95"
+            },
+            "Puyallup": {
+                "Regular": "$4.56",
+                "Premium": "$5.26"
+            },
+            "Redmond": {
+                "Regular": "$4.87",
+                "Premium": "$5.30"
+            },
+            "Richland": {
+                "Regular": "$4.77",
+                "Premium": "$5.17"
+            },
+            "Ridgefield": {
+                "Regular": "$4.56",
+                "Premium": "$5.30"
+            },
+            "Seattle": {
+                "Regular": "$5.00",
+                "Premium": "$5.40"
+            },
+            "Sequim": {
+                "Regular": "$5.36",
+                "Premium": "$5.86"
+            },
+            "Silverdale": {
+                "Regular": "$4.96",
+                "Premium": "$5.57"
+            },
+            "Spokane": {
+                "Regular": "$4.34",
+                "Premium": "$4.84"
+            },
+            "Tacoma": {
+                "Regular": "$4.34",
+                "Premium": "$4.90"
+            },
+            "Tukwila": {
+                "Regular": "$5.00",
+                "Premium": "$5.60"
+            },
+            "Tumwater": {
+                "Regular": "$4.53",
+                "Premium": "$5.10"
+            },
+            "Union Gap": {
+                "Regular": "$4.06",
+                "Premium": "$4.46"
+            },
+            "Vancouver WA": {
+                "Regular": "$4.48",
+                "Premium": "$4.90"
+            },
+            "Wenatchee": {
+                "Regular": "$4.37",
+                "Premium": "$4.80"
+            },
+            "Woodinville": {
+                "Regular": "$4.90",
+                "Premium": "$5.60"
+            }
+        },
+        "WI": {
+            "Bellevue": {
+                "Regular": "$3.62",
+                "Premium": "$4.53"
+            },
+            "Eau Claire": {
+                "Regular": "$3.50",
+                "Premium": "$4.35"
+            },
+            "Grafton": {
+                "Regular": "$3.70",
+                "Premium": "$4.76"
+            },
+            "Grand Chute": {
+                "Regular": "$3.54",
+                "Premium": "$4.35"
+            },
+            "Menomonee Falls": {
+                "Regular": "$3.45",
+                "Premium": "$4.45"
+            },
+            "Middleton": {
+                "Regular": "$3.56",
+                "Premium": "$4.34"
+            },
+            "New Berlin": {
+                "Regular": "$3.35",
+                "Premium": "$4.30"
+            },
+            "Pewaukee": {
+                "Regular": "$3.45",
+                "Premium": "$4.28"
+            },
+            "Pleasant Prairie": {
+                "Regular": "$3.36",
+                "Premium": "$4.30"
+            },
+            "Sun Prairie": {
+                "Regular": "$3.56",
+                "Premium": "$4.56"
+            },
+            "Verona": {
+                "Regular": "$3.56",
+                "Premium": "$4.34"
+            }
+        }
     }
 }
