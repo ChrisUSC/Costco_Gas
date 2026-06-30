@@ -2,8 +2,6 @@ name: Update Gas Prices
 
 on:
   schedule:
-    # Times are in UTC — 15:00, 20:00, 01:00 UTC = 8am, 1pm, 6pm PT (PST, UTC-8)
-    # During PDT (summer, UTC-7): 8am, 1pm, 6pm shifts 1hr earlier
     - cron: '0 8,16,0 * * *'
   workflow_dispatch:
 
@@ -11,7 +9,11 @@ permissions:
   contents: write
 
 env:
-  TZ: America/Los_Angeles  # Makes time.localtime() in gas.py use Pacific time
+  TZ: America/Los_Angeles
+
+concurrency:
+  group: gas-price-scrape
+  cancel-in-progress: false  # queue overlapping runs instead of letting them race
 
 jobs:
   scrape:
@@ -44,6 +46,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add local_prices.json ca_prices.json us_prices.json
+          git add us_prices.json ca_prices.json local_prices.json index.html
           git diff --staged --quiet || git commit -m "chore: auto-update gas prices [$(TZ=America/Los_Angeles date '+%Y-%m-%d %H:%M PT')]"
+          git pull --rebase origin main
           git push
