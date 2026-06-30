@@ -30,7 +30,7 @@ jobs:
 
       - run: pip install -r requirements.txt
 
-      - run: python scraper.py 6
+      - run: python gas.py 6
 
       - name: Commit updated store list
         run: |
