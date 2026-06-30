@@ -338,9 +338,17 @@
     let isDarkMode = localStorage.getItem('theme') === 'dark';
     let gasPref = localStorage.getItem('gasPref') || 'regular';
 
-    const parsePrice = (priceStr) => {
-        if (!priceStr || priceStr === "N/A") return Infinity;
-        return parseFloat(priceStr.replace('$', '').trim());
+    // Safely parse data (Handles BOTH new Array format [4.84, 5.20] and old {"Regular": "$4.84"} format)
+    const getValidPrice = (val) => {
+        if (val === null || val === undefined || val === "N/A") return Infinity;
+        if (typeof val === 'string') return parseFloat(val.replace('$', '').trim());
+        console.log(parseFloat(val))
+        return parseFloat(val);
+    };
+
+    const formatPriceDisplay = (val) => {
+        if (val === null || val === undefined || val === Infinity) return "N/A";
+        return `$${val.toFixed(2)}`;
     };
 
     function getDistanceMiles(lat1, lon1, lat2, lon2) {
@@ -407,7 +415,6 @@
 
     // Triggered on zoom to toggle the visibility of the text badges
     function checkZoomLevel() {
-        // Zoom level 11 is roughly city-view scale. Perfect for showing labels.
         if (map.getZoom() >= 10) {
             document.getElementById('map').classList.add('map-show-prices');
         } else {
@@ -440,23 +447,29 @@
         } catch (e) {}
     }
 
-    async function loadData() {
+async function loadData() {
         try {
+            // 1. Cache-buster to bypass Cloudflare/Browser cache
+            const cb = new Date().getTime();
             const [pricesRes, storesRes, _] = await Promise.all([
-                fetch('us_prices.json'),
-                fetch('us_stores.json'),
+                fetch(`us_prices.json?t=${cb}`),
+                fetch(`us_stores.json?t=${cb}`),
                 detectUserState()
             ]);
 
             const priceData = await pricesRes.json();
             const storeData = await storesRes.json();
 
+            // 2. FIX: Standard string sort. (YYYY-MM-DD HH:MM sorts perfectly this way)
+            // This prevents Safari/iOS from breaking the sort with "Invalid Date"
             const timestamps = Object.keys(priceData).sort();
             const latestTimestamp = timestamps[timestamps.length - 1];
 
             document.getElementById("lastUpdated").innerText = `Last Updated: ${latestTimestamp}`;
 
+            // Populate History
             timestamps.forEach(ts => {
+                // Replacing hyphens with slashes keeps History Dates working in Safari
                 const d = new Date(ts.replace(/-/g, '/'));
                 const dayStr = d.toLocaleDateString();
 
@@ -465,28 +478,56 @@
                         const key = `${stateCode}_${cityName}`;
                         if (!globalHistory[key]) globalHistory[key] = [];
 
-                        const p = priceData[ts][stateCode][cityName];
+                        const pData = priceData[ts][stateCode][cityName];
+                        let rRaw, pRaw;
+
+                        if (Array.isArray(pData)) {
+                            rRaw = pData[0];
+                            pRaw = pData[1];
+                        } else {
+                            rRaw = pData.Regular ?? pData.regular;
+                            pRaw = pData.Premium ?? pData.premium;
+                        }
+
                         globalHistory[key].push({
                             rawDate: d,
                             dayStr: dayStr,
-                            reg: parsePrice(p.Regular),
-                            prem: parsePrice(p.Premium)
+                            reg: getValidPrice(rRaw),
+                            prem: getValidPrice(pRaw)
                         });
                     }
                 }
             });
 
+            // Parse Map & Sidebar stores
             const timestampedPrices = priceData[latestTimestamp];
             for (const stateCode in storeData) {
                 if (!timestampedPrices[stateCode]) continue;
                 for (const [cityName, info] of Object.entries(storeData[stateCode])) {
-                    const pricing = timestampedPrices[stateCode][cityName];
-                    if (pricing) {
+
+                    const pData = timestampedPrices[stateCode][cityName];
+
+                    if (pData) {
+                        let rRaw, pRaw;
+
+                        if (Array.isArray(pData)) {
+                            rRaw = pData[0];
+                            pRaw = pData[1];
+                        } else {
+                            rRaw = pData.Regular ?? pData.regular;
+                            pRaw = pData.Premium ?? pData.premium;
+                        }
+
+                        const regVal = getValidPrice(rRaw);
+                        const premVal = getValidPrice(pRaw);
+
                         globalStoreData.push({
                             state: stateCode, city: cityName, address: info.address,
                             lat: info.lat, lng: info.lng, url: info.url,
-                            regularStr: pricing.Regular, premiumStr: pricing.Premium,
-                            regVal: parsePrice(pricing.Regular), premVal: parsePrice(pricing.Premium)
+                            regularStr: formatPriceDisplay(regVal),
+                            premiumStr: formatPriceDisplay(premVal),
+                            regVal: regVal,
+                            premVal: premVal
                         });
                     }
                 }
@@ -498,14 +539,13 @@
             if (globalStoreData.length > 0) {
                 const bounds = L.latLngBounds(globalStoreData.map(s => [s.lat, s.lng]).filter(coords => coords[0] && coords[1]));
                 map.fitBounds(bounds, { padding: [30, 30] });
-                checkZoomLevel(); // Run once to verify initial zoom state
+                checkZoomLevel();
             }
         } catch (error) {
             console.error('Error fetching data:', error);
-            document.getElementById("sidebarContent").innerHTML = `<p style="text-align:center; color:var(--costco-red); margin-top:30px;">Error Loading Data. Ensure JSON files exist.</p>`;
+            document.getElementById("sidebarContent").innerHTML = `<p style="text-align:center; color:var(--costco-red); margin-top:30px;">Error Loading Data.</p>`;
         }
     }
-
     function renderMap(dataArray) {
         markersLayer.clearLayers();
         dataArray.forEach(store => {
