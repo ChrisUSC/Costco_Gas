@@ -84,7 +84,6 @@ def save_data(data: dict, file_path: str) -> None:
     if not timestamp_str:
         return
 
-    # Sort the data alphabetically by State, and then by City
     raw_states_data = data[timestamp_str]
     sorted_states_data = {
         state: dict(sorted(cities.items()))
@@ -101,9 +100,15 @@ def save_data(data: dict, file_path: str) -> None:
 
     save_prices[timestamp_str] = sorted_states_data
 
+    # Write one compact JSON line per timestamp, sorted chronologically
     with open(file_path, "w", encoding='utf-8') as fp:
-        json.dump(save_prices, fp, indent=4)
-
+        fp.write("{\n")
+        items = list(save_prices.items())
+        for i, (ts, snapshot) in enumerate(items):
+            line = json.dumps(ts) + ":" + json.dumps(snapshot, separators=(',', ':'))
+            comma = "," if i < len(items) - 1 else ""
+            fp.write(line + comma + "\n")
+        fp.write("}\n")
 
 def load_store_locations(file_path: str) -> dict | None:
     try:
