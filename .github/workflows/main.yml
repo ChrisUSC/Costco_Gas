@@ -40,7 +40,7 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Run scraper (All Prices)
-        run: python gas.py 4
+        run: python scraper.py 4
 
       - name: Commit and push updated JSON files
         run: |
