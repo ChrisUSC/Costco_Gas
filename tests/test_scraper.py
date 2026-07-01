@@ -142,31 +142,41 @@ def test_remove_location_from_file(tmp_path):
 
 
 def test_save_data_appends_correctly(tmp_path):
-    file = tmp_path / "historical_prices.json"
+    history_file = tmp_path / "historical_prices.json"
+    latest_file = tmp_path / "latest_prices.json"  # Added dummy latest file
 
     initial_data = {"2023-10-01 10:00": {"CA": {"LA": [4.50, 4.80]}}}
-    file.write_text(json.dumps(initial_data))
+    history_file.write_text(json.dumps(initial_data))
 
     new_data = {"2023-10-02 10:00": {"CA": {"LA": [4.45, 4.75]}}}
-    save_data(new_data, str(file))
 
-    saved_content = json.loads(file.read_text())
+    # Pass both paths to the function
+    save_data(new_data, str(history_file), str(latest_file))
+
+    saved_content = json.loads(history_file.read_text())
     assert "2023-10-01 10:00" in saved_content
     assert "2023-10-02 10:00" in saved_content
     assert saved_content["2023-10-02 10:00"]["CA"]["LA"] == [4.45, 4.75]
 
+    # Optional: You can also assert the latest file was created correctly
+    latest_content = json.loads(latest_file.read_text())
+    assert latest_content["timestamp"] == "2023-10-02 10:00"
+
 
 def test_save_data_handles_corrupt_json(tmp_path, capsys):
-    file = tmp_path / "corrupt.json"
-    file.write_text("{ THIS IS NOT VALID JSON }")
+    history_file = tmp_path / "corrupt.json"
+    latest_file = tmp_path / "latest_prices.json"  # Added dummy latest file
+
+    history_file.write_text("{ THIS IS NOT VALID JSON }")
 
     new_data = {"2023-10-02 10:00": {"CA": {"LA": [4.45, 4.75]}}}
-    save_data(new_data, str(file))
 
-    assert file.read_text() == "{ THIS IS NOT VALID JSON }"
+    # Pass both paths to the function
+    save_data(new_data, str(history_file), str(latest_file))
+
+    assert history_file.read_text() == "{ THIS IS NOT VALID JSON }"
     captured = capsys.readouterr()
     assert "contains invalid JSON" in captured.out
-
 
 # --- NETWORK MOCKING TESTS ---
 
