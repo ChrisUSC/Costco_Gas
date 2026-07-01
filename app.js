@@ -5,6 +5,12 @@
     let globalHistory = {};
     let priceChartInstance = null;
 
+    // History is now a separate (and much larger, ever-growing) file from the
+    // latest snapshot. We only fetch it the first time someone actually opens
+    // a price history chart, and cache the result after that.
+    let historyLoaded = false;
+    let historyLoadPromise = null;
+
     let currentStateContext = 'CA';
     let userLocation = null;
     let searchLocationMarker = null;
@@ -22,7 +28,6 @@
     const getValidPrice = (val) => {
         if (val === null || val === undefined || val === "N/A") return Infinity;
         if (typeof val === 'string') return parseFloat(val.replace('$', '').trim());
-        console.log(parseFloat(val))
         return parseFloat(val);
     };
 
@@ -368,60 +373,39 @@
         } catch (e) {}
     }
 
+    // Pulls [regularRaw, premiumRaw] out of a price entry, handling BOTH the
+    // new Array format [4.84, 5.20] and the old {"Regular": "$4.84"} format.
+    function extractRegPrem(pData) {
+        if (Array.isArray(pData)) {
+            return [pData[0], pData[1]];
+        }
+        return [pData.Regular ?? pData.regular, pData.Premium ?? pData.premium];
+    }
+
 async function loadData() {
         try {
-            // 1. Cache-buster to bypass Cloudflare/Browser cache
+            // 1. Cache-buster to bypass Cloudflare/Browser cache.
+            // This now only has to fetch the small "latest snapshot" file, not
+            // the full (ever-growing) price history - that's loaded lazily,
+            // only if/when someone opens a price history chart.
             const cb = new Date().getTime();
-            const [pricesRes, storesRes, _] = await Promise.all([
-                fetch(`us_prices.json?t=${cb}`),
+            const [latestRes, storesRes, _] = await Promise.all([
+                fetch(`us_latest.json?t=${cb}`),
                 fetch(`us_stores.json?t=${cb}`),
                 detectUserState()
             ]);
 
-            const priceData = await pricesRes.json();
+            if (!latestRes.ok || !storesRes.ok) throw new Error('Failed to fetch latest snapshot or store list');
+
+            const latestData = await latestRes.json();
             const storeData = await storesRes.json();
 
-            // 2. FIX: Standard string sort. (YYYY-MM-DD HH:MM sorts perfectly this way)
-            // This prevents Safari/iOS from breaking the sort with "Invalid Date"
-            const timestamps = Object.keys(priceData).sort();
-            const latestTimestamp = timestamps[timestamps.length - 1];
+            const latestTimestamp = latestData.timestamp;
+            const timestampedPrices = latestData.prices;
 
             document.getElementById("lastUpdated").innerText = `Last Updated: ${latestTimestamp}`;
 
-            // Populate History
-            timestamps.forEach(ts => {
-                // Replacing hyphens with slashes keeps History Dates working in Safari
-                const d = new Date(ts.replace(/-/g, '/'));
-                const dayStr = d.toLocaleDateString();
-
-                for (const stateCode in priceData[ts]) {
-                    for (const cityName in priceData[ts][stateCode]) {
-                        const key = `${stateCode}_${cityName}`;
-                        if (!globalHistory[key]) globalHistory[key] = [];
-
-                        const pData = priceData[ts][stateCode][cityName];
-                        let rRaw, pRaw;
-
-                        if (Array.isArray(pData)) {
-                            rRaw = pData[0];
-                            pRaw = pData[1];
-                        } else {
-                            rRaw = pData.Regular ?? pData.regular;
-                            pRaw = pData.Premium ?? pData.premium;
-                        }
-
-                        globalHistory[key].push({
-                            rawDate: d,
-                            dayStr: dayStr,
-                            reg: getValidPrice(rRaw),
-                            prem: getValidPrice(pRaw)
-                        });
-                    }
-                }
-            });
-
-            // Parse Map & Sidebar stores
-            const timestampedPrices = priceData[latestTimestamp];
+            // Parse Map & Sidebar stores from the latest snapshot only
             for (const stateCode in storeData) {
                 if (!timestampedPrices[stateCode]) continue;
                 for (const [cityName, info] of Object.entries(storeData[stateCode])) {
@@ -429,16 +413,7 @@ async function loadData() {
                     const pData = timestampedPrices[stateCode][cityName];
 
                     if (pData) {
-                        let rRaw, pRaw;
-
-                        if (Array.isArray(pData)) {
-                            rRaw = pData[0];
-                            pRaw = pData[1];
-                        } else {
-                            rRaw = pData.Regular ?? pData.regular;
-                            pRaw = pData.Premium ?? pData.premium;
-                        }
-
+                        const [rRaw, pRaw] = extractRegPrem(pData);
                         const regVal = getValidPrice(rRaw);
                         const premVal = getValidPrice(pRaw);
 
@@ -467,6 +442,55 @@ async function loadData() {
             document.getElementById("sidebarContent").innerHTML = `<p style="text-align:center; color:var(--costco-red); margin-top:30px;">Error Loading Data.</p>`;
         }
     }
+
+    // Fetches and parses the full price history file exactly once, the first
+    // time it's actually needed (opening a chart). Concurrent callers share
+    // the same in-flight request instead of triggering duplicate fetches.
+    function ensureHistoryLoaded() {
+        if (historyLoaded) return Promise.resolve();
+        if (historyLoadPromise) return historyLoadPromise;
+
+        historyLoadPromise = (async () => {
+            const cb = new Date().getTime();
+            const res = await fetch(`us_history.json?t=${cb}`);
+            if (!res.ok) throw new Error(`Failed to fetch price history (${res.status})`);
+            const priceData = await res.json();
+
+            // Standard string sort: "YYYY-MM-DD HH:MM" sorts correctly this way
+            // and avoids Safari/iOS breaking on "Invalid Date".
+            const timestamps = Object.keys(priceData).sort();
+
+            timestamps.forEach(ts => {
+                // Replacing hyphens with slashes keeps History Dates working in Safari
+                const d = new Date(ts.replace(/-/g, '/'));
+                const dayStr = d.toLocaleDateString();
+
+                for (const stateCode in priceData[ts]) {
+                    for (const cityName in priceData[ts][stateCode]) {
+                        const key = `${stateCode}_${cityName}`;
+                        if (!globalHistory[key]) globalHistory[key] = [];
+
+                        const [rRaw, pRaw] = extractRegPrem(priceData[ts][stateCode][cityName]);
+
+                        globalHistory[key].push({
+                            rawDate: d,
+                            dayStr: dayStr,
+                            reg: getValidPrice(rRaw),
+                            prem: getValidPrice(pRaw)
+                        });
+                    }
+                }
+            });
+
+            historyLoaded = true;
+        })().catch(err => {
+            historyLoadPromise = null; // allow a retry on the next attempt
+            throw err;
+        });
+
+        return historyLoadPromise;
+    }
+
     function renderMap(dataArray) {
         markersLayer.clearLayers();
         dataArray.forEach(store => {
@@ -517,17 +541,39 @@ async function loadData() {
     }
 
     // --- History Chart Modal Logic ---
-    function openHistoryModal(state, city) {
+    async function openHistoryModal(state, city) {
         const key = `${state}_${city}`;
-        const history = globalHistory[key];
-
-        if (!history || history.length === 0) {
-            alert(`No price history available for ${city}, ${state}.`);
-            return;
-        }
+        const chartContainer = document.querySelector('.chart-container');
 
         document.getElementById('chartModal').classList.add('active');
         document.getElementById('chartTitle').innerText = `Price History: ${city}, ${state}`;
+
+        const showMessage = (msg, isError = false) => {
+            chartContainer.innerHTML = `<p style="text-align:center; color:${isError ? 'var(--costco-red)' : 'var(--text-muted)'}; margin-top:40px;">${msg}</p>`;
+        };
+
+        if (!historyLoaded) {
+            showMessage('Loading price history…');
+            try {
+                await ensureHistoryLoaded();
+            } catch (e) {
+                console.error('Error loading price history:', e);
+                showMessage("Couldn't load price history. Please try again.", true);
+                return;
+            }
+        }
+
+        const history = globalHistory[key];
+        if (!history || history.length === 0) {
+            showMessage(`No price history available for ${city}, ${state}.`);
+            return;
+        }
+
+        // The container may currently hold a loading/error/empty message
+        // instead of the canvas (from this call or a previous one) - restore it.
+        if (!document.getElementById('priceChart')) {
+            chartContainer.innerHTML = `<canvas id="priceChart"></canvas>`;
+        }
 
         const dedupedHistory = [];
         const seenDates = new Set();
