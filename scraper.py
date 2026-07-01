@@ -20,6 +20,28 @@ USER_AGENTS = [
 MAX_FETCH_ATTEMPTS = 5
 EXCLUDED_STATES = {"PR"}
 
+# --- Safety valve against wiping the store database ---
+# If more than this fraction of stores fail to return a price in a single run,
+# treat it as a systemic problem (rate limiting / IP block / Costco outage)
+# rather than individual stores losing their gas station, and skip deleting
+# anything from the store file. Only applies once there are enough stores in
+# the run for a failure *rate* to be meaningful.
+FAILURE_RATE_THRESHOLD = 0.25
+MIN_STORES_FOR_CIRCUIT_BREAKER = 10
+
+# Second tier: catches near-total blackouts even on small runs (e.g. the 9-store
+# local_stores.json), where the run is too small for the tier above to ever fire.
+# Legitimate same-day closures essentially never hit 80%+ of a batch at once.
+HIGH_FAILURE_RATE_THRESHOLD = 0.8
+MIN_STORES_FOR_HIGH_RATE_CHECK = 3
+
+# Each price file is now split in two:
+#   *_history.json - full timestamped log (grows over time, used only for charts)
+#   *_latest.json  - just the newest snapshot (small, used for the map/sidebar on every page load)
+LOCAL_HISTORY_FILE, LOCAL_LATEST_FILE = 'local_history.json', 'local_latest.json'
+CA_HISTORY_FILE, CA_LATEST_FILE = 'ca_history.json', 'ca_latest.json'
+US_HISTORY_FILE, US_LATEST_FILE = 'us_history.json', 'us_latest.json'
+
 
 def format_price(v) -> float | None:
     """Format a raw price string into a float rounded to 2 decimals, or None if invalid."""
@@ -79,7 +101,10 @@ def print_lowest_prices(prices: dict) -> None:
                 print(f"No {gas_type} prices available for {timestamp}.")
 
 
-def save_data(data: dict, file_path: str) -> None:
+def save_data(data: dict, history_path: str, latest_path: str) -> None:
+    """Appends the new snapshot to the history file AND overwrites the small
+    'latest' file, so the frontend can load a tiny file for the map/sidebar
+    instead of the entire (ever-growing) history on every page view."""
     timestamp_str = next(iter(data.keys()), None)
     if not timestamp_str:
         return
@@ -92,26 +117,36 @@ def save_data(data: dict, file_path: str) -> None:
         if isinstance(cities, dict)
     }
 
+    # --- 1. Append to the history file (full timestamped log) ---
     save_prices = {}
 
     # Load existing data to append to
-    if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
+    if os.path.exists(history_path) and os.path.getsize(history_path) > 0:
         try:
-            with open(file_path, 'r', encoding='utf-8') as json_file:
+            with open(history_path, 'r', encoding='utf-8') as json_file:
                 save_prices = json.load(json_file)
         except json.JSONDecodeError as e:
-            print(f"⚠️ ERROR: {file_path} contains invalid JSON ({e}).")
+            print(f"⚠️ ERROR: {history_path} contains invalid JSON ({e}).")
             print("Skipping save to prevent deleting historical data.")
             return
         except Exception as e:
-            print(f"⚠️ ERROR reading {file_path}: {e}")
+            print(f"⚠️ ERROR reading {history_path}: {e}")
             return
 
     # Add the new timestamp block
     save_prices[timestamp_str] = sorted_states_data
 
     # Save the combined data back to the file
-    write_pretty_top_level(save_prices, file_path)
+    write_pretty_top_level(save_prices, history_path)
+
+    # --- 2. Overwrite the latest-snapshot file (small, always just today's prices) ---
+    # Written compact (no indent) since this is fetched fresh on every page load -
+    # keeping it small is the whole point of splitting it out from history.
+    latest_payload = {"timestamp": timestamp_str, "prices": sorted_states_data}
+    with open(latest_path, 'w', encoding='utf-8') as f:
+        json.dump(latest_payload, f, separators=(',', ':'))
+
+    print(f"Saved latest snapshot -> {latest_path} | appended history -> {history_path}")
 
 
 def write_pretty_top_level(data: dict, file_path: str) -> None:
@@ -273,11 +308,15 @@ def get_gas_prices_ajax(locations: dict, source_filepath: str | None = None) -> 
         return target_state, target_city, None
 
     print("Fetching live gas prices...")
+    total_stores = 0
+    failed_stores: list[tuple[str, str]] = []
+
     with ThreadPoolExecutor(max_workers=10) as executor:
         futures = []
         for state, cities in locations.items():
             fetched_prices[state] = {}
             for city, info in cities.items():
+                total_stores += 1
                 futures.append(executor.submit(fetch_price, state, city, info))
 
         for future in as_completed(futures):
@@ -285,6 +324,35 @@ def get_gas_prices_ajax(locations: dict, source_filepath: str | None = None) -> 
             if prices:
                 fetched_prices[state][city] = prices
             else:
+                failed_stores.append((state, city))
+
+    # Prices that WERE fetched successfully are always kept - a partial run
+    # still produces useful, fresher data for the stores that responded.
+    # Deleting stores from the master file is the one *irreversible* action
+    # here, so it gets a safety check: only prune individual failures when
+    # they look like isolated cases (e.g. one store's gas station closed),
+    # not when a large fraction of the whole run failed, which is a much
+    # stronger signal of rate limiting/blocking than of mass store closures.
+    failure_rate = (len(failed_stores) / total_stores) if total_stores else 0
+    circuit_tripped = (
+        (len(failed_stores) >= MIN_STORES_FOR_CIRCUIT_BREAKER and failure_rate > FAILURE_RATE_THRESHOLD)
+        or (len(failed_stores) >= MIN_STORES_FOR_HIGH_RATE_CHECK and failure_rate >= HIGH_FAILURE_RATE_THRESHOLD)
+    )
+
+    if failed_stores:
+        if circuit_tripped:
+            print(
+                f"⚠️  WARNING: {len(failed_stores)}/{total_stores} stores "
+                f"({failure_rate:.0%}) returned no price data this run. That failure "
+                f"rate usually means Costco rate-limited/blocked the scraper rather "
+                f"than that many stores losing their gas station on the same day. "
+                f"Leaving '{source_filepath}' untouched - nothing will be removed. "
+                f"Retry the run later; investigate if this keeps happening."
+            )
+            for state, city in failed_stores:
+                print(f"  - no data (left in place): {city}, {state}")
+        else:
+            for state, city in failed_stores:
                 print(f"Removing {city}, {state} - Max retries hit or no gas available.")
                 remove_location_from_file(source_filepath, state, city)
 
@@ -382,6 +450,25 @@ def build_and_save_master_db(states_to_update: list, output_filepath: str):
                 if state in enriched:
                     master_stores[state] = enriched[state]
 
+    new_total = sum(len(cities) for cities in master_stores.values())
+
+    # Same safety valve as get_gas_prices_ajax: a full rebuild rebuilds
+    # us_stores.json from scratch, so a network block/rate-limit here would
+    # otherwise silently overwrite a good file with a much smaller one.
+    if os.path.exists(output_filepath):
+        existing = load_store_locations(output_filepath) or {}
+        existing_total = sum(len(cities) for cities in existing.values())
+        if existing_total > 0 and new_total < existing_total * (1 - FAILURE_RATE_THRESHOLD):
+            drop_pct = 1 - (new_total / existing_total)
+            print(
+                f"⚠️  WARNING: Rebuild produced {new_total} store(s) vs. {existing_total} "
+                f"currently in '{output_filepath}' ({drop_pct:.0%} fewer). That looks like "
+                f"fetch failures (rate limiting/blocking) rather than that many stores "
+                f"actually closing on the same day. Refusing to overwrite "
+                f"'{output_filepath}' - re-run the rebuild later."
+            )
+            return
+
     with open(output_filepath, 'w', encoding='utf-8') as f:
         json.dump(master_stores, f, indent=4)
     print(f"\nMaster database '{output_filepath}' updated successfully.")
@@ -409,26 +496,26 @@ def main():
 
     if run_type == 1 and nearby_stores:
         prices = get_gas_prices_ajax(nearby_stores, 'local_stores.json')
-        save_data(prices, 'local_prices.json')
+        save_data(prices, LOCAL_HISTORY_FILE, LOCAL_LATEST_FILE)
         print_lowest_prices(prices)
 
     elif run_type == 2 and ca_stores:
         prices = get_gas_prices_ajax(ca_stores, 'ca_stores.json')
-        save_data(prices, 'ca_prices.json')
+        save_data(prices, CA_HISTORY_FILE, CA_LATEST_FILE)
         print_lowest_prices(prices)
 
     elif run_type == 3 and us_stores:
         prices = get_gas_prices_ajax(us_stores, 'us_stores.json')
-        save_data(prices, 'us_prices.json')
+        save_data(prices, US_HISTORY_FILE, US_LATEST_FILE)
         print_lowest_prices(prices)
 
     elif run_type == 4:
         if nearby_stores:
-            save_data(get_gas_prices_ajax(nearby_stores, 'local_stores.json'), 'local_prices.json')
+            save_data(get_gas_prices_ajax(nearby_stores, 'local_stores.json'), LOCAL_HISTORY_FILE, LOCAL_LATEST_FILE)
         if ca_stores:
-            save_data(get_gas_prices_ajax(ca_stores, 'ca_stores.json'), 'ca_prices.json')
+            save_data(get_gas_prices_ajax(ca_stores, 'ca_stores.json'), CA_HISTORY_FILE, CA_LATEST_FILE)
         if us_stores:
-            save_data(get_gas_prices_ajax(us_stores, 'us_stores.json'), 'us_prices.json')
+            save_data(get_gas_prices_ajax(us_stores, 'us_stores.json'), US_HISTORY_FILE, US_LATEST_FILE)
 
     elif run_type == 5:
         target_url = "https://www.costco.com/sitemaps/warehouses-by-state"
@@ -449,7 +536,7 @@ def main():
         build_and_save_master_db(list(states_to_scrape), "us_stores.json")
         us_stores = load_store_locations('us_stores.json') or {}
         prices = get_gas_prices_ajax(us_stores, 'us_stores.json')
-        save_data(prices, 'us_prices.json')
+        save_data(prices, US_HISTORY_FILE, US_LATEST_FILE)
         print_lowest_prices(prices)
 
     elif run_type == 6:
