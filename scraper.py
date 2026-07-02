@@ -35,6 +35,15 @@ MIN_STORES_FOR_CIRCUIT_BREAKER = 10
 HIGH_FAILURE_RATE_THRESHOLD = 0.8
 MIN_STORES_FOR_HIGH_RATE_CHECK = 3
 
+# --- Snapshot completeness check (separate from the two breakers above) ---
+# Those breakers only protect us_stores.json from having stores *deleted*.
+# They don't stop a partially-failed run from still writing an incomplete
+# snapshot to *_latest.json/*_history.json. This is that second check: it
+# compares what actually came back against what we set out to fetch, and
+# blocks the save entirely if too much of it is missing.
+SNAPSHOT_STATE_COVERAGE_THRESHOLD = 0.85   # need prices for >=85% of expected states
+SNAPSHOT_STORE_COVERAGE_THRESHOLD = 0.75   # need prices for >=75% of expected stores
+
 # Each price file is now split in two:
 #   *_history.json - full timestamped log (grows over time, used only for charts)
 #   *_latest.json  - just the newest snapshot (small, used for the map/sidebar on every page load)
@@ -99,6 +108,43 @@ def print_lowest_prices(prices: dict) -> None:
                 print(f"Lowest {gas_type} price: {', '.join(cities)} @ ${price:.2f} as of {timestamp}")
             else:
                 print(f"No {gas_type} prices available for {timestamp}.")
+
+
+def validate_snapshot(fetched_prices: dict, locations: dict) -> tuple[bool, str]:
+    """Sanity-checks a freshly-fetched price snapshot against the location
+    list it was fetched from, before it's allowed to be saved.
+
+    Returns (is_valid, reason). A run can pass the circuit breakers in
+    get_gas_prices_ajax (so nothing gets deleted from the store file) and
+    still be a bad, sparse snapshot - e.g. Costco rate-limits partway
+    through and only 40 of 573 stores return a price. This catches that
+    case and gives the caller a clear reason to refuse the save.
+    """
+    expected_states = len(locations)
+    actual_states = len(fetched_prices)
+
+    expected_stores = sum(len(cities) for cities in locations.values())
+    actual_stores = sum(len(cities) for cities in fetched_prices.values())
+
+    if expected_states == 0:
+        return True, "no expected states to compare against"
+
+    state_coverage = actual_states / expected_states
+    store_coverage = (actual_stores / expected_stores) if expected_stores else 0
+
+    if state_coverage < SNAPSHOT_STATE_COVERAGE_THRESHOLD:
+        return False, (
+            f"only {actual_states}/{expected_states} states ({state_coverage:.0%}) "
+            f"returned any price data - below the {SNAPSHOT_STATE_COVERAGE_THRESHOLD:.0%} threshold"
+        )
+
+    if store_coverage < SNAPSHOT_STORE_COVERAGE_THRESHOLD:
+        return False, (
+            f"only {actual_stores}/{expected_stores} stores ({store_coverage:.0%}) "
+            f"returned price data - below the {SNAPSHOT_STORE_COVERAGE_THRESHOLD:.0%} threshold"
+        )
+
+    return True, f"{actual_states}/{expected_states} states, {actual_stores}/{expected_stores} stores"
 
 
 def save_data(data: dict, history_path: str, latest_path: str) -> None:
@@ -474,6 +520,27 @@ def build_and_save_master_db(states_to_update: list, output_filepath: str):
     print(f"\nMaster database '{output_filepath}' updated successfully.")
 
 
+def process_and_save(locations: dict, source_filepath: str, history_file: str, latest_file: str, label: str) -> bool:
+    """Fetches prices for one dataset (local/CA/US), validates the resulting
+    snapshot's completeness, and only saves it if it passes. Returns True if
+    saved, False if rejected - callers should treat False as a failed run
+    (e.g. exit non-zero) so CI doesn't push an incomplete update."""
+    prices = get_gas_prices_ajax(locations, source_filepath)
+    timestamp = next(iter(prices))
+    fetched = prices[timestamp]
+
+    is_valid, reason = validate_snapshot(fetched, locations)
+    if not is_valid:
+        print(f"⚠️  REJECTED {label} snapshot ({timestamp}): {reason}")
+        print(f"Not saving to {latest_file} / {history_file} - this run's data looks incomplete.")
+        return False
+
+    print(f"✅ {label} snapshot looks healthy: {reason}")
+    save_data(prices, history_file, latest_file)
+    print_lowest_prices(prices)
+    return True
+
+
 def main():
     nearby_stores = load_store_locations('local_stores.json')
     ca_stores = load_store_locations('ca_stores.json')
@@ -495,27 +562,27 @@ def main():
             sys.exit(1)
 
     if run_type == 1 and nearby_stores:
-        prices = get_gas_prices_ajax(nearby_stores, 'local_stores.json')
-        save_data(prices, LOCAL_HISTORY_FILE, LOCAL_LATEST_FILE)
-        print_lowest_prices(prices)
+        if not process_and_save(nearby_stores, 'local_stores.json', LOCAL_HISTORY_FILE, LOCAL_LATEST_FILE, "Local"):
+            sys.exit(1)
 
     elif run_type == 2 and ca_stores:
-        prices = get_gas_prices_ajax(ca_stores, 'ca_stores.json')
-        save_data(prices, CA_HISTORY_FILE, CA_LATEST_FILE)
-        print_lowest_prices(prices)
+        if not process_and_save(ca_stores, 'ca_stores.json', CA_HISTORY_FILE, CA_LATEST_FILE, "CA"):
+            sys.exit(1)
 
     elif run_type == 3 and us_stores:
-        prices = get_gas_prices_ajax(us_stores, 'us_stores.json')
-        save_data(prices, US_HISTORY_FILE, US_LATEST_FILE)
-        print_lowest_prices(prices)
+        if not process_and_save(us_stores, 'us_stores.json', US_HISTORY_FILE, US_LATEST_FILE, "US"):
+            sys.exit(1)
 
     elif run_type == 4:
+        ok = True
         if nearby_stores:
-            save_data(get_gas_prices_ajax(nearby_stores, 'local_stores.json'), LOCAL_HISTORY_FILE, LOCAL_LATEST_FILE)
+            ok &= process_and_save(nearby_stores, 'local_stores.json', LOCAL_HISTORY_FILE, LOCAL_LATEST_FILE, "Local")
         if ca_stores:
-            save_data(get_gas_prices_ajax(ca_stores, 'ca_stores.json'), CA_HISTORY_FILE, CA_LATEST_FILE)
+            ok &= process_and_save(ca_stores, 'ca_stores.json', CA_HISTORY_FILE, CA_LATEST_FILE, "CA")
         if us_stores:
-            save_data(get_gas_prices_ajax(us_stores, 'us_stores.json'), US_HISTORY_FILE, US_LATEST_FILE)
+            ok &= process_and_save(us_stores, 'us_stores.json', US_HISTORY_FILE, US_LATEST_FILE, "US")
+        if not ok:
+            sys.exit(1)
 
     elif run_type == 5:
         target_url = "https://www.costco.com/sitemaps/warehouses-by-state"
@@ -535,9 +602,8 @@ def main():
         print(f"Found {len(states_to_scrape)} states to process.")
         build_and_save_master_db(list(states_to_scrape), "us_stores.json")
         us_stores = load_store_locations('us_stores.json') or {}
-        prices = get_gas_prices_ajax(us_stores, 'us_stores.json')
-        save_data(prices, US_HISTORY_FILE, US_LATEST_FILE)
-        print_lowest_prices(prices)
+        if not process_and_save(us_stores, 'us_stores.json', US_HISTORY_FILE, US_LATEST_FILE, "US"):
+            sys.exit(1)
 
     elif run_type == 6:
         target_url = "https://www.costco.com/sitemaps/warehouses-by-state"
