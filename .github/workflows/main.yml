@@ -39,8 +39,13 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Run scraper (All Prices)
-        run: python scraper.py 4
+      - name: Run scraper
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+          retry_wait_seconds: 120
+          command: python scraper.py 4
 
       - name: Commit and push updated JSON files
         run: |
