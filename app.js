@@ -15,6 +15,10 @@
     let userLocation = null;
     let searchLocationMarker = null;
 
+    // Route feature state
+    let routeLayer = null;       // L.layerGroup holding the polyline + start/end markers
+    let lastRouteState = null;   // cached result so returning to the tab doesn't re-fetch
+
     // Autocomplete state
     let autocompleteItems = [];
     let activeAutocompleteIndex = -1;
@@ -42,6 +46,155 @@
         const dLon = (lon2 - lon1) * Math.PI / 180;
         const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
         return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
+    }
+
+    // --- Route helpers (used by the "Find Gas Along Route" tab) ---
+
+    // Distance from a point to a line SEGMENT (not just its endpoints), using
+    // a flat equirectangular projection. That's an approximation, but it's
+    // accurate to well under a mile for segments this short (a few hundred
+    // miles at most), which is more than good enough for "is this store near
+    // the route" - and it's what lets a store in the *middle* of a long
+    // straight fallback route correctly show as close, instead of only ever
+    // being compared against the two distant endpoints.
+    function distanceToSegmentMiles(lat, lng, lat1, lng1, lat2, lng2) {
+        const toRad = d => d * Math.PI / 180;
+        const midLat = toRad((lat1 + lat2) / 2);
+        const cosMid = Math.cos(midLat) || 0.000001;
+        const x = (lng - lng1) * cosMid;
+        const y = (lat - lat1);
+        const dx = (lng2 - lng1) * cosMid;
+        const dy = (lat2 - lat1);
+        const lenSq = dx * dx + dy * dy;
+        let t = lenSq === 0 ? 0 : ((x * dx + y * dy) / lenSq);
+        t = Math.max(0, Math.min(1, t));
+        const projLat = lat1 + t * dy;
+        const projLng = lng1 + (t * dx) / cosMid;
+        return getDistanceMiles(lat, lng, projLat, projLng);
+    }
+
+    function minDistanceToRouteMiles(lat, lng, routeCoords) {
+        if (routeCoords.length === 1) {
+            return getDistanceMiles(lat, lng, routeCoords[0][0], routeCoords[0][1]);
+        }
+        let min = Infinity;
+        for (let i = 0; i < routeCoords.length - 1; i++) {
+            const [lat1, lng1] = routeCoords[i];
+            const [lat2, lng2] = routeCoords[i + 1];
+            const d = distanceToSegmentMiles(lat, lng, lat1, lng1, lat2, lng2);
+            if (d < min) min = d;
+        }
+        return min;
+    }
+
+    // Cheap pre-filter so we don't run the segment math above against all
+    // ~570 stores for every route - just the ones anywhere near it.
+    function getRouteBoundsPadded(routeCoords, bufferMiles) {
+        let minLat = Infinity, maxLat = -Infinity, minLng = Infinity, maxLng = -Infinity;
+        for (const [lat, lng] of routeCoords) {
+            if (lat < minLat) minLat = lat;
+            if (lat > maxLat) maxLat = lat;
+            if (lng < minLng) minLng = lng;
+            if (lng > maxLng) maxLng = lng;
+        }
+        const midLat = (minLat + maxLat) / 2;
+        const padLat = bufferMiles / 69;
+        const padLng = bufferMiles / (69 * Math.max(0.2, Math.cos(midLat * Math.PI / 180)));
+        return { minLat: minLat - padLat, maxLat: maxLat + padLat, minLng: minLng - padLng, maxLng: maxLng + padLng };
+    }
+
+    function escapeHtml(str) {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
+    // Small ▲/▼ indicator comparing a price to what it was last scrape.
+    // Returns '' when there's nothing to compare against (first-ever scrape
+    // for that store, or the price was unavailable last time).
+    function getTrendArrow(current, previous) {
+        if (current === undefined || current === Infinity) return '';
+        if (previous === undefined || previous === null || previous === Infinity) return '';
+        const diff = current - previous;
+        if (Math.abs(diff) < 0.005) {
+            return `<span class="trend-flat" title="No change since last update">–</span>`;
+        }
+        if (diff > 0) {
+            return `<span class="trend-up" title="Up $${diff.toFixed(2)} since last update">▲</span>`;
+        }
+        return `<span class="trend-down" title="Down $${Math.abs(diff).toFixed(2)} since last update">▼</span>`;
+    }
+
+    // --- Shareable store links ---
+
+    function getShareUrl(state, city) {
+        const url = new URL(window.location.href);
+        url.search = '';
+        url.searchParams.set('store', `${state}_${city}`);
+        return url.toString();
+    }
+
+    function showToast(message) {
+        const existing = document.querySelector('.app-toast');
+        if (existing) existing.remove();
+
+        const toast = document.createElement('div');
+        toast.className = 'app-toast';
+        toast.textContent = message;
+        document.body.appendChild(toast);
+
+        requestAnimationFrame(() => toast.classList.add('visible'));
+        setTimeout(() => {
+            toast.classList.remove('visible');
+            setTimeout(() => toast.remove(), 300);
+        }, 2200);
+    }
+
+    async function shareStore(state, city, label) {
+        const url = getShareUrl(state, city);
+
+        if (navigator.share) {
+            try {
+                await navigator.share({ title: `Costco Gas — ${label}`, url });
+                return;
+            } catch (e) {
+                if (e.name === 'AbortError') return; // user cancelled the share sheet
+                // fall through to clipboard copy below
+            }
+        }
+
+        try {
+            await navigator.clipboard.writeText(url);
+            showToast('Link copied to clipboard!');
+        } catch (e) {
+            window.prompt('Copy this link:', url);
+        }
+    }
+
+    // Opens directly to a shared store (?store=STATE_City) if the URL has one.
+    // Returns true if it found and focused a store, so the caller can skip
+    // the default "zoom to fit every store" behavior.
+    function openSharedStoreIfPresent() {
+        const params = new URLSearchParams(window.location.search);
+        const storeKey = params.get('store');
+        if (!storeKey) return false;
+
+        const sepIndex = storeKey.indexOf('_');
+        if (sepIndex === -1) return false;
+        const state = storeKey.slice(0, sepIndex);
+        const city = storeKey.slice(sepIndex + 1);
+
+        const store = globalStoreData.find(s => s.state === state && s.city === city);
+        if (!store || !store.lat || !store.lng) {
+            console.warn(`Shared store "${storeKey}" not found.`);
+            return false;
+        }
+
+        map.setView([store.lat, store.lng], 14);
+        if (store.leafletMarker) {
+            setTimeout(() => store.leafletMarker.openPopup(), 300);
+        }
+        return true;
     }
 
     // --- Preferences Initializers ---
@@ -112,6 +265,7 @@
         L.control.zoom({ position: 'bottomright' }).addTo(map);
         setMapTiles();
         markersLayer = L.layerGroup().addTo(map);
+        routeLayer = L.layerGroup().addTo(map);
 
         // Listen for map zooms to toggle the CSS class
         map.on('zoomend', checkZoomLevel);
@@ -243,6 +397,62 @@
             return state ? `${addr.postcode} \u2014 ${main}, ${state}` : `${addr.postcode} \u2014 ${main}`;
         }
         return state ? `${main}, ${state}` : main;
+    }
+
+    // --- Route feature: geocoding + routing ---
+    // Deliberately self-contained (own fetch, no shared AbortController) so it
+    // can't race with the header search box's autocomplete requests.
+
+    async function geocodeAddress(query) {
+        // "lat, lng" typed directly (e.g. from "Use My Location") skips geocoding entirely
+        const coordMatch = query.match(/^(-?\d+\.?\d*),\s*(-?\d+\.?\d*)$/);
+        if (coordMatch) {
+            return { lat: parseFloat(coordMatch[1]), lng: parseFloat(coordMatch[2]), label: 'Your location' };
+        }
+        try {
+            const url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=1&countrycodes=us&q=${encodeURIComponent(query)}`;
+            const res = await fetch(url, { headers: { 'Accept-Language': 'en-US' } });
+            if (!res.ok) return null;
+            const matches = await res.json();
+            if (!matches || matches.length === 0) return null;
+            const best = matches[0];
+            return { lat: parseFloat(best.lat), lng: parseFloat(best.lon), label: shortGeoName(best) };
+        } catch (e) {
+            console.warn('Geocoding failed:', e);
+            return null;
+        }
+    }
+
+    // Tries the public OSRM demo server for a real driving route. That server
+    // is best-effort (no uptime guarantee, and it's a known-flaky CORS host),
+    // so on ANY failure this falls back to a straight-line corridor between
+    // the two points instead of breaking the feature entirely.
+    async function fetchDrivingRoute(origin, destination) {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 8000);
+        try {
+            const url = `https://router.project-osrm.org/route/v1/driving/${origin.lng},${origin.lat};${destination.lng},${destination.lat}?overview=full&geometries=geojson`;
+            const res = await fetch(url, { signal: controller.signal });
+            clearTimeout(timeoutId);
+            if (!res.ok) throw new Error(`Routing service returned ${res.status}`);
+            const data = await res.json();
+            if (data.code !== 'Ok' || !data.routes || data.routes.length === 0) {
+                throw new Error('No driving route found between those two points.');
+            }
+            const route = data.routes[0];
+            // GeoJSON coordinates are [lng, lat] - flip to [lat, lng] to match Leaflet/our own helpers
+            const coords = route.geometry.coordinates.map(([lng, lat]) => [lat, lng]);
+            return { coords, distanceMiles: route.distance / 1609.34, isApproximate: false };
+        } catch (err) {
+            clearTimeout(timeoutId);
+            console.warn('Live routing unavailable, falling back to a straight-line corridor:', err);
+            const coords = [[origin.lat, origin.lng], [destination.lat, destination.lng]];
+            return {
+                coords,
+                distanceMiles: getDistanceMiles(origin.lat, origin.lng, destination.lat, destination.lng),
+                isApproximate: true
+            };
+        }
     }
 
     function renderAutocompleteDropdown(storeMatches, geoMatches, query, isLoadingGeo) {
@@ -402,6 +612,7 @@ async function loadData() {
 
             const latestTimestamp = latestData.timestamp;
             const timestampedPrices = latestData.prices;
+            const previousPrices = latestData.previous || {};
 
             document.getElementById("lastUpdated").innerText = `Last Updated: ${latestTimestamp}`;
 
@@ -417,13 +628,23 @@ async function loadData() {
                         const regVal = getValidPrice(rRaw);
                         const premVal = getValidPrice(pRaw);
 
+                        let prevRegVal, prevPremVal;
+                        const prevData = previousPrices[stateCode] && previousPrices[stateCode][cityName];
+                        if (prevData) {
+                            const [prevRRaw, prevPRaw] = extractRegPrem(prevData);
+                            prevRegVal = getValidPrice(prevRRaw);
+                            prevPremVal = getValidPrice(prevPRaw);
+                        }
+
                         globalStoreData.push({
                             state: stateCode, city: cityName, address: info.address,
                             lat: info.lat, lng: info.lng, url: info.url,
                             regularStr: formatPriceDisplay(regVal),
                             premiumStr: formatPriceDisplay(premVal),
                             regVal: regVal,
-                            premVal: premVal
+                            premVal: premVal,
+                            prevRegVal: prevRegVal,
+                            prevPremVal: prevPremVal
                         });
                     }
                 }
@@ -432,7 +653,11 @@ async function loadData() {
             renderMap(globalStoreData);
             switchTab('nearby');
 
-            if (globalStoreData.length > 0) {
+            // A shared store link (?store=STATE_City) takes priority over the
+            // default "zoom to fit every store" behavior.
+            const openedSharedStore = openSharedStoreIfPresent();
+
+            if (!openedSharedStore && globalStoreData.length > 0) {
                 const bounds = L.latLngBounds(globalStoreData.map(s => [s.lat, s.lng]).filter(coords => coords[0] && coords[1]));
                 map.fitBounds(bounds, { padding: [30, 30] });
                 checkZoomLevel();
@@ -524,16 +749,19 @@ async function loadData() {
 
             const marker = L.marker([store.lat, store.lng], {icon: dynamicPin});
             const safeCity = store.city.replace(/'/g, "\\'");
+            const regTrend = getTrendArrow(store.regVal, store.prevRegVal);
+            const premTrend = getTrendArrow(store.premVal, store.prevPremVal);
 
             marker.bindPopup(`
                 <div class="popup-store-name">${store.city}, ${store.state}</div>
                 <div class="popup-address">${store.address}</div>
                 <div class="popup-prices-grid">
-                    <div class="popup-price-box"><span>Regular</span><strong>${store.regularStr || 'N/A'}</strong></div>
-                    <div class="popup-price-box"><span>Premium</span><strong>${store.premiumStr || 'N/A'}</strong></div>
+                    <div class="popup-price-box"><span>Regular</span><strong>${store.regularStr || 'N/A'} ${regTrend}</strong></div>
+                    <div class="popup-price-box"><span>Premium</span><strong>${store.premiumStr || 'N/A'} ${premTrend}</strong></div>
                 </div>
-                <a href="${store.url}" target="_blank" class="popup-btn popup-btn-outline">View Store</a>
+                <a href="${store.url}" target="_blank" rel="noopener noreferrer" class="popup-btn popup-btn-outline">View Store</a>
                 <button class="popup-btn" style="margin-top:8px;" onclick="openHistoryModal('${store.state}', '${safeCity}')">📈 Price History</button>
+                <button class="popup-btn popup-btn-outline" style="margin-top:8px;" onclick="shareStore('${store.state}', '${safeCity}', '${safeCity}, ${store.state}')">🔗 Share This Station</button>
             `);
             marker.addTo(markersLayer);
             store.leafletMarker = marker;
@@ -761,7 +989,7 @@ async function loadData() {
         return `<span style="font-size:13px; color:var(--text-muted); margin-right:4px;">#${index + 1}</span>`;
     }
 
-    function createStoreCard(store, highlight = null, index = null, showDistance = false) {
+    function createStoreCard(store, highlight = null, index = null, showDistance = false, distanceSuffix = '') {
         const div = document.createElement('div');
         div.className = 'store-card';
 
@@ -770,38 +998,192 @@ async function loadData() {
 
         let badgeHtml = '';
         if (showDistance && store.distance !== undefined) {
-            badgeHtml = `<span class="distance-badge">${store.distance.toFixed(1)} mi</span>`;
+            badgeHtml = `<span class="distance-badge">${store.distance.toFixed(1)} mi${distanceSuffix}</span>`;
         } else if (index !== null) {
             badgeHtml = `<span class="medal">${getMedal(index)}</span>`;
         }
 
         const safeCity = store.city.replace(/'/g, "\\'");
+        const regTrend = getTrendArrow(store.regVal, store.prevRegVal);
+        const premTrend = getTrendArrow(store.premVal, store.prevPremVal);
 
         div.innerHTML = `
             <h3><span>${store.city}, ${store.state}</span> ${badgeHtml}</h3>
             <div class="address">${store.address}</div>
             <div class="prices">
                 <div class="price-tag ${regClass}">
-                    <span>Regular</span><span class="val">${store.regularStr || 'N/A'}</span>
+                    <span>Regular</span><span class="val">${store.regularStr || 'N/A'} ${regTrend}</span>
                 </div>
                 <div class="price-tag ${premClass}">
-                    <span>Premium</span><span class="val">${store.premiumStr || 'N/A'}</span>
+                    <span>Premium</span><span class="val">${store.premiumStr || 'N/A'} ${premTrend}</span>
                 </div>
             </div>
-            <button class="btn-action" style="width:100%; background: transparent; color: var(--costco-blue); border: 2px solid var(--costco-blue);"
-                onclick="event.stopPropagation(); openHistoryModal('${store.state}', '${safeCity}')">
-                📈 View Price History
-            </button>
+            <div class="card-actions">
+                <button class="btn-action" style="flex:1; background: transparent; color: var(--costco-blue); border: 2px solid var(--costco-blue);"
+                    onclick="event.stopPropagation(); openHistoryModal('${store.state}', '${safeCity}')">
+                    📈 History
+                </button>
+                <button class="btn-action share-btn" title="Share this station"
+                    onclick="event.stopPropagation(); shareStore('${store.state}', '${safeCity}', '${safeCity}, ${store.state}')">
+                    🔗
+                </button>
+            </div>
         `;
 
         div.onclick = () => flyToStore(store);
         return div;
     }
 
+    // --- Route feature: UI + orchestration ---
+
+    function renderRoutePanel() {
+        const container = document.getElementById("sidebarContent");
+        const originVal = lastRouteState ? escapeHtml(lastRouteState.originText) : '';
+        const destVal = lastRouteState ? escapeHtml(lastRouteState.destText) : '';
+        const buffer = lastRouteState ? lastRouteState.bufferMiles : 2;
+
+        container.innerHTML = `
+            <div class="route-panel">
+                <label>From</label>
+                <div class="route-input-row">
+                    <input type="text" id="routeOrigin" class="route-input" placeholder="Address or city" autocomplete="off" value="${originVal}">
+                    <button class="route-locate-btn" onclick="useMyLocationForRoute()" title="Use my location">📍</button>
+                </div>
+                <label>To</label>
+                <div class="route-input-row">
+                    <input type="text" id="routeDestination" class="route-input" placeholder="Address or city" autocomplete="off" value="${destVal}">
+                </div>
+                <label>Search within (miles of the route)</label>
+                <input type="number" id="routeBuffer" class="route-input" style="width:100%; margin-bottom:12px;"
+                       min="0.5" max="25" step="0.5" value="${buffer}">
+                <button class="btn-action" style="width:100%; justify-content:center;" onclick="findGasAlongRoute()">🛣️ Find Cheapest Along Route</button>
+            </div>
+            <div id="routeResultsContainer"></div>
+        `;
+
+        if (lastRouteState && lastRouteState.along) {
+            renderRouteResults(lastRouteState);
+            renderRouteOnMap(lastRouteState.route.coords, lastRouteState.origin, lastRouteState.destination);
+            renderMap(lastRouteState.along.length > 0 ? lastRouteState.along : globalStoreData);
+        }
+    }
+
+    function renderRouteResults(state) {
+        const el = document.getElementById('routeResultsContainer');
+        if (!el) return;
+        const isReg = gasPref === 'regular';
+        const { along, route, bufferMiles } = state;
+
+        const sorted = along
+            .filter(s => isReg ? s.regVal !== Infinity : s.premVal !== Infinity)
+            .sort((a, b) => (isReg ? a.regVal - b.regVal : a.premVal - b.premVal));
+
+        let html = '';
+        if (route.isApproximate) {
+            html += `<p class="route-warning">⚠️ Live routing was unavailable, so this is an approximate straight-line path, not a real driving route.</p>`;
+        }
+        html += `<div class="route-summary">${Math.round(route.distanceMiles)} mi route &middot; ${sorted.length} station${sorted.length === 1 ? '' : 's'} found</div>`;
+        el.innerHTML = html;
+
+        if (sorted.length === 0) {
+            el.innerHTML += `<p style="text-align:center; color:var(--text-muted); margin-top:20px;">No Costco gas stations found within ${bufferMiles} miles of this route.</p>`;
+            return;
+        }
+
+        el.innerHTML += `<div class="leaderboard-header">Cheapest ${isReg ? 'Regular' : 'Premium'} Along the Way</div>`;
+        sorted.forEach((store, index) => el.appendChild(createStoreCard(store, gasPref, index, true, ' off route')));
+    }
+
+    function renderRouteOnMap(routeCoords, origin, destination) {
+        if (!routeLayer) return;
+        routeLayer.clearLayers();
+        L.polyline(routeCoords, { color: '#005DAA', weight: 5, opacity: 0.7 }).addTo(routeLayer);
+        L.circleMarker([origin.lat, origin.lng], { radius: 8, fillColor: '#059669', color: '#fff', weight: 3, opacity: 1, fillOpacity: 1 })
+            .addTo(routeLayer).bindPopup(`<b>Start:</b> ${escapeHtml(origin.label)}`);
+        L.circleMarker([destination.lat, destination.lng], { radius: 8, fillColor: '#E31837', color: '#fff', weight: 3, opacity: 1, fillOpacity: 1 })
+            .addTo(routeLayer).bindPopup(`<b>End:</b> ${escapeHtml(destination.label)}`);
+
+        const bounds = L.latLngBounds(routeCoords);
+        map.fitBounds(bounds, { padding: [40, 40] });
+    }
+
+    function useMyLocationForRoute() {
+        if (!navigator.geolocation) {
+            alert("Geolocation is not supported by your browser.");
+            return;
+        }
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const originInput = document.getElementById('routeOrigin');
+                if (originInput) {
+                    originInput.value = `${position.coords.latitude.toFixed(5)}, ${position.coords.longitude.toFixed(5)}`;
+                }
+            },
+            () => alert("Unable to retrieve your location. Check browser permissions.")
+        );
+    }
+
+    async function findGasAlongRoute() {
+        const originText = document.getElementById('routeOrigin').value.trim();
+        const destText = document.getElementById('routeDestination').value.trim();
+        const bufferInput = document.getElementById('routeBuffer').value;
+        const bufferMiles = parseFloat(bufferInput);
+        const resultsEl = document.getElementById('routeResultsContainer');
+
+        if (!originText || !destText) {
+            resultsEl.innerHTML = `<p class="route-error">Enter both a starting point and a destination.</p>`;
+            return;
+        }
+
+        if (!bufferInput || isNaN(bufferMiles) || bufferMiles <= 0) {
+            resultsEl.innerHTML = `<p class="route-error">Enter a valid search distance greater than 0.</p>`;
+            return;
+        }
+
+        resultsEl.innerHTML = `<p style="text-align:center; color:var(--text-muted); margin-top:20px;">Calculating route…</p>`;
+
+        try {
+            const [origin, destination] = await Promise.all([
+                geocodeAddress(originText),
+                geocodeAddress(destText)
+            ]);
+            if (!origin) throw new Error(`Couldn't find "${originText}". Try a more specific address or city.`);
+            if (!destination) throw new Error(`Couldn't find "${destText}". Try a more specific address or city.`);
+
+            const route = await fetchDrivingRoute(origin, destination);
+
+            const bounds = getRouteBoundsPadded(route.coords, bufferMiles);
+
+            const along = globalStoreData
+                .filter(s => s.lat && s.lng &&
+                    s.lat >= bounds.minLat && s.lat <= bounds.maxLat &&
+                    s.lng >= bounds.minLng && s.lng <= bounds.maxLng)
+                .map(s => ({ ...s, distance: minDistanceToRouteMiles(s.lat, s.lng, route.coords) }))
+                .filter(s => s.distance <= bufferMiles);
+
+            lastRouteState = { originText, destText, bufferMiles, origin, destination, route, along };
+
+            renderRouteOnMap(route.coords, origin, destination);
+            renderMap(along.length > 0 ? along : globalStoreData);
+            renderRouteResults(lastRouteState);
+
+        } catch (err) {
+            console.error('Route search failed:', err);
+            resultsEl.innerHTML = `<p class="route-error">${escapeHtml(err.message || "Couldn't calculate that route. Please try again.")}</p>`;
+        }
+    }
+
     function switchTab(tabName) {
         document.getElementById('tab-search').classList.remove('active');
         document.getElementById('tab-lowest').classList.remove('active');
         document.getElementById('tab-nearby').classList.remove('active');
+        document.getElementById('tab-route').classList.remove('active');
+
+        // Leaving the Route tab: clear the route line and restore full map markers
+        if (tabName !== 'route' && routeLayer) {
+            routeLayer.clearLayers();
+            if (globalStoreData.length > 0) renderMap(globalStoreData);
+        }
 
         if (tabName === 'search') {
             document.getElementById('tab-search').classList.add('active');
@@ -812,6 +1194,9 @@ async function loadData() {
         } else if (tabName === 'nearby') {
             document.getElementById('tab-nearby').classList.add('active');
             renderNearbyPrices();
+        } else if (tabName === 'route') {
+            document.getElementById('tab-route').classList.add('active');
+            renderRoutePanel();
         }
     }
 
