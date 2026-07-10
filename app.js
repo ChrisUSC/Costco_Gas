@@ -27,6 +27,8 @@
     // User Preferences State
     let isDarkMode = localStorage.getItem('theme') === 'dark';
     let gasPref = localStorage.getItem('gasPref') || 'regular';
+    let nearbyRadiusMiles = parseFloat(localStorage.getItem('nearbyRadius')) || 50;
+    let nearbySortMode = localStorage.getItem('nearbySort') || 'price'; // 'price' | 'distance'
 
     // Safely parse data (Handles BOTH new Array format [4.84, 5.20] and old {"Regular": "$4.84"} format)
     const getValidPrice = (val) => {
@@ -943,6 +945,18 @@ async function loadData() {
         sortedData.forEach((store, index) => container.appendChild(createStoreCard(store, gasPref, index)));
     }
 
+    function setNearbyRadius(val) {
+        nearbyRadiusMiles = parseFloat(val);
+        localStorage.setItem('nearbyRadius', nearbyRadiusMiles);
+        renderNearbyPrices();
+    }
+
+    function setNearbySort(val) {
+        nearbySortMode = val;
+        localStorage.setItem('nearbySort', nearbySortMode);
+        renderNearbyPrices();
+    }
+
     function renderNearbyPrices() {
         const container = document.getElementById("sidebarContent");
 
@@ -960,25 +974,56 @@ async function loadData() {
             return;
         }
 
+        const isReg = gasPref === 'regular';
+        const controlsHtml = `
+            <div class="nearby-controls">
+                <div class="nearby-control-group">
+                    <label>Radius</label>
+                    <select onchange="setNearbyRadius(this.value)">
+                        ${[5, 10, 25, 50, 100].map(m => `<option value="${m}" ${m === nearbyRadiusMiles ? 'selected' : ''}>${m} mi</option>`).join('')}
+                    </select>
+                </div>
+                <div class="nearby-control-group">
+                    <label>Sort by</label>
+                    <select onchange="setNearbySort(this.value)">
+                        <option value="price" ${nearbySortMode === 'price' ? 'selected' : ''}>Price</option>
+                        <option value="distance" ${nearbySortMode === 'distance' ? 'selected' : ''}>Distance</option>
+                    </select>
+                </div>
+            </div>
+        `;
+
         let nearbyStores = globalStoreData.filter(s => s.lat && s.lng).map(s => {
             return { ...s, distance: getDistanceMiles(userLocation.lat, userLocation.lng, s.lat, s.lng) };
-        }).filter(s => s.distance <= 50);
+        }).filter(s => s.distance <= nearbyRadiusMiles);
 
         if (nearbyStores.length === 0) {
-            container.innerHTML = `<p style="text-align:center; color:var(--text-muted); margin-top:40px;">No Costco locations found within a 50-mile radius.</p>`;
+            container.innerHTML = controlsHtml + `<p style="text-align:center; color:var(--text-muted); margin-top:40px;">No Costco locations found within ${nearbyRadiusMiles} miles.</p>`;
             return;
         }
 
-        const isReg = gasPref === 'regular';
         const sortedData = [...nearbyStores]
             .filter(s => isReg ? s.regVal !== Infinity : s.premVal !== Infinity)
             .sort((a, b) => {
                 const valA = isReg ? a.regVal : a.premVal;
                 const valB = isReg ? b.regVal : b.premVal;
+                if (nearbySortMode === 'distance') {
+                    return a.distance !== b.distance ? a.distance - b.distance : valA - valB;
+                }
                 return valA !== valB ? valA - valB : a.distance - b.distance;
             }).slice(0, 10);
 
-        container.innerHTML = `<div class="leaderboard-header">Cheapest ${isReg ? 'Regular' : 'Premium'} (Within 50 Miles)</div>`;
+        const headerLabel = nearbySortMode === 'distance'
+            ? `Closest Stations &middot; ${isReg ? 'Regular' : 'Premium'} (Within ${nearbyRadiusMiles} Miles)`
+            : `Cheapest ${isReg ? 'Regular' : 'Premium'} (Within ${nearbyRadiusMiles} Miles)`;
+
+        container.innerHTML = controlsHtml + `<div class="leaderboard-header">${headerLabel}</div>`;
+
+        if (sortedData.length === 0) {
+            container.innerHTML += `<p style="text-align:center; color:var(--text-muted); margin-top:20px;">No stations within ${nearbyRadiusMiles} miles have a ${isReg ? 'regular' : 'premium'} price right now.</p>`;
+            return;
+        }
+
         sortedData.forEach((store, index) => container.appendChild(createStoreCard(store, gasPref, index, true)));
     }
 
