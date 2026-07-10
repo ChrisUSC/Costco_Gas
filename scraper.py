@@ -9,6 +9,8 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 from bs4 import BeautifulSoup
+from datetime import datetime, timedelta
+
 
 # List of User-Agents to rotate
 USER_AGENTS = [
@@ -51,6 +53,13 @@ LOCAL_HISTORY_FILE, LOCAL_LATEST_FILE = 'local_history.json', 'local_latest.json
 CA_HISTORY_FILE, CA_LATEST_FILE = 'ca_history.json', 'ca_latest.json'
 US_HISTORY_FILE, US_LATEST_FILE = 'us_history.json', 'us_latest.json'
 
+# --- Trend baseline window ---
+# Runs happen every ~8 hours, so comparing against "whatever the previous
+# run was" (the old behavior) is only ~8h apart - not enough for gas prices
+# to move visibly, which made every trend arrow look flat. Compare against
+# a snapshot from further back instead.
+TREND_LOOKBACK_HOURS = 72
+TREND_LOOKBACK_TOLERANCE_HOURS = 12 # accept the closest match within +/- this many hours
 
 def format_price(v) -> float | None:
     """Format a raw price string into a float rounded to 2 decimals, or None if invalid."""
@@ -147,6 +156,54 @@ def validate_snapshot(fetched_prices: dict, locations: dict) -> tuple[bool, str]
     return True, f"{actual_states}/{expected_states} states, {actual_stores}/{expected_stores} stores"
 
 
+def find_trend_baseline(history: dict, current_timestamp_str: str) -> tuple[dict, str | None]:
+    """Looks back through `history` (the full {timestamp: {state: {city: prices}}}
+    log, NOT yet including the current run) for the snapshot closest to
+    TREND_LOOKBACK_HOURS before the current run's timestamp.
+
+    If nothing falls within TREND_LOOKBACK_TOLERANCE_HOURS (e.g. right after a
+    fresh deploy, before enough history has accumulated), it gracefully falls back
+    to the most recent previous run so trend arrows still function.
+    """
+    try:
+        current_dt = datetime.strptime(current_timestamp_str, "%Y-%m-%d %H:%M")
+    except ValueError:
+        return {}, None
+
+    target_dt = current_dt - timedelta(hours=TREND_LOOKBACK_HOURS)
+
+    best_ts, best_diff = None, None
+    latest_ts = None  # Track the most recent run for our fallback
+
+    for ts_str in history:
+        try:
+            ts_dt = datetime.strptime(ts_str, "%Y-%m-%d %H:%M")
+        except ValueError:
+            continue
+
+        # Track the absolute most recent previous snapshot
+        if latest_ts is None or ts_str > latest_ts:
+            if ts_str != current_timestamp_str:
+                latest_ts = ts_str
+
+        # Calculate the closest match to our ideal target
+        diff = abs((ts_dt - target_dt).total_seconds())
+        if best_diff is None or diff < best_diff:
+            best_ts, best_diff = ts_str, diff
+
+    # 1. Ideal scenario: We found a match within our tolerance window
+    if best_ts is not None and best_diff <= TREND_LOOKBACK_TOLERANCE_HOURS * 3600:
+        return history[best_ts], best_ts
+
+    # 2. Fallback: We don't have data going back far enough yet.
+    # Use the most recent previous run we DO have!
+    if latest_ts is not None:
+        return history[latest_ts], latest_ts
+
+    # 3. Absolute fallback: No history exists at all
+    return {}, None
+
+
 def save_data(data: dict, history_path: str, latest_path: str) -> None:
     """Appends the new snapshot to the history file AND overwrites the small
     'latest' file, so the frontend can load a tiny file for the map/sidebar
@@ -156,17 +213,15 @@ def save_data(data: dict, history_path: str, latest_path: str) -> None:
         return
 
     raw_states_data = data[timestamp_str]
-    # Sort states and cities alphabetically
     sorted_states_data = {
         str(state): dict(sorted(cities.items()))
         for state, cities in sorted(raw_states_data.items())
         if isinstance(cities, dict)
     }
 
-    # --- 1. Append to the history file (full timestamped log) ---
+    # --- 1. Load existing history (needed to append the new snapshot AND to
+    # find a trend baseline further back than "just the previous run") ---
     save_prices = {}
-
-    # Load existing data to append to
     if os.path.exists(history_path) and os.path.getsize(history_path) > 0:
         try:
             with open(history_path, 'r', encoding='utf-8') as json_file:
@@ -179,34 +234,25 @@ def save_data(data: dict, history_path: str, latest_path: str) -> None:
             print(f"⚠️ ERROR reading {history_path}: {e}")
             return
 
-    # Add the new timestamp block
-    save_prices[timestamp_str] = sorted_states_data
+    # --- 2. Find a trend baseline ~TREND_LOOKBACK_HOURS behind this run,
+    # instead of just carrying forward the immediately-previous run's prices. ---
+    previous_prices, previous_timestamp = find_trend_baseline(save_prices, timestamp_str)
 
-    # Save the combined data back to the file
+    # --- 3. Append the new snapshot to history and write it back ---
+    save_prices[timestamp_str] = sorted_states_data
     write_pretty_top_level(save_prices, history_path)
 
-    # --- 2. Overwrite the latest-snapshot file (small, always just today's prices) ---
-    # Before overwriting, grab whatever was in "prices" last time and carry it
-    # forward as "previous" - this is what lets the frontend show a trend
-    # arrow (price up/down since last scrape) without ever loading the full
-    # history file just for that.
-    previous_prices = {}
-    if os.path.exists(latest_path) and os.path.getsize(latest_path) > 0:
-        try:
-            with open(latest_path, 'r', encoding='utf-8') as f:
-                previous_prices = json.load(f).get('prices', {})
-        except Exception as e:
-            print(f"⚠️ Could not read previous snapshot from {latest_path} for trend data: {e}")
-            previous_prices = {}
-
-    # Written compact (no indent) since this is fetched fresh on every page load -
-    # keeping it small is the whole point of splitting it out from history.
-    latest_payload = {"timestamp": timestamp_str, "prices": sorted_states_data, "previous": previous_prices}
+    # --- 4. Overwrite the latest-snapshot file ---
+    latest_payload = {
+        "timestamp": timestamp_str,
+        "prices": sorted_states_data,
+        "previous": previous_prices,
+        "previous_timestamp": previous_timestamp,
+    }
     with open(latest_path, 'w', encoding='utf-8') as f:
         json.dump(latest_payload, f, separators=(',', ':'))
 
     print(f"Saved latest snapshot -> {latest_path} | appended history -> {history_path}")
-
 
 def write_pretty_top_level(data: dict, file_path: str) -> None:
     """Writes JSON with one line per top-level key, compact nested content."""
