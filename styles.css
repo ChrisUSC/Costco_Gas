@@ -1,4 +1,4 @@
-        :root {
+:root {
             /* Light Theme Variables */
             --costco-blue: #005DAA;
             --costco-red: #E31837;
@@ -191,6 +191,29 @@
             display: flex; flex-direction: column; align-items: flex-start; transition: 0.3s;
         }
         .price-tag .val { font-size: 18px; color: var(--price-color); font-weight: 700; margin-top: 2px; }
+        .price-tag .val .trend-up, .price-tag .val .trend-down, .price-tag .val .trend-flat {
+            font-size: 12px; margin-left: 2px; vertical-align: middle;
+        }
+        .trend-up { color: var(--costco-red); }
+        .trend-down { color: var(--price-color); }
+        .trend-flat { color: var(--text-muted); }
+
+        .card-actions { display: flex; gap: 8px; }
+        .share-btn {
+            flex: 0 0 auto; width: 44px; background: transparent;
+            color: var(--costco-blue); border: 2px solid var(--costco-blue);
+            box-shadow: none; padding: 10px 0;
+        }
+        .share-btn:hover { background: var(--tag-bg); transform: none; }
+
+        .app-toast {
+            position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+            background: var(--bg-sidebar); color: var(--text-main); border: 1px solid var(--border-color);
+            padding: 12px 20px; border-radius: 24px; box-shadow: var(--card-shadow);
+            font-size: 14px; font-weight: 600; z-index: 3000; opacity: 0;
+            transition: opacity 0.25s ease, transform 0.25s ease; pointer-events: none;
+        }
+        .app-toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
         .price-tag.highlight { background: var(--tag-highlight-bg); border: 1px solid var(--tag-highlight-border); }
 
         /* State Dropdown */
@@ -207,6 +230,41 @@
             width: 100%; padding: 8px 12px; border-radius: 8px; color: var(--text-main);
             border: 1px solid var(--border-color); font-family: 'Inter', sans-serif;
             font-size: 14px; outline: none; cursor: pointer; background: var(--bg-input);
+        }
+
+        /* Route Panel ("Find Gas Along Route") */
+        .route-panel {
+            background: var(--bg-card); padding: 14px; border-radius: 12px;
+            border: 1px solid var(--border-color); margin-bottom: 16px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+        }
+        .route-panel label {
+            font-size: 12px; font-weight: 700; color: var(--text-muted);
+            text-transform: uppercase; margin-bottom: 6px; display: block;
+        }
+        .route-input-row { display: flex; gap: 6px; margin-bottom: 12px; }
+        .route-input {
+            flex: 1; min-width: 0; padding: 9px 12px; border-radius: 8px; color: var(--text-main);
+            border: 1px solid var(--border-color); font-family: 'Inter', sans-serif;
+            font-size: 14px; outline: none; background: var(--bg-input); box-sizing: border-box;
+        }
+        .route-input:focus { border-color: var(--costco-blue); }
+        .route-locate-btn {
+            flex-shrink: 0; width: 38px; border-radius: 8px; border: 1px solid var(--border-color);
+            background: var(--bg-input); cursor: pointer; font-size: 15px; transition: 0.2s;
+        }
+        .route-locate-btn:hover { background: var(--tag-bg); }
+        .route-summary {
+            font-size: 12px; color: var(--text-muted); text-align: center;
+            margin: 14px 0 6px;
+        }
+        .route-warning {
+            font-size: 12px; color: var(--text-main); text-align: center;
+            background: var(--tag-bg); border: 1px solid var(--border-color);
+            border-radius: 8px; padding: 8px 10px; margin-top: 12px;
+        }
+        .route-error {
+            color: var(--costco-red); font-size: 13px; text-align: center; margin-top: 14px;
         }
 
         .leaderboard-header {

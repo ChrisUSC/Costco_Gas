@@ -186,9 +186,22 @@ def save_data(data: dict, history_path: str, latest_path: str) -> None:
     write_pretty_top_level(save_prices, history_path)
 
     # --- 2. Overwrite the latest-snapshot file (small, always just today's prices) ---
+    # Before overwriting, grab whatever was in "prices" last time and carry it
+    # forward as "previous" - this is what lets the frontend show a trend
+    # arrow (price up/down since last scrape) without ever loading the full
+    # history file just for that.
+    previous_prices = {}
+    if os.path.exists(latest_path) and os.path.getsize(latest_path) > 0:
+        try:
+            with open(latest_path, 'r', encoding='utf-8') as f:
+                previous_prices = json.load(f).get('prices', {})
+        except Exception as e:
+            print(f"⚠️ Could not read previous snapshot from {latest_path} for trend data: {e}")
+            previous_prices = {}
+
     # Written compact (no indent) since this is fetched fresh on every page load -
     # keeping it small is the whole point of splitting it out from history.
-    latest_payload = {"timestamp": timestamp_str, "prices": sorted_states_data}
+    latest_payload = {"timestamp": timestamp_str, "prices": sorted_states_data, "previous": previous_prices}
     with open(latest_path, 'w', encoding='utf-8') as f:
         json.dump(latest_payload, f, separators=(',', ':'))
 
