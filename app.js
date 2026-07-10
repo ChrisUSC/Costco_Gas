@@ -4,6 +4,7 @@
     let globalStoreData = [];
     let globalHistory = {};
     let priceChartInstance = null;
+    let trendBaselineLabel = 'the last update';
 
     // History is now a separate (and much larger, ever-growing) file from the
     // latest snapshot. We only fetch it the first time someone actually opens
@@ -111,6 +112,16 @@
         return div.innerHTML;
     }
 
+    function getRelativeTimeLabel(timestampStr) {
+    if (!timestampStr) return 'the last update';
+    const d = new Date(timestampStr.replace(/-/g, '/'));
+    if (isNaN(d.getTime())) return 'the last update';
+    const hours = Math.round((Date.now() - d.getTime()) / 3600000);
+    if (hours < 1) return 'the last hour';
+    if (hours < 36) return `${hours}h ago`;
+    return `${Math.round(hours / 24)}d ago`;
+}
+
     // Small ▲/▼ indicator comparing a price to what it was last scrape.
     // Returns '' when there's nothing to compare against (first-ever scrape
     // for that store, or the price was unavailable last time).
@@ -119,16 +130,15 @@
         if (previous === undefined || previous === null || previous === Infinity) return '';
         const diff = current - previous;
         if (Math.abs(diff) < 0.005) {
-            return `<span class="trend-flat" title="No change since last update">–</span>`;
+            return `<span class="trend-flat" title="No change since ${trendBaselineLabel}">–</span>`;
         }
         if (diff > 0) {
-            return `<span class="trend-up" title="Up $${diff.toFixed(2)} since last update">▲</span>`;
+            return `<span class="trend-up" title="Up $${diff.toFixed(2)} since ${trendBaselineLabel}">▲</span>`;
         }
-        return `<span class="trend-down" title="Down $${Math.abs(diff).toFixed(2)} since last update">▼</span>`;
+        return `<span class="trend-down" title="Down $${Math.abs(diff).toFixed(2)} since ${trendBaselineLabel}">▼</span>`;
     }
 
     // --- Shareable store links ---
-
     function getShareUrl(state, city) {
         const url = new URL(window.location.href);
         url.search = '';
@@ -615,6 +625,9 @@ async function loadData() {
             const latestTimestamp = latestData.timestamp;
             const timestampedPrices = latestData.prices;
             const previousPrices = latestData.previous || {};
+            const previousTimestamp = latestData.previous_timestamp || null;
+            trendBaselineLabel = getRelativeTimeLabel(previousTimestamp);
+
 
             document.getElementById("lastUpdated").innerText = `Last Updated: ${latestTimestamp}`;
 
