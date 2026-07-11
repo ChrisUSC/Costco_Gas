@@ -349,21 +349,50 @@ function getGeoMeta(result) {
         state: { icon: '📍', label: 'State' },
         suburb: { icon: '📍', label: 'Neighborhood' },
         neighbourhood: { icon: '📍', label: 'Neighborhood' },
-        administrative: { icon: '📍', label: 'Area' }
+        administrative: { icon: '📍', label: 'Area' },
+        // Added classifications for addresses and streets
+        house: { icon: '🏠', label: 'Address' },
+        building: { icon: '🏢', label: 'Building' },
+        amenity: { icon: '🏢', label: 'Place' },
+        road: { icon: '🛣️', label: 'Street' },
+        yes: { icon: '🏠', label: 'Address' } // Nominatim sometimes uses 'yes' for precise addresses
     };
     return metaMap[type] || { icon: '📍', label: 'Location' };
 }
 
 function shortGeoName(result) {
     const addr = result.address || {};
-    const main = addr.city || addr.town || addr.village || addr.hamlet || addr.county || result.display_name.split(',')[0];
+
+    // 1. Check if the result is a specific street address or building
+    let street = "";
+    if (addr.house_number && addr.road) {
+        street = `${addr.house_number} ${addr.road}`;
+    } else if (addr.road) {
+        street = addr.road;
+    } else if (addr.amenity || addr.shop || addr.building) {
+        street = addr.amenity || addr.shop || addr.building;
+    }
+
+    const city = addr.city || addr.town || addr.village || addr.hamlet || addr.county || "";
     let state = '';
     if (addr['ISO3166-2-lvl4']) state = addr['ISO3166-2-lvl4'].split('-')[1];
     else if (addr.state) state = addr.state;
 
+    // If we have a specific street-level match, construct a full address label
+    if (street) {
+        const locationParts = [street];
+        if (city) locationParts.push(city);
+        if (state) locationParts.push(state);
+        return locationParts.join(', ');
+    }
+
+    // 2. Fallback logic for broader queries (Cities, Zip Codes, States)
+    const main = city || result.display_name.split(',')[0];
+
     if (addr.postcode && (result.addresstype === 'postcode')) {
         return state ? `${addr.postcode} \u2014 ${main}, ${state}` : `${addr.postcode} \u2014 ${main}`;
     }
+
     return state ? `${main}, ${state}` : main;
 }
 
