@@ -401,25 +401,28 @@
             header {
                 flex-wrap: wrap;
                 padding: 12px 16px;
-                gap: 12px;
-                width: 100vw; /* Lock to viewport width */
+                width: 100%;
+                box-sizing: border-box;
             }
 
+            /* 1. Title/Logo top left */
             .header-title {
-                flex: 1 1 auto;
-                min-width: 0; /* Allows title area to shrink if needed */
+                order: 1;
+                margin-bottom: 8px;
             }
 
+            /* 2. Gas Toggle, GPS, Theme buttons top right */
             .header-controls {
-                flex: 0 0 auto; /* Keeps gas buttons their normal size */
+                order: 2;
+                margin-bottom: 8px;
             }
 
-            /* Force search bar to its own row on phones */
+            /* 3. Search bar forced to a new row at the bottom */
             .search-wrapper {
-                flex: 0 0 100%; /* Forces it to break to a new line */
+                order: 3;
+                flex: 0 0 100%; /* Forces it to take up the whole row */
                 width: 100%;
                 max-width: 100%;
-                margin: 0; /* Removes all side margins */
-                order: 3;
+                margin: 4px 0 0 0 !important; /* Wipes out the desktop side margins so it doesn't get pushed off screen */
             }
         }
