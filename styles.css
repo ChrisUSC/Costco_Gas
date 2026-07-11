@@ -393,36 +393,36 @@
 
         .chart-container { position: relative; height: 350px; width: 100%; }
 
-     @media (max-width: 768px) {
+    @media (max-width: 768px) {
             .app-container { flex-direction: column; }
             .sidebar { width: 100%; height: 45vh; order: 2; box-shadow: 0 -4px 12px rgba(0,0,0,0.1); }
 
-            /* Mobile header tweaks */
+            /* 1. Make the header stack vertically */
             header {
-                flex-wrap: wrap;
+                flex-direction: column;
+                align-items: stretch;
                 padding: 12px 16px;
+                gap: 12px;
                 width: 100%;
                 box-sizing: border-box;
             }
 
-            /* 1. Title/Logo top left */
-            .header-title {
-                order: 1;
-                margin-bottom: 8px;
-            }
-
-            /* 2. Gas Toggle, GPS, Theme buttons top right */
+            /* 2. Allow the button group to wrap its contents */
             .header-controls {
-                order: 2;
-                margin-bottom: 8px;
+                display: flex;
+                flex-wrap: wrap; /* This is the magic fix! */
+                gap: 10px;
+                width: 100%;
+                align-items: center;
+                justify-content: flex-start; /* Aligns buttons nicely to the left */
             }
 
-            /* 3. Search bar forced to a new row at the bottom */
+            /* 3. Force the search bar to drop below the buttons and take up the whole screen */
             .search-wrapper {
-                order: 3;
-                flex: 0 0 100%; /* Forces it to take up the whole row */
+                flex: 0 0 100%; /* Forces it to a new row */
                 width: 100%;
                 max-width: 100%;
-                margin: 4px 0 0 0 !important; /* Wipes out the desktop side margins so it doesn't get pushed off screen */
+                margin: 4px 0 0 0 !important; /* Wipes out desktop margins */
+                order: 99; /* Guarantees it goes to the bottom of the button group */
             }
         }
