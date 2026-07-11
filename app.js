@@ -5,6 +5,7 @@ let globalStoreData = [];
 let globalHistory = {};
 let priceChartInstance = null;
 let trendBaselineLabel = 'the last update';
+let latestTimestampGlobal = null; // raw scraper timestamp string, kept so we can re-render "time ago" on a timer
 
 // History is now a separate (and much larger, ever-growing) file from the
 // latest snapshot. We only fetch it the first time someone actually opens
@@ -108,16 +109,105 @@ function escapeHtml(str) {
     return div.innerHTML;
 }
 
+// The scraper writes timestamps as a naive "wall clock" string (e.g.
+// "2026-07-11 14:30:00") with NO timezone info attached — and that clock is
+// Pacific time. Handing that straight to `new Date(...)` (which is what the
+// old `.replace(/-/g, '/')` trick did) makes the browser assume the string is
+// in the *viewer's own* timezone. That's wrong for anyone not on Pacific
+// time: someone in New York would read "14:30" as 2:30pm Eastern, when it
+// was really 2:30pm Pacific — a 3 hour error. SCRAPER_TIMEZONE plus
+// parseScraperTimestamp() below resolve the string against the correct
+// timezone (DST-aware) so "time ago" math comes out right everywhere.
+const SCRAPER_TIMEZONE = 'America/Los_Angeles';
+
+// Returns the offset (in minutes) such that UTC = wallClockTimeInZone + offset,
+// for whatever instant `utcGuess` represents.
+function getTimeZoneOffsetMinutes(timeZone, utcGuess) {
+    const dtf = new Intl.DateTimeFormat('en-US', {
+        timeZone, hour12: false,
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', second: '2-digit'
+    });
+    const parts = {};
+    dtf.formatToParts(utcGuess).forEach(p => { if (p.type !== 'literal') parts[p.type] = p.value; });
+    const hour = parts.hour === '24' ? '00' : parts.hour;
+    const asIfUTC = Date.UTC(parts.year, parts.month - 1, parts.day, hour, parts.minute, parts.second);
+    return (asIfUTC - utcGuess.getTime()) / 60000;
+}
+
+// Resolves a scraper timestamp string into the actual point in time it
+// represents, regardless of the browser's own timezone.
+function parseScraperTimestamp(timestampStr) {
+    if (!timestampStr) return null;
+    const str = String(timestampStr).trim();
+
+    // Already carries an explicit offset or "Z" — the browser parses this correctly on its own.
+    if (/([+-]\d{2}:?\d{2}|Z)$/i.test(str)) {
+        const d = new Date(str);
+        return isNaN(d.getTime()) ? null : d;
+    }
+
+    const match = str.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?/);
+    if (!match) {
+        // Unrecognized format — best-effort fallback (matches the old behavior).
+        const fallback = new Date(str.replace(/-/g, '/'));
+        return isNaN(fallback.getTime()) ? null : fallback;
+    }
+
+    const [year, month, day, hour, minute] = match.slice(1, 6).map(Number);
+    const second = match[6] ? Number(match[6]) : 0;
+
+    // First pass: treat the wall-clock digits as if they were UTC, then measure
+    // how far America/Los_Angeles actually sits from UTC at that instant and
+    // shift by that amount. One pass is enough for hour-level display accuracy
+    // (it could only be off by up to an hour, and only within the couple of
+    // hours around a DST changeover).
+    const guessUTC = Date.UTC(year, month - 1, day, hour, minute, second);
+    const offsetMinutes = getTimeZoneOffsetMinutes(SCRAPER_TIMEZONE, new Date(guessUTC));
+    return new Date(guessUTC - offsetMinutes * 60000);
+}
+
 function getRelativeTimeLabel(timestampStr) {
-    if (!timestampStr) return 'the last update';
-    // Wrap timestampStr in String() to prevent a TypeError if it's parsed as a number
-    const d = new Date(String(timestampStr).replace(/-/g, '/'));
-    if (isNaN(d.getTime())) return 'the last update';
+    const d = parseScraperTimestamp(timestampStr);
+    if (!d) return 'the last update';
 
     const hours = Math.round((Date.now() - d.getTime()) / 3600000);
     if (hours < 1) return 'the last hour';
     if (hours < 36) return `${hours}h ago`;
     return `${Math.round(hours / 24)}d ago`;
+}
+
+// Builds the "Last Updated" banner text plus a precise tooltip, both
+// resolved to the viewer's own clock no matter where they are.
+function formatLastUpdatedLabel(timestampStr) {
+    const d = parseScraperTimestamp(timestampStr);
+    if (!d) return { text: 'Last Updated: unknown', title: '' };
+
+    const diffMs = Date.now() - d.getTime();
+    const minutes = Math.round(diffMs / 60000);
+    const hours = Math.round(diffMs / 3600000);
+    const days = Math.round(hours / 24);
+
+    let text;
+    if (minutes < 1) text = 'Last Updated: just now';
+    else if (minutes < 60) text = `Last Updated: ${minutes} minute${minutes === 1 ? '' : 's'} ago`;
+    else if (hours < 36) text = `Last Updated: ${hours} hour${hours === 1 ? '' : 's'} ago`;
+    else text = `Last Updated: ${days} day${days === 1 ? '' : 's'} ago`;
+
+    // Exact time, shown in the viewer's own local timezone, as a tooltip for precision.
+    const title = d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+
+    return { text, title };
+}
+
+// Re-renders the "Last Updated" text from the cached timestamp, so it stays
+// fresh ("3 minutes ago" -> "4 minutes ago" ...) without needing a page reload.
+function refreshLastUpdatedLabel() {
+    const el = document.getElementById('lastUpdated');
+    if (!el || !latestTimestampGlobal) return;
+    const { text, title } = formatLastUpdatedLabel(latestTimestampGlobal);
+    el.innerText = text;
+    el.title = title;
 }
 
 // Small ▲/▼ indicator comparing a price to what it was last scrape.
@@ -742,7 +832,8 @@ async function loadData() {
         }
 
         trendBaselineLabel = getRelativeTimeLabel(previousTimestamp);
-        document.getElementById("lastUpdated").innerText = `Last Updated: ${latestTimestamp}`;
+        latestTimestampGlobal = latestTimestamp;
+        refreshLastUpdatedLabel();
 
         for (const stateCode in storeData) {
             if (!timestampedPrices[stateCode]) continue;
@@ -1423,3 +1514,4 @@ function triggerFindMe() {
 initPreferences();
 initMap();
 loadData();
+setInterval(refreshLastUpdatedLabel, 60000);
