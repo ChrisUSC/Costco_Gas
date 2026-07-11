@@ -66,12 +66,14 @@
         .header-controls { display: flex; gap: 12px; align-items: center; }
 
         /* Search + Autocomplete */
-        .search-wrapper {
+       .search-wrapper {
             position: relative;
-            flex: 1; /* Tells it to grow and fill empty space */
-            max-width: 900px; /* Increased from 600px so it stretches much further! */
-            margin: 0 40px; /* A bit more breathing room on the sides */
+            width: 45vw; /* Forces it to take up exactly 45% of your screen width */
+            min-width: 300px; /* Makes sure it never gets too squished on smaller screens */
+            max-width: 800px; /* Stops it from looking crazy on massive monitors */
+            margin: 0 20px;
         }
+
         .search-box {
             padding: 10px 16px; border-radius: 24px; border: 1px solid transparent;
             outline: none; width: 100%; font-size: 14px; font-family: 'Inter', sans-serif;
