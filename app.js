@@ -1223,7 +1223,7 @@ function renderRoutePanel() {
             
             <label>Search within (miles of the route)</label>
             <input type="number" id="routeBuffer" class="route-input" style="width:100%; margin-bottom:12px;"
-                   min="0.5" max="25" step="0.5" value="${buffer}">
+                   min="1" max="25" step="1" value="${buffer}">
             <button class="btn-action" style="width:100%; justify-content:center;" onclick="findGasAlongRoute()">🛣️ Find Cheapest Along Route</button>
         </div>
         <div id="routeResultsContainer"></div>
