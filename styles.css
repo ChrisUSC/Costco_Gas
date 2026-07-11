@@ -66,11 +66,11 @@
         .header-controls { display: flex; gap: 12px; align-items: center; }
 
         /* Search + Autocomplete */
-       .search-wrapper {
+        .search-wrapper {
             position: relative;
             flex: 1; /* Tells it to grow and fill empty space */
-            max-width: 600px; /* Prevents it from getting too wide on huge monitors */
-            margin: 0 24px; /* Adds breathing room on the left and right */
+            max-width: 900px; /* Increased from 600px so it stretches much further! */
+            margin: 0 40px; /* A bit more breathing room on the sides */
         }
         .search-box {
             padding: 10px 16px; border-radius: 24px; border: 1px solid transparent;
