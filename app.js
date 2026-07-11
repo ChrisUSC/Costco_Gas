@@ -790,6 +790,57 @@ async function detectUserState() {
     } catch (e) {}
 }
 
+// Silent geolocation lookup for first page load: only fires if the browser
+// reports the permission as already 'granted', so a first-time visitor never
+// gets a surprise location prompt just for opening the page. Returns null in
+// every other case (unsupported, not yet granted, denied, or timed out) and
+// the app falls back to its normal default (fit map to all stores).
+async function tryAutoLocateOnLoad() {
+    if (!navigator.geolocation || !navigator.permissions || !navigator.permissions.query) return null;
+
+    try {
+        const status = await navigator.permissions.query({ name: 'geolocation' });
+        if (status.state !== 'granted') return null;
+    } catch (e) {
+        return null; // Permissions API doesn't support querying 'geolocation' in this browser
+    }
+
+    return new Promise((resolve) => {
+        navigator.geolocation.getCurrentPosition(
+            (position) => resolve({ lat: position.coords.latitude, lng: position.coords.longitude }),
+            () => resolve(null),
+            { maximumAge: 10 * 60 * 1000, timeout: 5000 }
+        );
+    });
+}
+
+// Picks the state of whichever known store is geographically closest to `loc`,
+// used to default the "Lowest Prices" leaderboard to a sensible state.
+function updateClosestStoreState(loc) {
+    if (!loc || globalStoreData.length === 0) return;
+    let closestStore = globalStoreData.find(s => s.lat && s.lng) || globalStoreData[0];
+    let minDistance = Infinity;
+    globalStoreData.forEach(s => {
+        if (!s.lat || !s.lng) return;
+        const distance = Math.pow(s.lat - loc.lat, 2) + Math.pow(s.lng - loc.lng, 2);
+        if (distance < minDistance) {
+            minDistance = distance;
+            closestStore = s;
+        }
+    });
+    currentStateContext = closestStore.state;
+}
+
+// Drops the "You are here" pin used both for the manual Detect Location
+// button and the silent auto-locate on first load.
+function placeUserLocationMarker(loc, { openPopup = false } = {}) {
+    const marker = L.circleMarker([loc.lat, loc.lng], {
+        radius: 8, fillColor: "#3b82f6", color: "#ffffff", weight: 3, opacity: 1, fillOpacity: 1
+    }).addTo(map).bindPopup("<b>You are here!</b>");
+    if (openPopup) marker.openPopup();
+    return marker;
+}
+
 function extractRegPrem(pData) {
     // Null safety guard
     if (!pData) return [undefined, undefined];
@@ -803,10 +854,11 @@ function extractRegPrem(pData) {
 async function loadData() {
     try {
         const cb = new Date().getTime();
-        const [latestRes, storesRes, _] = await Promise.all([
+        const [latestRes, storesRes, _, autoLocation] = await Promise.all([
             fetch(`us_latest.json?t=${cb}`),
             fetch(`us_stores.json?t=${cb}`),
-            detectUserState()
+            detectUserState(),
+            tryAutoLocateOnLoad()
         ]);
 
         if (!latestRes.ok || !storesRes.ok) throw new Error('Failed to fetch latest snapshot or store list');
@@ -867,14 +919,29 @@ async function loadData() {
         }
 
         renderMap(globalStoreData);
+
+        // If we're allowed to silently know where the user is, use it: set
+        // userLocation *before* switching tabs so the Nearby tab renders real
+        // results immediately instead of its "Detect Location" prompt.
+        if (autoLocation) {
+            userLocation = autoLocation;
+            updateClosestStoreState(autoLocation);
+            placeUserLocationMarker(autoLocation);
+        }
+
         switchTab('nearby');
 
         const openedSharedStore = openSharedStoreIfPresent();
 
-        if (!openedSharedStore && globalStoreData.length > 0) {
-            const bounds = L.latLngBounds(globalStoreData.map(s => [s.lat, s.lng]).filter(coords => coords[0] && coords[1]));
-            map.fitBounds(bounds, { padding: [30, 30] });
-            checkZoomLevel();
+        if (!openedSharedStore) {
+            if (autoLocation) {
+                map.setView([autoLocation.lat, autoLocation.lng], 10);
+                checkZoomLevel();
+            } else if (globalStoreData.length > 0) {
+                const bounds = L.latLngBounds(globalStoreData.map(s => [s.lat, s.lng]).filter(coords => coords[0] && coords[1]));
+                map.fitBounds(bounds, { padding: [30, 30] });
+                checkZoomLevel();
+            }
         }
     } catch (error) {
         console.error('Error fetching data:', error);
@@ -1485,26 +1552,9 @@ function triggerFindMe() {
                 lng: position.coords.longitude
             };
 
-            L.circleMarker([userLocation.lat, userLocation.lng], {
-                radius: 8, fillColor: "#3b82f6", color: "#ffffff", weight: 3, opacity: 1, fillOpacity: 1
-            }).addTo(map).bindPopup("<b>You are here!</b>").openPopup();
-
+            placeUserLocationMarker(userLocation, { openPopup: true });
             map.flyTo([userLocation.lat, userLocation.lng], 10, {duration: 2});
-
-            if (globalStoreData.length > 0) {
-                let closestStore = globalStoreData.find(s => s.lat && s.lng) || globalStoreData[0];
-                let minDistance = Infinity;
-                globalStoreData.forEach(s => {
-                    if(!s.lat || !s.lng) return;
-                    let distance = Math.pow(s.lat - userLocation.lat, 2) + Math.pow(s.lng - userLocation.lng, 2);
-                    if (distance < minDistance) {
-                        minDistance = distance;
-                        closestStore = s;
-                    }
-                });
-                currentStateContext = closestStore.state;
-            }
-
+            updateClosestStoreState(userLocation);
             switchTab('nearby');
         },
         (error) => alert("Unable to retrieve your location. Check browser permissions.")
