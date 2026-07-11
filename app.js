@@ -297,18 +297,42 @@ function debounce(fn, delay) {
 }
 
 function getStoreMatches(query) {
-    return globalStoreData.filter(s =>
+    if (!query) return [];
+
+    let matches = globalStoreData.filter(s =>
         s.city.toLowerCase().includes(query) ||
         s.address.toLowerCase().includes(query) ||
         s.state.toLowerCase().includes(query)
-    ).slice(0, 5);
+    );
+
+    // SORT: Prioritize stores closest to the current map view
+    if (map) {
+        const center = map.getCenter();
+        matches.sort((a, b) => {
+            const distA = getDistanceMiles(center.lat, center.lng, a.lat, a.lng);
+            const distB = getDistanceMiles(center.lat, center.lng, b.lat, b.lng);
+            return distA - distB;
+        });
+    }
+
+    return matches.slice(0, 5);
 }
 
 async function getGeoMatches(query) {
     try {
         if (geocodeAbortController) geocodeAbortController.abort();
         geocodeAbortController = new AbortController();
-        const url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=5&countrycodes=us&q=${encodeURIComponent(query)}`;
+
+        let url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=5&countrycodes=us&q=${encodeURIComponent(query)}`;
+
+        // BIAS RELEVANCE: Tell the geocoder to prioritize results near what the user is currently looking at on the map
+        if (map) {
+            const bounds = map.getBounds();
+            // Nominatim viewbox format is left,top,right,bottom (longitude, latitude)
+            const viewbox = `${bounds.getWest()},${bounds.getNorth()},${bounds.getEast()},${bounds.getSouth()}`;
+            url += `&viewbox=${viewbox}`;
+        }
+
         const res = await fetch(url, {
             signal: geocodeAbortController.signal,
             headers: { 'Accept-Language': 'en-US' }
@@ -404,7 +428,15 @@ async function geocodeAddress(query) {
         return { lat: parseFloat(coordMatch[1]), lng: parseFloat(coordMatch[2]), label: 'Your location' };
     }
     try {
-        const url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=1&countrycodes=us&q=${encodeURIComponent(query)}`;
+        let url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=1&countrycodes=us&q=${encodeURIComponent(query)}`;
+
+        // Ensure the actual routing engine uses the same map-biased logic as the autocomplete
+        if (map) {
+            const bounds = map.getBounds();
+            const viewbox = `${bounds.getWest()},${bounds.getNorth()},${bounds.getEast()},${bounds.getSouth()}`;
+            url += `&viewbox=${viewbox}`;
+        }
+
         const res = await fetch(url, { headers: { 'Accept-Language': 'en-US' } });
         if (!res.ok) return null;
         const matches = await res.json();
@@ -583,15 +615,22 @@ function setupInputAutocomplete(inputId, dropdownId, actionType) {
             e.preventDefault();
             moveAutocompleteSelection(-1);
         } else if (e.key === 'Enter') {
+            e.preventDefault();
             if (activeAutocompleteIndex >= 0) {
-                e.preventDefault();
+                // User used arrow keys to pick something specific
                 selectAutocompleteItem(activeAutocompleteIndex);
+            } else if (autocompleteItems.length > 0) {
+                // User just mashed Enter: auto-select the very top result!
+                selectAutocompleteItem(0);
+            } else if (actionType === 'search') {
+                // No dropdown matches, just close keyboard
+                e.target.blur();
             }
         } else if (e.key === 'Escape') {
             closeAutocompleteDropdown();
         }
     });
-
+    
     inputEl.addEventListener('focus', () => {
         activeInputId = inputId;
         activeDropdownId = dropdownId;
@@ -939,20 +978,31 @@ function closeHistoryModal(event) {
     document.getElementById('chartModal').classList.remove('active');
 }
 
-// --- Sidebar Render Logic ---
 function renderStoresList(searchTerm) {
     const container = document.getElementById("sidebarContent");
     container.innerHTML = "";
-    const filtered = globalStoreData.filter(s =>
+
+    let filtered = globalStoreData.filter(s =>
         s.city.toLowerCase().includes(searchTerm) ||
         s.address.toLowerCase().includes(searchTerm) ||
         s.state.toLowerCase().includes(searchTerm)
     );
 
+    // SORT: Make the sidebar list also prioritize by distance to the map view
+    if (map && filtered.length > 0) {
+        const center = map.getCenter();
+        filtered.sort((a, b) => {
+            const distA = getDistanceMiles(center.lat, center.lng, a.lat, a.lng);
+            const distB = getDistanceMiles(center.lat, center.lng, b.lat, b.lng);
+            return distA - distB;
+        });
+    }
+
     if (filtered.length === 0) {
         container.innerHTML = `<p style="text-align:center; color:var(--text-muted); margin-top:40px;">No stores found.</p>`;
         return;
     }
+
     filtered.forEach(store => container.appendChild(createStoreCard(store, gasPref)));
 }
 
