@@ -656,23 +656,30 @@ async function loadData() {
         const latestData = await latestRes.json();
         const storeData = await storesRes.json();
 
-        const latestTimestamp = latestData.timestamp;
+        let latestTimestamp;
+        let timestampedPrices;
+        let previousPrices = {};
+        let previousTimestamp = null;
 
-        // Safety fallback for prices object
-        const timestampedPrices = latestData.prices || latestData || {};
+        // Detect if we are looking at the NEW backend format or the OLD backend format
+        if (latestData.timestamp && latestData.prices) {
+            latestTimestamp = latestData.timestamp;
+            timestampedPrices = latestData.prices;
+            previousPrices = latestData.previous || {};
+            previousTimestamp = latestData.previous_timestamp || null;
+        } else {
+            // OLD FORMAT FALLBACK: Keeps the app from crashing before your new Python script runs!
+            latestTimestamp = Object.keys(latestData)[0];
+            timestampedPrices = latestData[latestTimestamp] || {};
+        }
 
-        const previousPrices = latestData.previous || {};
-        const previousTimestamp = latestData.previous_timestamp || null;
         trendBaselineLabel = getRelativeTimeLabel(previousTimestamp);
-
         document.getElementById("lastUpdated").innerText = `Last Updated: ${latestTimestamp}`;
 
         for (const stateCode in storeData) {
             if (!timestampedPrices[stateCode]) continue;
             for (const [cityName, info] of Object.entries(storeData[stateCode])) {
-
                 const pData = timestampedPrices[stateCode][cityName];
-
                 if (pData) {
                     const [rRaw, pRaw] = extractRegPrem(pData);
                     const regVal = getValidPrice(rRaw);
