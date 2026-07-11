@@ -19,8 +19,6 @@ let searchLocationMarker = null;
 // Route feature state
 let routeLayer = null;       // L.layerGroup holding the polyline + start/end markers
 let lastRouteState = null;   // cached result so returning to the tab doesn't re-fetch
-let routeOriginLocation = null; // cached origin coordinates from autocomplete
-let routeDestLocation = null;   // cached destination coordinates from autocomplete
 
 // Autocomplete state
 let autocompleteItems = [];
@@ -110,7 +108,6 @@ function escapeHtml(str) {
 
 function getRelativeTimeLabel(timestampStr) {
     if (!timestampStr) return 'the last update';
-    // Wrap timestampStr in String() to prevent a TypeError if it's parsed as a number
     const d = new Date(String(timestampStr).replace(/-/g, '/'));
     if (isNaN(d.getTime())) return 'the last update';
 
@@ -277,11 +274,14 @@ function initMap() {
     // Setup autocomplete for main search bar
     setupInputAutocomplete('searchInput', 'autocompleteDropdown', 'search');
 
-    // Handle clicking outside to close any open autocomplete dropdown globally
+    // Handle clicking outside to close any open autocomplete dropdown
     document.addEventListener('click', (e) => {
-        const isInput = e.target.closest('.route-input') || e.target.closest('#searchInput');
-        const isDropdown = e.target.closest('.autocomplete-dropdown');
-        if (!isInput && !isDropdown) {
+        const searchWrapper = document.getElementById('searchWrapper');
+        const routePanel = document.querySelector('.route-panel');
+        if (
+            (!searchWrapper || !searchWrapper.contains(e.target)) &&
+            (!routePanel || !routePanel.contains(e.target))
+        ) {
             closeAutocompleteDropdown();
         }
     });
@@ -488,14 +488,6 @@ function getAutocompleteLabel(item) {
     return shortGeoName(item.data);
 }
 
-function extractLocation(item) {
-    return {
-        lat: item.type === 'store' ? item.data.lat : parseFloat(item.data.lat),
-        lng: item.type === 'store' ? item.data.lng : parseFloat(item.data.lon),
-        label: getAutocompleteLabel(item)
-    };
-}
-
 function selectAutocompleteItem(idx) {
     const item = autocompleteItems[idx];
     if (!item) return;
@@ -510,20 +502,19 @@ function selectAutocompleteItem(idx) {
         if (searchInput) searchInput.blur();
     } else if (currentAutocompleteAction === 'routeOrigin') {
         document.getElementById('routeOrigin').value = getAutocompleteLabel(item);
-        routeOriginLocation = extractLocation(item);
     } else if (currentAutocompleteAction === 'routeDest') {
         document.getElementById('routeDestination').value = getAutocompleteLabel(item);
-        routeDestLocation = extractLocation(item);
     }
 
     closeAutocompleteDropdown();
 }
 
 function closeAutocompleteDropdown() {
-    document.querySelectorAll('.autocomplete-dropdown').forEach(dropdown => {
+    const dropdown = document.getElementById(activeDropdownId);
+    if (dropdown) {
         dropdown.classList.remove('active');
         dropdown.innerHTML = '';
-    });
+    }
     autocompleteItems = [];
     activeAutocompleteIndex = -1;
 }
@@ -537,10 +528,6 @@ function setupInputAutocomplete(inputId, dropdownId, actionType) {
         activeInputId = inputId;
         activeDropdownId = dropdownId;
         currentAutocompleteAction = actionType;
-
-        // Reset locked-in coordinates if the user starts modifying the text manually
-        if (actionType === 'routeOrigin') routeOriginLocation = null;
-        if (actionType === 'routeDest') routeDestLocation = null;
 
         const query = e.target.value.toLowerCase().trim();
 
@@ -577,17 +564,14 @@ function setupInputAutocomplete(inputId, dropdownId, actionType) {
     });
 
     inputEl.addEventListener('focus', () => {
-        if (activeInputId !== inputId) {
-            closeAutocompleteDropdown(); // Clean up old dropdown before switching inputs
-        }
-
         activeInputId = inputId;
         activeDropdownId = dropdownId;
         currentAutocompleteAction = actionType;
 
         const query = inputEl.value.toLowerCase().trim();
-        if (query.length > 0) {
-            debouncedAutocomplete(query);
+        if (query.length > 0 && autocompleteItems.length > 0) {
+            const dropdownEl = document.getElementById(dropdownId);
+            if (dropdownEl) dropdownEl.classList.add('active');
         }
     });
 }
@@ -1209,12 +1193,7 @@ function useMyLocationForRoute() {
         (position) => {
             const originInput = document.getElementById('routeOrigin');
             if (originInput) {
-                originInput.value = 'Your location';
-                routeOriginLocation = {
-                    lat: position.coords.latitude,
-                    lng: position.coords.longitude,
-                    label: 'Your location'
-                };
+                originInput.value = `${position.coords.latitude.toFixed(5)}, ${position.coords.longitude.toFixed(5)}`;
             }
         },
         () => alert("Unable to retrieve your location. Check browser permissions.")
@@ -1241,15 +1220,10 @@ async function findGasAlongRoute() {
     resultsEl.innerHTML = `<p style="text-align:center; color:var(--text-muted); margin-top:20px;">Calculating route…</p>`;
 
     try {
-        // Use exactly what was locked in from the autocomplete dropdown, or fall back to geocoding if manually typed
-        const origin = (routeOriginLocation && routeOriginLocation.label.toLowerCase() === originText.toLowerCase())
-            ? routeOriginLocation
-            : await geocodeAddress(originText);
-
-        const destination = (routeDestLocation && routeDestLocation.label.toLowerCase() === destText.toLowerCase())
-            ? routeDestLocation
-            : await geocodeAddress(destText);
-
+        const [origin, destination] = await Promise.all([
+            geocodeAddress(originText),
+            geocodeAddress(destText)
+        ]);
         if (!origin) throw new Error(`Couldn't find "${originText}". Try a more specific address or city.`);
         if (!destination) throw new Error(`Couldn't find "${destText}". Try a more specific address or city.`);
 
