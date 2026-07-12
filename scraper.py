@@ -61,6 +61,18 @@ US_HISTORY_FILE, US_LATEST_FILE = 'us_history.json', 'us_latest.json'
 TREND_LOOKBACK_HOURS = 72
 TREND_LOOKBACK_TOLERANCE_HOURS = 12 # accept the closest match within +/- this many hours
 
+# --- Price-jump sanity check ---
+# Costco's AJAX endpoint occasionally returns a stale/cached or otherwise
+# wrong price for a single store on a single fetch. Compare each fresh price
+# against the last *saved* price for that store; if it moved by more than
+# either threshold below, re-fetch a couple of times (with a short random
+# delay) before trusting it, rather than writing a possibly-bogus number -
+# which would also throw a false trend arrow at anyone looking at it.
+PRICE_JUMP_ABS_THRESHOLD = 0.30   # dollars
+PRICE_JUMP_PCT_THRESHOLD = 0.08   # 8%
+MAX_RECHECK_ATTEMPTS = 2
+RECHECK_DELAY_RANGE = (2.0, 4.0)  # random delay in seconds between rechecks, be polite to Costco's endpoint
+
 def format_price(v) -> float | None:
     """Format a raw price string into a float rounded to 2 decimals, or None if invalid."""
     if v is None or str(v).strip().lower() in ("", "n/a"):
@@ -377,10 +389,108 @@ def enrich_store_list(state_urls: dict) -> dict:
     return {k: v for k, v in enriched_data.items() if v}
 
 
-def get_gas_prices_ajax(locations: dict, source_filepath: str | None = None) -> dict:
+def is_suspicious_jump(new_price: float | None, last_price: float | None) -> bool:
+    """True if new_price moved far enough from last_price to warrant a
+    re-check before trusting it. Either threshold alone is enough to flag -
+    a small absolute move on a cheap tank of gas and a large dollar move on
+    an expensive one should both be catchable."""
+    if new_price is None or last_price is None:
+        return False
+    diff = abs(new_price - last_price)
+    if diff == 0:
+        return False
+    pct = (diff / last_price) if last_price else float('inf')
+    return diff >= PRICE_JUMP_ABS_THRESHOLD or pct >= PRICE_JUMP_PCT_THRESHOLD
+
+
+def _prices_match(a: float | None, b: float | None, tol: float = 0.01) -> bool:
+    if a is None or b is None:
+        return a is None and b is None
+    return abs(a - b) < tol
+
+
+def confirm_or_revert_price(state: str, city: str, reg: float | None, prem: float | None,
+                             last_reg: float | None, last_prem: float | None,
+                             refetch_fn) -> tuple[float | None, float | None, bool]:
+    """Called when a freshly-fetched price looks like a suspiciously big jump
+    vs. the last saved price. Re-fetches (with a short randomized delay so
+    we're not hammering Costco back-to-back) up to MAX_RECHECK_ATTEMPTS times
+    to figure out, independently per gas grade, whether the jump was real or
+    a one-off glitch.
+
+    Returns (final_reg, final_prem, unconfirmed) where unconfirmed is True if
+    at least one grade still couldn't be resolved either way after retries -
+    in that case the freshest fetched value is kept (not the stale old one),
+    just flagged for visibility.
+    """
+    reg_suspicious = is_suspicious_jump(reg, last_reg)
+    prem_suspicious = is_suspicious_jump(prem, last_prem)
+
+    details = []
+    if reg_suspicious:
+        details.append(f"reg {last_reg}->{reg}")
+    if prem_suspicious:
+        details.append(f"prem {last_prem}->{prem}")
+    print(f"  ⚠ Suspicious jump for {city}, {state}: {', '.join(details)}. Re-checking...")
+
+    final_reg, final_prem = reg, prem
+
+    for attempt in range(MAX_RECHECK_ATTEMPTS):
+        time.sleep(random.uniform(*RECHECK_DELAY_RANGE))
+        recheck = refetch_fn()
+        if recheck is None:
+            continue
+        recheck_reg, recheck_prem = recheck
+
+        if reg_suspicious:
+            if _prices_match(recheck_reg, reg):
+                reg_suspicious = False  # confirmed - it really moved
+            elif _prices_match(recheck_reg, last_reg):
+                final_reg = last_reg  # original fetch was the glitch
+                reg_suspicious = False
+
+        if prem_suspicious:
+            if _prices_match(recheck_prem, prem):
+                prem_suspicious = False
+            elif _prices_match(recheck_prem, last_prem):
+                final_prem = last_prem
+                prem_suspicious = False
+
+        if not reg_suspicious and not prem_suspicious:
+            break
+
+    unconfirmed = reg_suspicious or prem_suspicious
+    if unconfirmed:
+        print(f"  ⚠ {city}, {state}: couldn't confirm after {MAX_RECHECK_ATTEMPTS} recheck(s) - "
+              f"keeping most recent fetch (reg={final_reg}, prem={final_prem}), flagging as unconfirmed")
+    else:
+        print(f"  ✓ Resolved {city}, {state}: reg={final_reg}, prem={final_prem}")
+
+    return final_reg, final_prem, unconfirmed
+
+
+def load_latest_prices(latest_path: str) -> dict:
+    """Loads just the {state: {city: [reg, prem]}} prices out of an existing
+    *_latest.json, used as the baseline for the jump-confirmation check.
+    Returns {} if the file doesn't exist yet or is unreadable - in that case
+    the check simply has nothing to compare against and skips (no baseline,
+    no false positives on the very first run)."""
+    if not os.path.exists(latest_path):
+        return {}
+    try:
+        with open(latest_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        return data.get('prices', {}) if isinstance(data, dict) else {}
+    except (json.JSONDecodeError, OSError):
+        return {}
+
+
+def get_gas_prices_ajax(locations: dict, source_filepath: str | None = None,
+                         last_known_prices: dict | None = None) -> dict:
     """Concurrently fetches gas prices from Costco's AJAX API."""
     fetched_prices = {}
     session = create_session()
+    last_known_prices = last_known_prices or {}
 
     def fetch_price(target_state, target_city, target_info):
         # Handle backwards compatibility if location file is in the old string URL format
@@ -388,33 +498,50 @@ def get_gas_prices_ajax(locations: dict, source_filepath: str | None = None) -> 
 
         ajax_url = f"https://www.costco.com/AjaxGetGasPricesService?warehouseid={wh_id}"
 
-        for attempt in range(MAX_FETCH_ATTEMPTS):
-            try:
-                time.sleep(1 + attempt)  # Delay to respect rate limits
-                resp = session.get(ajax_url, headers={'User-Agent': random.choice(USER_AGENTS)}, timeout=15)
-                resp.raise_for_status()
+        def attempt_fetch():
+            for attempt in range(MAX_FETCH_ATTEMPTS):
+                try:
+                    time.sleep(1 + attempt)  # Delay to respect rate limits
+                    resp = session.get(ajax_url, headers={'User-Agent': random.choice(USER_AGENTS)}, timeout=15)
+                    resp.raise_for_status()
 
-                raw_data = resp.json()
-                if not raw_data:
-                    raise ValueError("Empty response")
+                    raw_data = resp.json()
+                    if not raw_data:
+                        raise ValueError("Empty response")
 
-                inner_data = next(iter(raw_data.values()))
-                normalized = {k.lower(): v for k, v in inner_data.items()}
+                    inner_data = next(iter(raw_data.values()))
+                    normalized = {k.lower(): v for k, v in inner_data.items()}
 
-                reg = format_price(normalized.get('regular'))
-                prem = format_price(normalized.get('premium'))
+                    reg = format_price(normalized.get('regular'))
+                    prem = format_price(normalized.get('premium'))
 
-                if reg is not None or prem is not None:
-                    return target_state, target_city, [reg, prem]  # Space-saving Array!
+                    if reg is not None or prem is not None:
+                        return reg, prem
 
-            except (requests.exceptions.RequestException, json.JSONDecodeError, ValueError, KeyError):
-                pass
+                except (requests.exceptions.RequestException, json.JSONDecodeError, ValueError, KeyError):
+                    pass
+            return None
 
-        return target_state, target_city, None
+        result = attempt_fetch()
+        if result is None:
+            return target_state, target_city, None, False
+
+        reg, prem = result
+        last = last_known_prices.get(target_state, {}).get(target_city)
+        last_reg, last_prem = (last[0], last[1]) if last else (None, None)
+
+        flagged = False
+        if is_suspicious_jump(reg, last_reg) or is_suspicious_jump(prem, last_prem):
+            reg, prem, flagged = confirm_or_revert_price(
+                target_state, target_city, reg, prem, last_reg, last_prem, attempt_fetch
+            )
+
+        return target_state, target_city, [reg, prem], flagged
 
     print("Fetching live gas prices...")
     total_stores = 0
     failed_stores: list[tuple[str, str]] = []
+    unconfirmed_jumps: list[tuple[str, str]] = []
 
     with ThreadPoolExecutor(max_workers=10) as executor:
         futures = []
@@ -425,11 +552,22 @@ def get_gas_prices_ajax(locations: dict, source_filepath: str | None = None) -> 
                 futures.append(executor.submit(fetch_price, state, city, info))
 
         for future in as_completed(futures):
-            state, city, prices = future.result()
+            state, city, prices, flagged = future.result()
             if prices:
                 fetched_prices[state][city] = prices
+                if flagged:
+                    unconfirmed_jumps.append((state, city))
             else:
                 failed_stores.append((state, city))
+
+    if unconfirmed_jumps:
+        print(
+            f"⚠️  {len(unconfirmed_jumps)} store(s) had a large price jump that couldn't be "
+            f"confirmed by a recheck this run. Kept the freshest fetched value for each - "
+            f"worth a manual look if the same store keeps showing up here:"
+        )
+        for state, city in unconfirmed_jumps:
+            print(f"  - {city}, {state}")
 
     # Prices that WERE fetched successfully are always kept - a partial run
     # still produces useful, fresher data for the stores that responded.
@@ -584,7 +722,7 @@ def process_and_save(locations: dict, source_filepath: str, history_file: str, l
     snapshot's completeness, and only saves it if it passes. Returns True if
     saved, False if rejected - callers should treat False as a failed run
     (e.g. exit non-zero) so CI doesn't push an incomplete update."""
-    prices = get_gas_prices_ajax(locations, source_filepath)
+    prices = get_gas_prices_ajax(locations, source_filepath, load_latest_prices(latest_file))
     timestamp = next(iter(prices))
     fetched = prices[timestamp]
 
@@ -684,4 +822,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    main() 
