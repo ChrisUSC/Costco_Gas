@@ -396,7 +396,7 @@ def is_suspicious_jump(new_price: float | None, last_price: float | None) -> boo
     an expensive one should both be catchable."""
     if new_price is None or last_price is None:
         return False
-    diff = abs(new_price - last_price)
+    diff = round(abs(new_price - last_price), 2)
     if diff == 0:
         return False
     pct = (diff / last_price) if last_price else float('inf')
@@ -822,4 +822,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main() 
+    main()
