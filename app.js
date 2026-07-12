@@ -679,6 +679,39 @@ function closeAutocompleteDropdown() {
     activeAutocompleteIndex = -1;
 }
 
+// "I'm feeling lucky": called when Enter is pressed but there's nothing in the
+// dropdown to select yet - most commonly because the user typed fast and hit
+// Enter before the 400ms debounce even fired, so autocompleteItems is still
+// empty. Rather than doing nothing, resolve the raw text immediately: check
+// local Costco stores first (instant, no network), then fall back to a live
+// geocode lookup, and act on whichever comes back first with a match. Reuses
+// selectAutocompleteItem so search vs. route-field behavior stays identical
+// to actually clicking a dropdown result.
+async function resolveBestMatchAndAct(query) {
+    if (!query) return;
+
+    let best = null;
+    const storeMatches = getStoreMatches(query);
+    if (storeMatches.length > 0) {
+        best = { type: 'store', data: storeMatches[0] };
+    } else {
+        const geoMatches = await getGeoMatches(query);
+        if (geoMatches.length > 0) {
+            best = { type: 'place', data: geoMatches[0] };
+        }
+    }
+
+    if (!best) {
+        showToast(`No matches found for "${query}"`);
+        const activeInput = document.getElementById(activeInputId);
+        if (activeInput) activeInput.blur();
+        return;
+    }
+
+    autocompleteItems = [best];
+    selectAutocompleteItem(0);
+}
+
 // NEW: Reusable autocomplete listener setup
 function setupInputAutocomplete(inputId, dropdownId, actionType) {
     const inputEl = document.getElementById(inputId);
@@ -709,27 +742,29 @@ function setupInputAutocomplete(inputId, dropdownId, actionType) {
 
     inputEl.addEventListener('keydown', (e) => {
         const dropdownEl = document.getElementById(dropdownId);
-        if (!dropdownEl || !dropdownEl.classList.contains('active')) return;
+        const dropdownActive = !!dropdownEl && dropdownEl.classList.contains('active');
 
-        if (e.key === 'ArrowDown') {
+        if (e.key === 'ArrowDown' && dropdownActive) {
             e.preventDefault();
             moveAutocompleteSelection(1);
-        } else if (e.key === 'ArrowUp') {
+        } else if (e.key === 'ArrowUp' && dropdownActive) {
             e.preventDefault();
             moveAutocompleteSelection(-1);
         } else if (e.key === 'Enter') {
             e.preventDefault();
-            if (activeAutocompleteIndex >= 0) {
+            if (dropdownActive && activeAutocompleteIndex >= 0) {
                 // User used arrow keys to pick something specific
                 selectAutocompleteItem(activeAutocompleteIndex);
-            } else if (autocompleteItems.length > 0) {
+            } else if (dropdownActive && autocompleteItems.length > 0) {
                 // User just mashed Enter: auto-select the very top result!
                 selectAutocompleteItem(0);
-            } else if (actionType === 'search') {
-                // No dropdown matches, just close keyboard
-                e.target.blur();
+            } else {
+                // Nothing in the dropdown yet (e.g. Enter beat the debounce) -
+                // resolve the typed text directly instead of doing nothing.
+                const query = e.target.value.toLowerCase().trim();
+                if (query) resolveBestMatchAndAct(query);
             }
-        } else if (e.key === 'Escape') {
+        } else if (e.key === 'Escape' && dropdownActive) {
             closeAutocompleteDropdown();
         }
     });
