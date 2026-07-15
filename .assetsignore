@@ -1,0 +1,34 @@
+# Cloudflare Workers Static Assets - files listed here are never uploaded/served,
+# even though assets.directory is "." (the whole repo root). Gitignore syntax.
+# See: https://developers.cloudflare.com/workers/static-assets/binding/
+
+# Scraper source + internals - no reason to hand out your anti-block
+# thresholds (circuit breaker %s, retry counts, etc.) to the public site.
+scraper.py
+requirements.txt
+
+# Docs / repo metadata - not needed at runtime by the frontend.
+README.md
+.git
+.github
+.gitignore
+
+# Scraper-only intermediate/subset data - the frontend only ever fetches
+# us_latest.json, us_stores.json, and us_history.json (see app.js loadData()
+# / ensureHistoryLoaded()). These CA/local files exist purely so the scraper
+# can do small, fast test runs; the site never requests them.
+ca_latest.json
+ca_history.json
+ca_stores.json
+local_latest.json
+local_history.json
+local_stores.json
+state_list.json
+
+# Tests
+test_validate_snapshot.py
+**/__pycache__
+**/*.pyc
+
+# Wrangler config itself doesn't need to be publicly downloadable either.
+wrangler.jsonc
