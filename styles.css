@@ -222,6 +222,27 @@
         }
         .share-btn:hover { background: var(--tag-bg); transform: none; }
 
+        .favorite-btn {
+            flex: 0 0 auto; width: 44px; background: transparent;
+            color: var(--text-muted); border: 2px solid var(--border-color);
+            box-shadow: none; padding: 10px 0; font-size: 16px;
+        }
+        .favorite-btn:hover { background: var(--tag-bg); transform: none; }
+        .favorite-btn.active { color: #f5a623; border-color: #f5a623; }
+
+        .pin-favorite-badge {
+            position: absolute; top: -6px; left: -6px;
+            color: #f5a623; font-size: 16px;
+            text-shadow: 0 0 2px #000, 0 0 2px #000;
+        }
+
+        .save-route-btn {
+            width: 100%; justify-content: center; margin-top: 8px;
+            background: transparent; color: #f5a623; border: 2px solid #f5a623;
+            box-shadow: none;
+        }
+        .save-route-btn:hover { background: var(--tag-bg); transform: none; }
+
         .app-toast {
             position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
             background: var(--bg-sidebar); color: var(--text-main); border: 1px solid var(--border-color);
