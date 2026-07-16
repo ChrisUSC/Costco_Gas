@@ -163,5 +163,6 @@
   "2026-07-15 03:01": {"CA":{"Danville":[5.15,5.6],"Hayward":[5.0,5.5],"Hayward Business Center":[4.98,5.4],"Livermore":[5.15,5.5],"Manteca":[4.86,5.3],"Modesto":[5.1,5.6],"Pleasanton":[5.0,5.6],"Tracy":[4.95,5.4],"Turlock":[5.06,5.6]}},
   "2026-07-15 10:15": {"CA":{"Danville":[5.25,5.65],"Hayward":[5.1,5.6],"Hayward Business Center":[5.0,5.4],"Livermore":[5.16,5.56],"Manteca":[4.9,5.4],"Modesto":[5.1,5.6],"Pleasanton":[5.1,5.6],"Tracy":[4.95,5.46],"Turlock":[5.06,5.6]}},
   "2026-07-15 19:28": {"CA":{"Danville":[5.3,5.65],"Hayward":[5.1,5.6],"Hayward Business Center":[5.0,5.4],"Livermore":[5.16,5.6],"Manteca":[4.9,5.4],"Modesto":[5.1,5.6],"Pleasanton":[5.1,5.6],"Tracy":[4.95,5.5],"Turlock":[5.06,5.6]}},
-  "2026-07-16 03:07": {"CA":{"Danville":[5.3,5.65],"Hayward":[5.1,5.6],"Hayward Business Center":[5.0,5.4],"Livermore":[5.16,5.6],"Manteca":[4.9,5.4],"Modesto":[5.1,5.6],"Pleasanton":[5.1,5.6],"Tracy":[4.95,5.5],"Turlock":[5.06,5.6]}}
+  "2026-07-16 03:07": {"CA":{"Danville":[5.3,5.65],"Hayward":[5.1,5.6],"Hayward Business Center":[5.0,5.4],"Livermore":[5.16,5.6],"Manteca":[4.9,5.4],"Modesto":[5.1,5.6],"Pleasanton":[5.1,5.6],"Tracy":[4.95,5.5],"Turlock":[5.06,5.6]}},
+  "2026-07-16 10:14": {"CA":{"Danville":[5.3,5.7],"Hayward":[5.1,5.6],"Hayward Business Center":[5.06,5.46],"Livermore":[5.2,5.66],"Manteca":[4.96,5.46],"Modesto":[5.1,5.66],"Pleasanton":[5.18,5.7],"Tracy":[4.95,5.5],"Turlock":[5.06,5.6]}}
 }
