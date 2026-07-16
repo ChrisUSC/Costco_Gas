@@ -22,6 +22,7 @@ let routeLayer = null;       // L.layerGroup holding the polyline + start/end ma
 let lastRouteState = null;   // cached result so returning to the tab doesn't re-fetch
 let routeOriginLocation = null; // cached origin coordinates from autocomplete
 let routeDestLocation = null;   // cached destination coordinates from autocomplete
+let editingRouteId = null;   // id of the favorite route currently being edited, or null
 
 // Autocomplete state
 let autocompleteItems = [];
@@ -1478,21 +1479,30 @@ function renderRoutePanel() {
     const destVal = lastRouteState ? escapeHtml(lastRouteState.destText) : '';
     const buffer = lastRouteState ? lastRouteState.bufferMiles : 2;
 
-    const saveButtonHtml = lastRouteState
-        ? `<button class="btn-action save-route-btn" onclick="saveCurrentRouteAsFavorite()">☆ Save This Route</button>`
-        : '';
+    const saveButtonHtml = editingRouteId !== null
+        ? (lastRouteState ? `
+            <button class="btn-action save-route-btn" onclick="saveCurrentRouteAsFavorite()">💾 Update Route</button>
+            <button class="btn-action cancel-edit-btn" onclick="cancelEditRoute()">✕ Cancel Editing</button>
+          ` : '')
+        : (lastRouteState
+            ? `<button class="btn-action save-route-btn" onclick="saveCurrentRouteAsFavorite()">☆ Save This Route</button>`
+            : '');
 
     const savedRoutesHtml = favoriteRoutes.length > 0 ? `
         <div style="margin-top:16px;">
             <div class="leaderboard-header">★ Saved Routes</div>
             ${favoriteRoutes.map(r => `
-                <div class="store-card" style="cursor:pointer;" onclick="loadFavoriteRoute(${r.id})">
+                <div class="store-card ${r.id === editingRouteId ? 'route-editing' : ''}" style="cursor:pointer;" onclick="loadFavoriteRoute(${r.id})">
                     <h3><span>${escapeHtml(r.origin.label)} → ${escapeHtml(r.destination.label)}</span></h3>
-                    <div class="address">Within ${r.bufferMiles} mi of route</div>
+                    <div class="address">Within ${r.bufferMiles} mi of route${r.id === editingRouteId ? ' &middot; <strong>Editing…</strong>' : ''}</div>
                     <div class="card-actions">
                         <button class="btn-action" style="flex:1; background: transparent; color: var(--costco-blue); border: 2px solid var(--costco-blue);"
                             onclick="event.stopPropagation(); loadFavoriteRoute(${r.id})">
                             🛣️ Load
+                        </button>
+                        <button class="btn-action share-btn" title="Edit saved route"
+                            onclick="event.stopPropagation(); startEditRoute(${r.id})">
+                            ✎
                         </button>
                         <button class="btn-action share-btn" title="Remove saved route"
                             onclick="event.stopPropagation(); removeFavoriteRoute(${r.id})">
@@ -1545,6 +1555,35 @@ function saveCurrentRouteAsFavorite() {
     if (!lastRouteState) return;
     const { origin, destination, bufferMiles } = lastRouteState;
 
+    // If we're editing an existing favorite, update it in place rather than
+    // adding a new entry.
+    if (editingRouteId !== null) {
+        const target = favoriteRoutes.find(r => r.id === editingRouteId);
+        if (!target) {
+            // The route being edited was removed from elsewhere; fall through
+            // and treat this as a normal save instead.
+            editingRouteId = null;
+        } else {
+            const isDuplicateOfOther = favoriteRoutes.some(r =>
+                r.id !== editingRouteId &&
+                r.origin.label === origin.label && r.destination.label === destination.label && r.bufferMiles === bufferMiles
+            );
+            if (isDuplicateOfOther) {
+                showToast('Another saved route already matches these values');
+                return;
+            }
+
+            target.origin = origin;
+            target.destination = destination;
+            target.bufferMiles = bufferMiles;
+            localStorage.setItem('favoriteRoutes', JSON.stringify(favoriteRoutes));
+            editingRouteId = null;
+            showToast('✓ Route updated');
+            renderRoutePanel();
+            return;
+        }
+    }
+
     const isDuplicate = favoriteRoutes.some(r =>
         r.origin.label === origin.label && r.destination.label === destination.label && r.bufferMiles === bufferMiles
     );
@@ -1562,12 +1601,17 @@ function saveCurrentRouteAsFavorite() {
 function removeFavoriteRoute(id) {
     favoriteRoutes = favoriteRoutes.filter(r => r.id !== id);
     localStorage.setItem('favoriteRoutes', JSON.stringify(favoriteRoutes));
+    if (editingRouteId === id) {
+        editingRouteId = null; // the route being edited no longer exists
+    }
     renderRoutePanel();
 }
 
 async function loadFavoriteRoute(id) {
     const route = favoriteRoutes.find(r => r.id === id);
     if (!route) return;
+
+    editingRouteId = null; // loading a route (rather than editing) exits edit mode
 
     // Setting the inputs to the resolved label (not whatever raw text was
     // originally typed) guarantees it matches routeOriginLocation/routeDestLocation
@@ -1580,6 +1624,28 @@ async function loadFavoriteRoute(id) {
     routeDestLocation = route.destination;
 
     await findGasAlongRoute();
+    renderRoutePanel(); // refresh so the Save button reflects the freshly loaded route
+}
+
+async function startEditRoute(id) {
+    const route = favoriteRoutes.find(r => r.id === id);
+    if (!route) return;
+
+    editingRouteId = id;
+    routeOriginLocation = route.origin;
+    routeDestLocation = route.destination;
+
+    document.getElementById('routeOrigin').value = route.origin.label;
+    document.getElementById('routeDestination').value = route.destination.label;
+    document.getElementById('routeBuffer').value = route.bufferMiles;
+
+    await findGasAlongRoute();
+    renderRoutePanel(); // switches the Save button into "Update Route" / "Cancel" mode
+}
+
+function cancelEditRoute() {
+    editingRouteId = null;
+    renderRoutePanel();
 }
 
 function renderRouteResults(state) {
@@ -1704,10 +1770,14 @@ function switchTab(tabName) {
     document.getElementById('tab-route').classList.remove('active');
     document.getElementById('tab-favorites')?.classList.remove('active');
 
-    // Leaving the Route tab: clear the route line and restore full map markers
+    // Leaving the Route tab: clear the route line, restore full map markers,
+    // and drop out of any in-progress route edit.
     if (tabName !== 'route' && routeLayer) {
         routeLayer.clearLayers();
         if (globalStoreData.length > 0) renderMap(globalStoreData);
+    }
+    if (tabName !== 'route') {
+        editingRouteId = null;
     }
 
     if (tabName === 'search') {

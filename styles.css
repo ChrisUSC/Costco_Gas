@@ -243,6 +243,19 @@
         }
         .save-route-btn:hover { background: var(--tag-bg); transform: none; }
 
+        .cancel-edit-btn {
+            width: 100%; justify-content: center; margin-top: 8px;
+            background: transparent; color: var(--text-muted); border: 2px solid var(--border-color);
+            box-shadow: none;
+        }
+        .cancel-edit-btn:hover { background: var(--tag-bg); transform: none; }
+
+        .store-card.route-editing {
+            border-color: var(--costco-blue);
+            box-shadow: 0 0 0 2px rgba(0, 93, 170, 0.15);
+        }
+        .store-card.route-editing:hover { border-color: var(--costco-blue); }
+
         .app-toast {
             position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
             background: var(--bg-sidebar); color: var(--text-main); border: 1px solid var(--border-color);
