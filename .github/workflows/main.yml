@@ -23,7 +23,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Required to fetch all branches, not just the default one
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -57,30 +57,28 @@ jobs:
           # Stage the files updated by the scraper
           git add us_history.json us_latest.json ca_history.json ca_latest.json local_history.json local_latest.json index.html
           
-          # Check if there are actually any changes before proceeding
           if git diff --staged --quiet; then
             echo "No gas price changes detected. Skipping commit."
             exit 0
           fi
           
-          # Stash the staged changes so we can apply them across all branches
+          # Stash the staged changes
           git stash
           
-          # Iterate over all remote branches (ignoring HEAD pointer)
+          # Iterate over all remote branches
           for branch in $(git branch -r | grep -v '\->' | sed 's/origin\///'); do
             echo "--- Updating branch: $branch ---"
             
-            # Checkout branch and get latest changes
             git checkout $branch
             git pull origin $branch --rebase
             
-            # Apply our stashed gas prices (does not remove from stash)
-            git stash apply
+            # Forcefully extract the exact files from the stash, overwriting any conflicts
+            git checkout stash@{0} -- us_history.json us_latest.json ca_history.json ca_latest.json local_history.json local_latest.json index.html
             
-            # Stage the files on this branch
+            # Stage the forcefully applied files
             git add us_history.json us_latest.json ca_history.json ca_latest.json local_history.json local_latest.json index.html
             
-            # Commit and push if there are changes for this specific branch
+            # Commit and push if there are changes
             if ! git diff --staged --quiet; then
               git commit -m "chore: auto-update gas prices [$(TZ=America/Los_Angeles date '+%Y-%m-%d %H:%M PT')]"
               git push origin $branch
