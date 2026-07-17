@@ -1795,9 +1795,10 @@ async function findGasAlongRoute() {
 
         lastRouteState = { originText, destText, bufferMiles, origin, destination, route, along };
 
-        renderRouteOnMap(route.coords, origin, destination);
-        renderMap(along.length > 0 ? along : globalStoreData);
-        renderRouteResults(lastRouteState);
+        // Full panel re-render (not just the results container) so the Save
+        // button shows up immediately - renderRoutePanel() also handles the
+        // map/results updates internally when lastRouteState.along is set.
+        renderRoutePanel();
 
     } catch (err) {
         console.error('Route search failed:', err);
