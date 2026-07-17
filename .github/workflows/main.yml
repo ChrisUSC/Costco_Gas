@@ -22,6 +22,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Required to fetch all branches, not just the default one
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -47,12 +49,48 @@ jobs:
           retry_wait_seconds: 120
           command: python scraper.py 4
 
-      - name: Commit and push updated JSON files
+      - name: Commit and push updated JSON files to all branches
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Stage the files updated by the scraper
           git add us_history.json us_latest.json ca_history.json ca_latest.json local_history.json local_latest.json index.html
-          git diff --staged --quiet || git commit -m "chore: auto-update gas prices [$(TZ=America/Los_Angeles date '+%Y-%m-%d %H:%M PT')]"
-          git pull --rebase origin main
-          git push
-
+          
+          # Check if there are actually any changes before proceeding
+          if git diff --staged --quiet; then
+            echo "No gas price changes detected. Skipping commit."
+            exit 0
+          fi
+          
+          # Stash the staged changes so we can apply them across all branches
+          git stash
+          
+          # Iterate over all remote branches (ignoring HEAD pointer)
+          for branch in $(git branch -r | grep -v '\->' | sed 's/origin\///'); do
+            echo "--- Updating branch: $branch ---"
+            
+            # Checkout branch and get latest changes
+            git checkout $branch
+            git pull origin $branch --rebase
+            
+            # Apply our stashed gas prices (does not remove from stash)
+            git stash apply
+            
+            # Stage the files on this branch
+            git add us_history.json us_latest.json ca_history.json ca_latest.json local_history.json local_latest.json index.html
+            
+            # Commit and push if there are changes for this specific branch
+            if ! git diff --staged --quiet; then
+              git commit -m "chore: auto-update gas prices [$(TZ=America/Los_Angeles date '+%Y-%m-%d %H:%M PT')]"
+              git push origin $branch
+            else
+              echo "No changes needed for $branch"
+            fi
+            
+            # Clean up the working directory before moving to the next branch
+            git reset --hard
+          done
+          
+          # Clear the stash now that we're done
+          git stash drop
