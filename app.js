@@ -23,6 +23,7 @@ let lastRouteState = null;   // cached result so returning to the tab doesn't re
 let routeOriginLocation = null; // cached origin coordinates from autocomplete
 let routeDestLocation = null;   // cached destination coordinates from autocomplete
 let editingRouteId = null;   // id of the favorite route currently being edited, or null
+let editSnapshot = null;     // { lastRouteState, routeOriginLocation, routeDestLocation } to restore on cancel
 
 // Autocomplete state
 let autocompleteItems = [];
@@ -1479,14 +1480,21 @@ function renderRoutePanel() {
     const destVal = lastRouteState ? escapeHtml(lastRouteState.destText) : '';
     const buffer = lastRouteState ? lastRouteState.bufferMiles : 2;
 
-    const saveButtonHtml = editingRouteId !== null
-        ? (lastRouteState ? `
-            <button class="btn-action save-route-btn" onclick="saveCurrentRouteAsFavorite()">💾 Update Route</button>
+    let saveButtonHtml = '';
+    if (editingRouteId !== null) {
+        // Cancel must always be reachable while editing, even if the most recent
+        // findGasAlongRoute() call failed (bad geocode, OSRM hiccup, etc.) and
+        // left lastRouteState stale/null — otherwise there'd be no way out of edit mode.
+        const updateBtn = lastRouteState
+            ? `<button class="btn-action save-route-btn" onclick="saveCurrentRouteAsFavorite()">💾 Update Route</button>`
+            : '';
+        saveButtonHtml = `
+            ${updateBtn}
             <button class="btn-action cancel-edit-btn" onclick="cancelEditRoute()">✕ Cancel Editing</button>
-          ` : '')
-        : (lastRouteState
-            ? `<button class="btn-action save-route-btn" onclick="saveCurrentRouteAsFavorite()">☆ Save This Route</button>`
-            : '');
+        `;
+    } else if (lastRouteState) {
+        saveButtonHtml = `<button class="btn-action save-route-btn" onclick="saveCurrentRouteAsFavorite()">☆ Save This Route</button>`;
+    }
 
     const savedRoutesHtml = favoriteRoutes.length > 0 ? `
         <div style="margin-top:16px;">
@@ -1601,10 +1609,14 @@ function saveCurrentRouteAsFavorite() {
 function removeFavoriteRoute(id) {
     favoriteRoutes = favoriteRoutes.filter(r => r.id !== id);
     localStorage.setItem('favoriteRoutes', JSON.stringify(favoriteRoutes));
+
     if (editingRouteId === id) {
-        editingRouteId = null; // the route being edited no longer exists
+        // The favorite being edited was just deleted out from under the edit -
+        // exit edit mode the same way Cancel does, restoring the pre-edit view.
+        cancelEditRoute();
+    } else {
+        renderRoutePanel();
     }
-    renderRoutePanel();
 }
 
 async function loadFavoriteRoute(id) {
@@ -1612,6 +1624,7 @@ async function loadFavoriteRoute(id) {
     if (!route) return;
 
     editingRouteId = null; // loading a route (rather than editing) exits edit mode
+    editSnapshot = null;
 
     // Setting the inputs to the resolved label (not whatever raw text was
     // originally typed) guarantees it matches routeOriginLocation/routeDestLocation
@@ -1620,8 +1633,8 @@ async function loadFavoriteRoute(id) {
     document.getElementById('routeOrigin').value = route.origin.label;
     document.getElementById('routeDestination').value = route.destination.label;
     document.getElementById('routeBuffer').value = route.bufferMiles;
-    routeOriginLocation = route.origin;
-    routeDestLocation = route.destination;
+    routeOriginLocation = { ...route.origin };
+    routeDestLocation = { ...route.destination };
 
     await findGasAlongRoute();
     renderRoutePanel(); // refresh so the Save button reflects the freshly loaded route
@@ -1631,9 +1644,20 @@ async function startEditRoute(id) {
     const route = favoriteRoutes.find(r => r.id === id);
     if (!route) return;
 
+    // Snapshot whatever was on screen before editing began, so Cancel can put
+    // it back exactly. Only take the snapshot when entering edit mode fresh -
+    // switching the Edit button between two saved routes without saving or
+    // cancelling shouldn't overwrite it with mid-edit state.
+    if (editingRouteId === null) {
+        editSnapshot = { lastRouteState, routeOriginLocation, routeDestLocation };
+    }
+
     editingRouteId = id;
-    routeOriginLocation = route.origin;
-    routeDestLocation = route.destination;
+    // Clone the saved origin/destination rather than pointing at them directly -
+    // otherwise lastRouteState.origin and favoriteRoutes[i].origin are the same
+    // object, and any future in-place mutation of one silently corrupts the other.
+    routeOriginLocation = { ...route.origin };
+    routeDestLocation = { ...route.destination };
 
     document.getElementById('routeOrigin').value = route.origin.label;
     document.getElementById('routeDestination').value = route.destination.label;
@@ -1645,6 +1669,24 @@ async function startEditRoute(id) {
 
 function cancelEditRoute() {
     editingRouteId = null;
+
+    if (editSnapshot) {
+        lastRouteState = editSnapshot.lastRouteState;
+        routeOriginLocation = editSnapshot.routeOriginLocation;
+        routeDestLocation = editSnapshot.routeDestLocation;
+        editSnapshot = null;
+    }
+
+    // Put the map/results back to whatever they showed before editing began,
+    // rather than leaving the in-progress (unsaved) edit on screen.
+    if (routeLayer) routeLayer.clearLayers();
+    if (lastRouteState && lastRouteState.along) {
+        renderRouteOnMap(lastRouteState.route.coords, lastRouteState.origin, lastRouteState.destination);
+        renderMap(lastRouteState.along.length > 0 ? lastRouteState.along : globalStoreData);
+    } else {
+        renderMap(globalStoreData);
+    }
+
     renderRoutePanel();
 }
 
@@ -1778,6 +1820,7 @@ function switchTab(tabName) {
     }
     if (tabName !== 'route') {
         editingRouteId = null;
+        editSnapshot = null;
     }
 
     if (tabName === 'search') {
