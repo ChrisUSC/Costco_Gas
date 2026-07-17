@@ -22,6 +22,8 @@ let routeLayer = null;       // L.layerGroup holding the polyline + start/end ma
 let lastRouteState = null;   // cached result so returning to the tab doesn't re-fetch
 let routeOriginLocation = null; // cached origin coordinates from autocomplete
 let routeDestLocation = null;   // cached destination coordinates from autocomplete
+let editingRouteId = null;   // id of the favorite route currently being edited, or null
+let editSnapshot = null;     // { lastRouteState, routeOriginLocation, routeDestLocation } to restore on cancel
 
 // Autocomplete state
 let autocompleteItems = [];
@@ -36,6 +38,21 @@ let isDarkMode = localStorage.getItem('theme') === 'dark';
 let gasPref = localStorage.getItem('gasPref') || 'regular';
 let nearbyRadiusMiles = parseFloat(localStorage.getItem('nearbyRadius')) || 50;
 let nearbySortMode = localStorage.getItem('nearbySort') || 'price'; // 'price' | 'distance'
+
+// Favorites: stores as a Set of "STATE_City" keys, routes as an array of
+// resolved {origin, destination, bufferMiles} objects - both persisted to
+// localStorage the same way the other prefs above are.
+let favoriteStoreKeys = new Set(loadJsonPref('favoriteStores', []));
+let favoriteRoutes = loadJsonPref('favoriteRoutes', []);
+
+function loadJsonPref(key, fallback) {
+    try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : fallback;
+    } catch (e) {
+        return fallback;
+    }
+}
 
 // Safely parse data (Handles BOTH new Array format [4.84, 5.20] and old {"Regular": "$4.84"} format)
 const getValidPrice = (val) => {
@@ -233,6 +250,38 @@ function getShareUrl(state, city) {
     url.search = '';
     url.searchParams.set('store', `${state}_${city}`);
     return url.toString();
+}
+
+// --- Favorite stores ---
+function favoriteKey(state, city) {
+    return `${state}_${city}`;
+}
+
+function isFavoriteStore(state, city) {
+    return favoriteStoreKeys.has(favoriteKey(state, city));
+}
+
+function toggleFavoriteStore(state, city) {
+    const key = favoriteKey(state, city);
+    if (favoriteStoreKeys.has(key)) {
+        favoriteStoreKeys.delete(key);
+        showToast('Removed from favorites');
+    } else {
+        favoriteStoreKeys.add(key);
+        showToast('★ Added to favorites');
+    }
+    localStorage.setItem('favoriteStores', JSON.stringify([...favoriteStoreKeys]));
+    refreshCurrentDisplay();
+}
+
+// Re-renders whichever tab is currently open (and the map markers/popups
+// along with it), so a favorite toggle is reflected immediately wherever
+// it's visible - same pattern setGasPref already uses.
+function refreshCurrentDisplay() {
+    const activeTab = document.querySelector('.tab.active');
+    if (activeTab) {
+        switchTab(activeTab.id.replace('tab-', ''));
+    }
 }
 
 function showToast(message) {
@@ -1033,11 +1082,14 @@ function renderMap(dataArray) {
 
         const displayPrice = gasPref === 'regular' ? store.regularStr : store.premiumStr;
         const priceColor = gasPref === 'regular' ? '#059669' : '#E31837';
+        const isFav = isFavoriteStore(store.state, store.city);
+        const favBadge = isFav ? `<div class="pin-favorite-badge">★</div>` : '';
 
         const dynamicPin = L.divIcon({
             className: 'costco-custom-icon',
             html: `
                 <div style="position:relative;">
+                    ${favBadge}
                     <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="#E31837" stroke="#ffffff" stroke-width="2"/>
                         <circle cx="12" cy="9" r="3.5" fill="#ffffff"/>
@@ -1066,6 +1118,7 @@ function renderMap(dataArray) {
             </div>
             <a href="${store.url}" target="_blank" rel="noopener noreferrer" class="popup-btn popup-btn-outline">View Store</a>
             <button class="popup-btn" style="margin-top:8px;" onclick="openHistoryModal('${store.state}', '${safeCity}')">📈 Price History</button>
+            <button class="popup-btn popup-btn-outline" style="margin-top:8px;" onclick="toggleFavoriteStore('${store.state}', '${safeCity}')">${isFav ? '★ Remove Favorite' : '☆ Add to Favorites'}</button>
             <button class="popup-btn popup-btn-outline" style="margin-top:8px;" onclick="shareStore('${store.state}', '${safeCity}', '${safeCity}, ${store.state}')">🔗 Share This Station</button>
         `);
         marker.addTo(markersLayer);
@@ -1339,6 +1392,29 @@ function renderNearbyPrices() {
     sortedData.forEach((store, index) => container.appendChild(createStoreCard(store, gasPref, index, true)));
 }
 
+function renderFavoriteStores() {
+    const container = document.getElementById("sidebarContent");
+    container.innerHTML = "";
+
+    const favorites = globalStoreData
+        .filter(s => isFavoriteStore(s.state, s.city))
+        .sort((a, b) => a.city.localeCompare(b.city));
+
+    if (favorites.length === 0) {
+        container.innerHTML = `
+            <div style="text-align:center; margin-top:50px;">
+                <div style="font-size:40px; margin-bottom:10px;">☆</div>
+                <h3 style="margin-bottom: 5px;">No Favorites Yet</h3>
+                <p style="color:var(--text-muted); font-size:14px; padding: 0 10px;">Tap the ☆ on any store card or map popup to save it here for quick access.</p>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = `<div class="leaderboard-header">★ Favorite Stores (${favorites.length})</div>`;
+    favorites.forEach(store => container.appendChild(createStoreCard(store, gasPref)));
+}
+
 function getMedal(index) {
     if (index === 0) return '🥇';
     if (index === 1) return '🥈';
@@ -1363,6 +1439,7 @@ function createStoreCard(store, highlight = null, index = null, showDistance = f
     const safeCity = store.city.replace(/'/g, "\\'");
     const regTrend = getTrendArrow(store.regVal, store.prevRegVal);
     const premTrend = getTrendArrow(store.premVal, store.prevPremVal);
+    const isFav = isFavoriteStore(store.state, store.city);
 
     div.innerHTML = `
         <h3><span>${store.city}, ${store.state}</span> ${badgeHtml}</h3>
@@ -1379,6 +1456,10 @@ function createStoreCard(store, highlight = null, index = null, showDistance = f
             <button class="btn-action" style="flex:1; background: transparent; color: var(--costco-blue); border: 2px solid var(--costco-blue);"
                 onclick="event.stopPropagation(); openHistoryModal('${store.state}', '${safeCity}')">
                 📈 History
+            </button>
+            <button class="btn-action favorite-btn ${isFav ? 'active' : ''}" title="${isFav ? 'Remove from favorites' : 'Add to favorites'}"
+                onclick="event.stopPropagation(); toggleFavoriteStore('${store.state}', '${safeCity}')">
+                ${isFav ? '★' : '☆'}
             </button>
             <button class="btn-action share-btn" title="Share this station"
                 onclick="event.stopPropagation(); shareStore('${store.state}', '${safeCity}', '${safeCity}, ${store.state}')">
@@ -1399,6 +1480,48 @@ function renderRoutePanel() {
     const destVal = lastRouteState ? escapeHtml(lastRouteState.destText) : '';
     const buffer = lastRouteState ? lastRouteState.bufferMiles : 2;
 
+    let saveButtonHtml = '';
+    if (editingRouteId !== null) {
+        // Cancel must always be reachable while editing, even if the most recent
+        // findGasAlongRoute() call failed (bad geocode, OSRM hiccup, etc.) and
+        // left lastRouteState stale/null — otherwise there'd be no way out of edit mode.
+        const updateBtn = lastRouteState
+            ? `<button class="btn-action save-route-btn" onclick="saveCurrentRouteAsFavorite()">💾 Update Route</button>`
+            : '';
+        saveButtonHtml = `
+            ${updateBtn}
+            <button class="btn-action cancel-edit-btn" onclick="cancelEditRoute()">✕ Cancel Editing</button>
+        `;
+    } else if (lastRouteState) {
+        saveButtonHtml = `<button class="btn-action save-route-btn" onclick="saveCurrentRouteAsFavorite()">☆ Save This Route</button>`;
+    }
+
+    const savedRoutesHtml = favoriteRoutes.length > 0 ? `
+        <div style="margin-top:16px;">
+            <div class="leaderboard-header">★ Saved Routes</div>
+            ${favoriteRoutes.map(r => `
+                <div class="store-card ${r.id === editingRouteId ? 'route-editing' : ''}" style="cursor:pointer;" onclick="loadFavoriteRoute(${r.id})">
+                    <h3><span>${escapeHtml(r.origin.label)} → ${escapeHtml(r.destination.label)}</span></h3>
+                    <div class="address">Within ${r.bufferMiles} mi of route${r.id === editingRouteId ? ' &middot; <strong>Editing…</strong>' : ''}</div>
+                    <div class="card-actions">
+                        <button class="btn-action" style="flex:1; background: transparent; color: var(--costco-blue); border: 2px solid var(--costco-blue);"
+                            onclick="event.stopPropagation(); loadFavoriteRoute(${r.id})">
+                            🛣️ Load
+                        </button>
+                        <button class="btn-action share-btn" title="Edit saved route"
+                            onclick="event.stopPropagation(); startEditRoute(${r.id})">
+                            ✎
+                        </button>
+                        <button class="btn-action share-btn" title="Remove saved route"
+                            onclick="event.stopPropagation(); removeFavoriteRoute(${r.id})">
+                            🗑
+                        </button>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    ` : '';
+
     container.innerHTML = `
         <div class="route-panel">
             <label>From</label>
@@ -1418,7 +1541,9 @@ function renderRoutePanel() {
             <input type="number" id="routeBuffer" class="route-input" style="width:100%; margin-bottom:12px;"
                    min="1" max="25" step="1" value="${buffer}">
             <button class="btn-action" style="width:100%; justify-content:center;" onclick="findGasAlongRoute()">🛣️ Find Cheapest Along Route</button>
+            ${saveButtonHtml}
         </div>
+        ${savedRoutesHtml}
         <div id="routeResultsContainer"></div>
     `;
 
@@ -1431,6 +1556,138 @@ function renderRoutePanel() {
         renderRouteOnMap(lastRouteState.route.coords, lastRouteState.origin, lastRouteState.destination);
         renderMap(lastRouteState.along.length > 0 ? lastRouteState.along : globalStoreData);
     }
+}
+
+// --- Favorite routes ---
+function saveCurrentRouteAsFavorite() {
+    if (!lastRouteState) return;
+    const { origin, destination, bufferMiles } = lastRouteState;
+
+    // If we're editing an existing favorite, update it in place rather than
+    // adding a new entry.
+    if (editingRouteId !== null) {
+        const target = favoriteRoutes.find(r => r.id === editingRouteId);
+        if (!target) {
+            // The route being edited was removed from elsewhere; fall through
+            // and treat this as a normal save instead.
+            editingRouteId = null;
+        } else {
+            const isDuplicateOfOther = favoriteRoutes.some(r =>
+                r.id !== editingRouteId &&
+                r.origin.label === origin.label && r.destination.label === destination.label && r.bufferMiles === bufferMiles
+            );
+            if (isDuplicateOfOther) {
+                showToast('Another saved route already matches these values');
+                return;
+            }
+
+            target.origin = origin;
+            target.destination = destination;
+            target.bufferMiles = bufferMiles;
+            localStorage.setItem('favoriteRoutes', JSON.stringify(favoriteRoutes));
+            editingRouteId = null;
+            showToast('✓ Route updated');
+            renderRoutePanel();
+            return;
+        }
+    }
+
+    const isDuplicate = favoriteRoutes.some(r =>
+        r.origin.label === origin.label && r.destination.label === destination.label && r.bufferMiles === bufferMiles
+    );
+    if (isDuplicate) {
+        showToast('This route is already saved');
+        return;
+    }
+
+    favoriteRoutes.push({ id: Date.now(), origin, destination, bufferMiles });
+    localStorage.setItem('favoriteRoutes', JSON.stringify(favoriteRoutes));
+    showToast('★ Route saved');
+    renderRoutePanel();
+}
+
+function removeFavoriteRoute(id) {
+    favoriteRoutes = favoriteRoutes.filter(r => r.id !== id);
+    localStorage.setItem('favoriteRoutes', JSON.stringify(favoriteRoutes));
+
+    if (editingRouteId === id) {
+        // The favorite being edited was just deleted out from under the edit -
+        // exit edit mode the same way Cancel does, restoring the pre-edit view.
+        cancelEditRoute();
+    } else {
+        renderRoutePanel();
+    }
+}
+
+async function loadFavoriteRoute(id) {
+    const route = favoriteRoutes.find(r => r.id === id);
+    if (!route) return;
+
+    editingRouteId = null; // loading a route (rather than editing) exits edit mode
+    editSnapshot = null;
+
+    // Setting the inputs to the resolved label (not whatever raw text was
+    // originally typed) guarantees it matches routeOriginLocation/routeDestLocation
+    // exactly, so findGasAlongRoute() reuses these cached coordinates instead
+    // of re-geocoding from scratch.
+    document.getElementById('routeOrigin').value = route.origin.label;
+    document.getElementById('routeDestination').value = route.destination.label;
+    document.getElementById('routeBuffer').value = route.bufferMiles;
+    routeOriginLocation = { ...route.origin };
+    routeDestLocation = { ...route.destination };
+
+    await findGasAlongRoute();
+    renderRoutePanel(); // refresh so the Save button reflects the freshly loaded route
+}
+
+async function startEditRoute(id) {
+    const route = favoriteRoutes.find(r => r.id === id);
+    if (!route) return;
+
+    // Snapshot whatever was on screen before editing began, so Cancel can put
+    // it back exactly. Only take the snapshot when entering edit mode fresh -
+    // switching the Edit button between two saved routes without saving or
+    // cancelling shouldn't overwrite it with mid-edit state.
+    if (editingRouteId === null) {
+        editSnapshot = { lastRouteState, routeOriginLocation, routeDestLocation };
+    }
+
+    editingRouteId = id;
+    // Clone the saved origin/destination rather than pointing at them directly -
+    // otherwise lastRouteState.origin and favoriteRoutes[i].origin are the same
+    // object, and any future in-place mutation of one silently corrupts the other.
+    routeOriginLocation = { ...route.origin };
+    routeDestLocation = { ...route.destination };
+
+    document.getElementById('routeOrigin').value = route.origin.label;
+    document.getElementById('routeDestination').value = route.destination.label;
+    document.getElementById('routeBuffer').value = route.bufferMiles;
+
+    await findGasAlongRoute();
+    renderRoutePanel(); // switches the Save button into "Update Route" / "Cancel" mode
+}
+
+function cancelEditRoute() {
+    editingRouteId = null;
+
+    if (editSnapshot) {
+        lastRouteState = editSnapshot.lastRouteState;
+        routeOriginLocation = editSnapshot.routeOriginLocation;
+        routeDestLocation = editSnapshot.routeDestLocation;
+        editSnapshot = null;
+    }
+
+    // Put the map/results back to whatever they showed before editing began,
+    // rather than leaving the in-progress (unsaved) edit on screen.
+    if (routeLayer) routeLayer.clearLayers();
+    if (lastRouteState && lastRouteState.along) {
+        renderRouteOnMap(lastRouteState.route.coords, lastRouteState.origin, lastRouteState.destination);
+        renderMap(lastRouteState.along.length > 0 ? lastRouteState.along : globalStoreData);
+    } else {
+        renderMap(globalStoreData);
+    }
+
+    renderRoutePanel();
 }
 
 function renderRouteResults(state) {
@@ -1538,9 +1795,10 @@ async function findGasAlongRoute() {
 
         lastRouteState = { originText, destText, bufferMiles, origin, destination, route, along };
 
-        renderRouteOnMap(route.coords, origin, destination);
-        renderMap(along.length > 0 ? along : globalStoreData);
-        renderRouteResults(lastRouteState);
+        // Full panel re-render (not just the results container) so the Save
+        // button shows up immediately - renderRoutePanel() also handles the
+        // map/results updates internally when lastRouteState.along is set.
+        renderRoutePanel();
 
     } catch (err) {
         console.error('Route search failed:', err);
@@ -1553,11 +1811,17 @@ function switchTab(tabName) {
     document.getElementById('tab-lowest').classList.remove('active');
     document.getElementById('tab-nearby').classList.remove('active');
     document.getElementById('tab-route').classList.remove('active');
+    document.getElementById('tab-favorites')?.classList.remove('active');
 
-    // Leaving the Route tab: clear the route line and restore full map markers
+    // Leaving the Route tab: clear the route line, restore full map markers,
+    // and drop out of any in-progress route edit.
     if (tabName !== 'route' && routeLayer) {
         routeLayer.clearLayers();
         if (globalStoreData.length > 0) renderMap(globalStoreData);
+    }
+    if (tabName !== 'route') {
+        editingRouteId = null;
+        editSnapshot = null;
     }
 
     if (tabName === 'search') {
@@ -1572,6 +1836,9 @@ function switchTab(tabName) {
     } else if (tabName === 'route') {
         document.getElementById('tab-route').classList.add('active');
         renderRoutePanel();
+    } else if (tabName === 'favorites') {
+        document.getElementById('tab-favorites')?.classList.add('active');
+        renderFavoriteStores();
     }
 }
 
