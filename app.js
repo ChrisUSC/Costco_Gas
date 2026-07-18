@@ -13,6 +13,13 @@ let latestTimestampGlobal = null; // raw scraper timestamp string, kept so we ca
 let historyLoaded = false;
 let historyLoadPromise = null;
 
+// How many days of price history to show in the chart. 0 means "all time".
+// Persisted across sessions, defaults to 30 days.
+let historyRangeDays = parseInt(localStorage.getItem('historyRangeDays'), 10);
+if (isNaN(historyRangeDays)) historyRangeDays = 30;
+let currentModalState = null;
+let currentModalCity = null;
+
 let currentStateContext = 'CA';
 let userLocation = null;
 let searchLocationMarker = null;
@@ -24,6 +31,7 @@ let routeOriginLocation = null; // cached origin coordinates from autocomplete
 let routeDestLocation = null;   // cached destination coordinates from autocomplete
 let editingRouteId = null;   // id of the favorite route currently being edited, or null
 let editSnapshot = null;     // { lastRouteState, routeOriginLocation, routeDestLocation } to restore on cancel
+let currentTab = 'nearby';   // which sidebar tab is currently showing
 
 // Autocomplete state
 let autocompleteItems = [];
@@ -1127,12 +1135,55 @@ function renderMap(dataArray) {
 }
 
 // --- History Chart Modal Logic ---
+
+// Range options shown to the user for the price history chart, in days.
+// 0 represents "all time".
+const HISTORY_RANGE_OPTIONS = [
+    { label: '7D', days: 7 },
+    { label: '30D', days: 30 },
+    { label: '90D', days: 90 },
+    { label: '1Y', days: 365 },
+    { label: 'All', days: 0 }
+];
+
+function renderRangeControls() {
+    let controls = document.getElementById('historyRangeControls');
+    const chartContainer = document.querySelector('.chart-container');
+
+    if (!controls) {
+        controls = document.createElement('div');
+        controls.id = 'historyRangeControls';
+        controls.style.cssText = 'display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-bottom:12px;';
+        chartContainer.parentNode.insertBefore(controls, chartContainer);
+    }
+
+    controls.innerHTML = HISTORY_RANGE_OPTIONS.map(opt => {
+        const isActive = historyRangeDays === opt.days;
+        const bg = isActive ? 'var(--costco-red)' : 'transparent';
+        const color = isActive ? '#fff' : 'var(--text-muted)';
+        const border = isActive ? 'var(--costco-red)' : 'var(--border-color, #cbd5e1)';
+        return `<button type="button" onclick="setHistoryRange(${opt.days})"
+            style="padding:4px 12px; border-radius:16px; border:1px solid ${border}; background:${bg}; color:${color}; font-size:13px; cursor:pointer;">${opt.label}</button>`;
+    }).join('');
+}
+
+function setHistoryRange(days) {
+    historyRangeDays = days;
+    localStorage.setItem('historyRangeDays', days);
+    renderRangeControls();
+    if (currentModalState && currentModalCity) {
+        renderPriceChart(currentModalState, currentModalCity);
+    }
+}
+
 async function openHistoryModal(state, city) {
-    const key = `${state}_${city}`;
+    currentModalState = state;
+    currentModalCity = city;
     const chartContainer = document.querySelector('.chart-container');
 
     document.getElementById('chartModal').classList.add('active');
     document.getElementById('chartTitle').innerText = `Price History: ${city}, ${state}`;
+    renderRangeControls();
 
     const showMessage = (msg, isError = false) => {
         chartContainer.innerHTML = `<p style="text-align:center; color:${isError ? 'var(--costco-red)' : 'var(--text-muted)'}; margin-top:40px;">${msg}</p>`;
@@ -1149,6 +1200,17 @@ async function openHistoryModal(state, city) {
         }
     }
 
+    renderPriceChart(state, city);
+}
+
+function renderPriceChart(state, city) {
+    const key = `${state}_${city}`;
+    const chartContainer = document.querySelector('.chart-container');
+
+    const showMessage = (msg, isError = false) => {
+        chartContainer.innerHTML = `<p style="text-align:center; color:${isError ? 'var(--costco-red)' : 'var(--text-muted)'}; margin-top:40px;">${msg}</p>`;
+    };
+
     const history = globalHistory[key];
     if (!history || history.length === 0) {
         showMessage(`No price history available for ${city}, ${state}.`);
@@ -1159,13 +1221,24 @@ async function openHistoryModal(state, city) {
         chartContainer.innerHTML = `<canvas id="priceChart"></canvas>`;
     }
 
-    const dedupedHistory = [];
+    let dedupedHistory = [];
     const seenDates = new Set();
     for (let i = history.length - 1; i >= 0; i--) {
         if (!seenDates.has(history[i].dayStr)) {
             seenDates.add(history[i].dayStr);
             dedupedHistory.unshift(history[i]);
         }
+    }
+
+    if (historyRangeDays > 0) {
+        const cutoff = new Date();
+        cutoff.setDate(cutoff.getDate() - historyRangeDays);
+        dedupedHistory = dedupedHistory.filter(h => h.rawDate >= cutoff);
+    }
+
+    if (dedupedHistory.length === 0) {
+        showMessage(`No price history available for ${city}, ${state} in this range.`);
+        return;
     }
 
     const labels = dedupedHistory.map(h => h.rawDate);
@@ -1400,19 +1473,53 @@ function renderFavoriteStores() {
         .filter(s => isFavoriteStore(s.state, s.city))
         .sort((a, b) => a.city.localeCompare(b.city));
 
-    if (favorites.length === 0) {
+    if (favorites.length === 0 && favoriteRoutes.length === 0) {
         container.innerHTML = `
             <div style="text-align:center; margin-top:50px;">
                 <div style="font-size:40px; margin-bottom:10px;">☆</div>
                 <h3 style="margin-bottom: 5px;">No Favorites Yet</h3>
-                <p style="color:var(--text-muted); font-size:14px; padding: 0 10px;">Tap the ☆ on any store card or map popup to save it here for quick access.</p>
+                <p style="color:var(--text-muted); font-size:14px; padding: 0 10px;">Tap the ☆ on any store card or map popup to save it here, or save a route from the Route tab.</p>
             </div>
         `;
         return;
     }
 
-    container.innerHTML = `<div class="leaderboard-header">★ Favorite Stores (${favorites.length})</div>`;
-    favorites.forEach(store => container.appendChild(createStoreCard(store, gasPref)));
+    if (favorites.length > 0) {
+        const header = document.createElement('div');
+        header.className = 'leaderboard-header';
+        header.textContent = `★ Favorite Stores (${favorites.length})`;
+        container.appendChild(header);
+        favorites.forEach(store => container.appendChild(createStoreCard(store, gasPref)));
+    }
+
+    if (favoriteRoutes.length > 0) {
+        const routesWrap = document.createElement('div');
+        routesWrap.style.marginTop = favorites.length > 0 ? '16px' : '0';
+        routesWrap.innerHTML = `
+            <div class="leaderboard-header">★ Saved Routes (${favoriteRoutes.length})</div>
+            ${favoriteRoutes.map(r => `
+                <div class="store-card" style="cursor:pointer;" onclick="loadFavoriteRouteFromFavorites(${r.id})">
+                    <h3><span>${escapeHtml(r.origin.label)} → ${escapeHtml(r.destination.label)}</span></h3>
+                    <div class="address">Within ${r.bufferMiles} mi of route</div>
+                    <div class="card-actions">
+                        <button class="btn-action" style="flex:1; background: transparent; color: var(--costco-blue); border: 2px solid var(--costco-blue);"
+                            onclick="event.stopPropagation(); loadFavoriteRouteFromFavorites(${r.id})">
+                            🛣️ Load
+                        </button>
+                        <button class="btn-action share-btn" title="Edit saved route"
+                            onclick="event.stopPropagation(); editFavoriteRouteFromFavorites(${r.id})">
+                            ✎
+                        </button>
+                        <button class="btn-action share-btn" title="Remove saved route"
+                            onclick="event.stopPropagation(); removeFavoriteRoute(${r.id})">
+                            🗑
+                        </button>
+                    </div>
+                </div>
+            `).join('')}
+        `;
+        container.appendChild(routesWrap);
+    }
 }
 
 function getMedal(index) {
@@ -1615,8 +1722,18 @@ function removeFavoriteRoute(id) {
         // exit edit mode the same way Cancel does, restoring the pre-edit view.
         cancelEditRoute();
     } else {
-        renderRoutePanel();
+        renderCurrentTab();
     }
+}
+
+async function loadFavoriteRouteFromFavorites(id) {
+    switchTab('route');
+    await loadFavoriteRoute(id);
+}
+
+async function editFavoriteRouteFromFavorites(id) {
+    switchTab('route');
+    await startEditRoute(id);
 }
 
 async function loadFavoriteRoute(id) {
@@ -1807,6 +1924,8 @@ async function findGasAlongRoute() {
 }
 
 function switchTab(tabName) {
+    currentTab = tabName;
+
     document.getElementById('tab-search').classList.remove('active');
     document.getElementById('tab-lowest').classList.remove('active');
     document.getElementById('tab-nearby').classList.remove('active');
@@ -1838,6 +1957,20 @@ function switchTab(tabName) {
         renderRoutePanel();
     } else if (tabName === 'favorites') {
         document.getElementById('tab-favorites')?.classList.add('active');
+        renderFavoriteStores();
+    }
+}
+
+function renderCurrentTab() {
+    if (currentTab === 'search') {
+        renderStoresList(document.getElementById('searchInput').value.toLowerCase());
+    } else if (currentTab === 'lowest') {
+        renderLowestPrices();
+    } else if (currentTab === 'nearby') {
+        renderNearbyPrices();
+    } else if (currentTab === 'route') {
+        renderRoutePanel();
+    } else if (currentTab === 'favorites') {
         renderFavoriteStores();
     }
 }
