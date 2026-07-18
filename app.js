@@ -24,6 +24,7 @@ let routeOriginLocation = null; // cached origin coordinates from autocomplete
 let routeDestLocation = null;   // cached destination coordinates from autocomplete
 let editingRouteId = null;   // id of the favorite route currently being edited, or null
 let editSnapshot = null;     // { lastRouteState, routeOriginLocation, routeDestLocation } to restore on cancel
+let currentTab = 'nearby';   // which sidebar tab is currently showing
 
 // Autocomplete state
 let autocompleteItems = [];
@@ -1400,19 +1401,53 @@ function renderFavoriteStores() {
         .filter(s => isFavoriteStore(s.state, s.city))
         .sort((a, b) => a.city.localeCompare(b.city));
 
-    if (favorites.length === 0) {
+    if (favorites.length === 0 && favoriteRoutes.length === 0) {
         container.innerHTML = `
             <div style="text-align:center; margin-top:50px;">
                 <div style="font-size:40px; margin-bottom:10px;">☆</div>
                 <h3 style="margin-bottom: 5px;">No Favorites Yet</h3>
-                <p style="color:var(--text-muted); font-size:14px; padding: 0 10px;">Tap the ☆ on any store card or map popup to save it here for quick access.</p>
+                <p style="color:var(--text-muted); font-size:14px; padding: 0 10px;">Tap the ☆ on any store card or map popup to save it here, or save a route from the Route tab.</p>
             </div>
         `;
         return;
     }
 
-    container.innerHTML = `<div class="leaderboard-header">★ Favorite Stores (${favorites.length})</div>`;
-    favorites.forEach(store => container.appendChild(createStoreCard(store, gasPref)));
+    if (favorites.length > 0) {
+        const header = document.createElement('div');
+        header.className = 'leaderboard-header';
+        header.textContent = `★ Favorite Stores (${favorites.length})`;
+        container.appendChild(header);
+        favorites.forEach(store => container.appendChild(createStoreCard(store, gasPref)));
+    }
+
+    if (favoriteRoutes.length > 0) {
+        const routesWrap = document.createElement('div');
+        routesWrap.style.marginTop = favorites.length > 0 ? '16px' : '0';
+        routesWrap.innerHTML = `
+            <div class="leaderboard-header">★ Saved Routes (${favoriteRoutes.length})</div>
+            ${favoriteRoutes.map(r => `
+                <div class="store-card" style="cursor:pointer;" onclick="loadFavoriteRouteFromFavorites(${r.id})">
+                    <h3><span>${escapeHtml(r.origin.label)} → ${escapeHtml(r.destination.label)}</span></h3>
+                    <div class="address">Within ${r.bufferMiles} mi of route</div>
+                    <div class="card-actions">
+                        <button class="btn-action" style="flex:1; background: transparent; color: var(--costco-blue); border: 2px solid var(--costco-blue);"
+                            onclick="event.stopPropagation(); loadFavoriteRouteFromFavorites(${r.id})">
+                            🛣️ Load
+                        </button>
+                        <button class="btn-action share-btn" title="Edit saved route"
+                            onclick="event.stopPropagation(); editFavoriteRouteFromFavorites(${r.id})">
+                            ✎
+                        </button>
+                        <button class="btn-action share-btn" title="Remove saved route"
+                            onclick="event.stopPropagation(); removeFavoriteRoute(${r.id})">
+                            🗑
+                        </button>
+                    </div>
+                </div>
+            `).join('')}
+        `;
+        container.appendChild(routesWrap);
+    }
 }
 
 function getMedal(index) {
@@ -1615,8 +1650,18 @@ function removeFavoriteRoute(id) {
         // exit edit mode the same way Cancel does, restoring the pre-edit view.
         cancelEditRoute();
     } else {
-        renderRoutePanel();
+        renderCurrentTab();
     }
+}
+
+async function loadFavoriteRouteFromFavorites(id) {
+    switchTab('route');
+    await loadFavoriteRoute(id);
+}
+
+async function editFavoriteRouteFromFavorites(id) {
+    switchTab('route');
+    await startEditRoute(id);
 }
 
 async function loadFavoriteRoute(id) {
@@ -1807,6 +1852,8 @@ async function findGasAlongRoute() {
 }
 
 function switchTab(tabName) {
+    currentTab = tabName;
+
     document.getElementById('tab-search').classList.remove('active');
     document.getElementById('tab-lowest').classList.remove('active');
     document.getElementById('tab-nearby').classList.remove('active');
@@ -1838,6 +1885,20 @@ function switchTab(tabName) {
         renderRoutePanel();
     } else if (tabName === 'favorites') {
         document.getElementById('tab-favorites')?.classList.add('active');
+        renderFavoriteStores();
+    }
+}
+
+function renderCurrentTab() {
+    if (currentTab === 'search') {
+        renderStoresList(document.getElementById('searchInput').value.toLowerCase());
+    } else if (currentTab === 'lowest') {
+        renderLowestPrices();
+    } else if (currentTab === 'nearby') {
+        renderNearbyPrices();
+    } else if (currentTab === 'route') {
+        renderRoutePanel();
+    } else if (currentTab === 'favorites') {
         renderFavoriteStores();
     }
 }
