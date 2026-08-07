@@ -70,8 +70,19 @@ TREND_LOOKBACK_TOLERANCE_HOURS = 12 # accept the closest match within +/- this m
 # which would also throw a false trend arrow at anyone looking at it.
 PRICE_JUMP_ABS_THRESHOLD = 0.30   # dollars
 PRICE_JUMP_PCT_THRESHOLD = 0.08   # 8%
-MAX_RECHECK_ATTEMPTS = 2
-RECHECK_DELAY_RANGE = (2.0, 4.0)  # random delay in seconds between rechecks, be polite to Costco's endpoint
+MAX_RECHECK_ATTEMPTS = 3
+RECHECK_DELAY_RANGE = (4.0, 8.0)  # random delay in seconds between rechecks, be polite to Costco's endpoint
+
+# A single recheck matching the new (or old) value used to be enough to
+# "confirm" it. That's weak evidence on its own - especially since Costco's
+# AJAX endpoint appears to sit behind caching, so a recheck can just return
+# the exact same (possibly stale/wrong) cached response as the original
+# fetch, "confirming" a bad price with zero independent information. Now we
+# require CONFIRMATION_QUORUM independently-fetched samples (cache-busted,
+# see _cache_busted_url below) to agree with each other before trusting a
+# value at all.
+CONFIRMATION_QUORUM = 2
+PRICE_MATCH_TOLERANCE = 0.01
 
 def format_price(v) -> float | None:
     """Format a raw price string into a float rounded to 2 decimals, or None if invalid."""
@@ -94,6 +105,17 @@ def create_session() -> requests.Session:
     )
     session.mount('https://', HTTPAdapter(max_retries=retries))
     return session
+
+
+def _cache_busted_url(base_url: str) -> str:
+    """Appends a random+timestamp query param so a re-fetch can't be silently
+    served the same cached response as a prior fetch to the same URL. Costco's
+    AJAX endpoint appears to sit behind edge/CDN caching, which was making
+    "recheck" calls just replay the original (possibly wrong) cached price
+    instead of independently verifying it."""
+    sep = '&' if '?' in base_url else '?'
+    nonce = f"{int(time.time() * 1000)}{random.randint(1000, 9999)}"
+    return f"{base_url}{sep}_={nonce}"
 
 
 def get_warehouse_id(url: str) -> str:
@@ -403,25 +425,62 @@ def is_suspicious_jump(new_price: float | None, last_price: float | None) -> boo
     return diff >= PRICE_JUMP_ABS_THRESHOLD or pct >= PRICE_JUMP_PCT_THRESHOLD
 
 
-def _prices_match(a: float | None, b: float | None, tol: float = 0.01) -> bool:
+def _prices_match(a: float | None, b: float | None, tol: float = PRICE_MATCH_TOLERANCE) -> bool:
     if a is None or b is None:
         return a is None and b is None
     return abs(a - b) < tol
+
+
+def _quorum_value(samples: list[float | None]) -> float | None:
+    """Given a list of independently-fetched samples for one grade (oldest
+    first), returns the value that has reached CONFIRMATION_QUORUM mutually-
+    agreeing samples, or None if no such value exists yet. Ties (e.g. two
+    different clusters both reaching quorum at once) favor the most recently
+    seen cluster, since that's the freshest evidence."""
+    if not samples:
+        return None
+    clusters: list[list[float]] = []  # list of groups of matching values
+    for val in samples:
+        if val is None:
+            continue
+        placed = False
+        for cluster in clusters:
+            if _prices_match(cluster[0], val):
+                cluster.append(val)
+                placed = True
+                break
+        if not placed:
+            clusters.append([val])
+
+    winning = [c for c in clusters if len(c) >= CONFIRMATION_QUORUM]
+    if not winning:
+        return None
+    # Prefer whichever qualifying cluster contains the most recent sample.
+    for val in reversed(samples):
+        for cluster in winning:
+            if val is not None and _prices_match(cluster[0], val):
+                return cluster[0]
+    return winning[-1][0]
 
 
 def confirm_or_revert_price(state: str, city: str, reg: float | None, prem: float | None,
                              last_reg: float | None, last_prem: float | None,
                              refetch_fn) -> tuple[float | None, float | None, bool]:
     """Called when a freshly-fetched price looks like a suspiciously big jump
-    vs. the last saved price. Re-fetches (with a short randomized delay so
-    we're not hammering Costco back-to-back) up to MAX_RECHECK_ATTEMPTS times
-    to figure out, independently per gas grade, whether the jump was real or
-    a one-off glitch.
+    vs. the last saved price. Re-fetches (cache-busted, with a randomized
+    delay so we're not hammering Costco back-to-back, and not just replaying
+    a cached response) up to MAX_RECHECK_ATTEMPTS times per grade.
+
+    A value - whether it's the new price, the old price, or something else
+    entirely - is only trusted once CONFIRMATION_QUORUM independently-fetched
+    samples agree on it. A single matching recheck is no longer enough on its
+    own, since one recheck can't distinguish "the price really moved" from
+    "the endpoint served the same cached/glitchy response twice."
 
     Returns (final_reg, final_prem, unconfirmed) where unconfirmed is True if
-    at least one grade still couldn't be resolved either way after retries -
-    in that case the freshest fetched value is kept (not the stale old one),
-    just flagged for visibility.
+    at least one grade never reached quorum after all rechecks - in that case
+    the freshest fetched value is kept (not the stale old one), just flagged
+    for visibility.
     """
     reg_suspicious = is_suspicious_jump(reg, last_reg)
     prem_suspicious = is_suspicious_jump(prem, last_prem)
@@ -433,6 +492,13 @@ def confirm_or_revert_price(state: str, city: str, reg: float | None, prem: floa
         details.append(f"prem {last_prem}->{prem}")
     print(f"  ⚠ Suspicious jump for {city}, {state}: {', '.join(details)}. Re-checking...")
 
+    # Deliberately NOT seeded with the original (suspicious) fetch. If the
+    # original counted as a free sample, a single agreeing recheck would
+    # satisfy CONFIRMATION_QUORUM=2 by itself - exactly the weak "one
+    # recheck confirms it" behavior this was meant to replace. Quorum must
+    # be reached among independently-fetched *rechecks*.
+    reg_samples: list[float | None] = []
+    prem_samples: list[float | None] = []
     final_reg, final_prem = reg, prem
 
     for attempt in range(MAX_RECHECK_ATTEMPTS):
@@ -443,18 +509,22 @@ def confirm_or_revert_price(state: str, city: str, reg: float | None, prem: floa
         recheck_reg, recheck_prem = recheck
 
         if reg_suspicious:
-            if _prices_match(recheck_reg, reg):
-                reg_suspicious = False  # confirmed - it really moved
-            elif _prices_match(recheck_reg, last_reg):
-                final_reg = last_reg  # original fetch was the glitch
+            reg_samples.append(recheck_reg)
+            quorum_reg = _quorum_value(reg_samples)
+            if quorum_reg is not None:
+                final_reg = quorum_reg
                 reg_suspicious = False
+            else:
+                final_reg = recheck_reg  # freshest sample, in case we run out of attempts
 
         if prem_suspicious:
-            if _prices_match(recheck_prem, prem):
+            prem_samples.append(recheck_prem)
+            quorum_prem = _quorum_value(prem_samples)
+            if quorum_prem is not None:
+                final_prem = quorum_prem
                 prem_suspicious = False
-            elif _prices_match(recheck_prem, last_prem):
-                final_prem = last_prem
-                prem_suspicious = False
+            else:
+                final_prem = recheck_prem
 
         if not reg_suspicious and not prem_suspicious:
             break
@@ -462,7 +532,8 @@ def confirm_or_revert_price(state: str, city: str, reg: float | None, prem: floa
     unconfirmed = reg_suspicious or prem_suspicious
     if unconfirmed:
         print(f"  ⚠ {city}, {state}: couldn't confirm after {MAX_RECHECK_ATTEMPTS} recheck(s) - "
-              f"keeping most recent fetch (reg={final_reg}, prem={final_prem}), flagging as unconfirmed")
+              f"keeping most recent fetch (reg={final_reg}, prem={final_prem}), flagging as unconfirmed "
+              f"[reg samples: {reg_samples}, prem samples: {prem_samples}]")
     else:
         print(f"  ✓ Resolved {city}, {state}: reg={final_reg}, prem={final_prem}")
 
@@ -502,7 +573,19 @@ def get_gas_prices_ajax(locations: dict, source_filepath: str | None = None,
             for attempt in range(MAX_FETCH_ATTEMPTS):
                 try:
                     time.sleep(1 + attempt)  # Delay to respect rate limits
-                    resp = session.get(ajax_url, headers={'User-Agent': random.choice(USER_AGENTS)}, timeout=15)
+                    # Cache-bust + explicitly ask for a fresh response every
+                    # call - this function is also used as the "recheck"
+                    # fetch, and a cached response would let a bad price
+                    # falsely confirm itself.
+                    resp = session.get(
+                        _cache_busted_url(ajax_url),
+                        headers={
+                            'User-Agent': random.choice(USER_AGENTS),
+                            'Cache-Control': 'no-cache, no-store',
+                            'Pragma': 'no-cache',
+                        },
+                        timeout=15
+                    )
                     resp.raise_for_status()
 
                     raw_data = resp.json()

@@ -271,36 +271,43 @@ def test_prices_match():
 
 @patch('scraper.time.sleep', return_value=None)
 def test_confirm_or_revert_price_confirms_real_change(mock_sleep):
-    # Recheck agrees with the NEW (suspicious) price -> trust it
-    refetch = MagicMock(side_effect=[(4.50, 5.60)])
+    # Two independent rechecks agree with the NEW (suspicious) price -> trust it
+    # (a single agreeing recheck is no longer enough - CONFIRMATION_QUORUM=2)
+    refetch = MagicMock(side_effect=[(4.50, 5.60), (4.50, 5.60)])
     reg, prem, flagged = confirm_or_revert_price("CA", "Danville", 4.50, 5.60, 5.10, 5.60, refetch)
     assert (reg, prem, flagged) == (4.50, 5.60, False)
-    assert refetch.call_count == 1
+    assert refetch.call_count == 2
 
 
 @patch('scraper.time.sleep', return_value=None)
 def test_confirm_or_revert_price_reverts_glitch(mock_sleep):
-    # Recheck agrees with the OLD/last-known price -> original fetch was the glitch
-    refetch = MagicMock(side_effect=[(5.10, 5.60)])
+    # Two independent rechecks agree with the OLD/last-known price -> original fetch was the glitch
+    refetch = MagicMock(side_effect=[(5.10, 5.60), (5.10, 5.60)])
     reg, prem, flagged = confirm_or_revert_price("CA", "Danville", 1.00, 5.60, 5.10, 5.60, refetch)
     assert (reg, prem, flagged) == (5.10, 5.60, False)
+    assert refetch.call_count == 2
 
 
 @patch('scraper.time.sleep', return_value=None)
 def test_confirm_or_revert_price_inconclusive_keeps_freshest_and_flags(mock_sleep):
-    # Recheck(s) agree with NEITHER old nor new -> keep freshest fetch, flag it
-    refetch = MagicMock(side_effect=[(2.00, 5.60), (3.00, 5.60)])
+    # Three mutually-disagreeing rechecks -> no cluster ever reaches quorum,
+    # so all MAX_RECHECK_ATTEMPTS (3) are used and the freshest (last) recheck
+    # sample is kept, flagged as unconfirmed.
+    refetch = MagicMock(side_effect=[(2.00, 5.60), (3.00, 5.60), (4.00, 5.60)])
     reg, prem, flagged = confirm_or_revert_price("CA", "Danville", 1.00, 5.60, 5.10, 5.60, refetch)
-    assert (reg, prem) == (1.00, 5.60)
+    assert (reg, prem) == (4.00, 5.60)
     assert flagged is True
+    assert refetch.call_count == 3
 
 
 @patch('scraper.time.sleep', return_value=None)
 def test_confirm_or_revert_price_mixed_only_suspicious_grade_confirmed(mock_sleep):
-    # Premium jumped, regular didn't move at all - only premium should need confirming
-    refetch = MagicMock(side_effect=[(5.10, 6.50)])
+    # Premium jumped, regular didn't move at all - only premium should need
+    # confirming, and it needs two agreeing rechecks to reach quorum.
+    refetch = MagicMock(side_effect=[(5.10, 6.50), (5.10, 6.50)])
     reg, prem, flagged = confirm_or_revert_price("CA", "Danville", 5.10, 6.50, 5.10, 5.60, refetch)
     assert (reg, prem, flagged) == (5.10, 6.50, False)
+    assert refetch.call_count == 2
 
 
 def test_load_latest_prices_missing_file_returns_empty():
@@ -338,8 +345,9 @@ def test_get_gas_prices_ajax_no_jump_makes_single_call(mock_sleep, mock_create_s
 @patch('scraper.create_session')
 @patch('scraper.time.sleep', return_value=None)
 def test_get_gas_prices_ajax_real_change_confirmed(mock_sleep, mock_create_session):
+    # Initial fetch + 2 agreeing rechecks (CONFIRMATION_QUORUM=2) = 3 calls
     mock_session = MagicMock()
-    mock_session.get.side_effect = [_resp("4.50", "5.60"), _resp("4.50", "5.60")]
+    mock_session.get.side_effect = [_resp("4.50", "5.60"), _resp("4.50", "5.60"), _resp("4.50", "5.60")]
     mock_create_session.return_value = mock_session
 
     locations = {"CA": {"Danville": {"warehouse_id": "12345"}}}
@@ -348,14 +356,15 @@ def test_get_gas_prices_ajax_real_change_confirmed(mock_sleep, mock_create_sessi
 
     ts = next(iter(result))
     assert result[ts]["CA"]["Danville"] == [4.50, 5.60]
-    assert mock_session.get.call_count == 2
+    assert mock_session.get.call_count == 3
 
 
 @patch('scraper.create_session')
 @patch('scraper.time.sleep', return_value=None)
 def test_get_gas_prices_ajax_glitch_reverted(mock_sleep, mock_create_session):
+    # Initial (glitchy) fetch + 2 agreeing rechecks pointing at the old price
     mock_session = MagicMock()
-    mock_session.get.side_effect = [_resp("1.00", "5.60"), _resp("5.10", "5.60")]
+    mock_session.get.side_effect = [_resp("1.00", "5.60"), _resp("5.10", "5.60"), _resp("5.10", "5.60")]
     mock_create_session.return_value = mock_session
 
     locations = {"CA": {"Danville": {"warehouse_id": "12345"}}}
@@ -364,13 +373,18 @@ def test_get_gas_prices_ajax_glitch_reverted(mock_sleep, mock_create_session):
 
     ts = next(iter(result))
     assert result[ts]["CA"]["Danville"] == [5.10, 5.60]
+    assert mock_session.get.call_count == 3
 
 
 @patch('scraper.create_session')
 @patch('scraper.time.sleep', return_value=None)
 def test_get_gas_prices_ajax_inconclusive_flags_but_keeps_freshest(mock_sleep, mock_create_session, capsys):
+    # Initial fetch + 3 mutually-disagreeing rechecks (MAX_RECHECK_ATTEMPTS=3)
+    # -> no quorum reached, freshest (last) recheck sample is kept and flagged
     mock_session = MagicMock()
-    mock_session.get.side_effect = [_resp("1.00", "5.60"), _resp("2.00", "5.60"), _resp("3.00", "5.60")]
+    mock_session.get.side_effect = [
+        _resp("1.00", "5.60"), _resp("2.00", "5.60"), _resp("3.00", "5.60"), _resp("4.00", "5.60"),
+    ]
     mock_create_session.return_value = mock_session
 
     locations = {"CA": {"Danville": {"warehouse_id": "12345"}}}
@@ -378,7 +392,7 @@ def test_get_gas_prices_ajax_inconclusive_flags_but_keeps_freshest(mock_sleep, m
     result = get_gas_prices_ajax(locations, None, last_known)
 
     ts = next(iter(result))
-    assert result[ts]["CA"]["Danville"] == [1.00, 5.60]
+    assert result[ts]["CA"]["Danville"] == [4.00, 5.60]
     captured = capsys.readouterr()
     assert "couldn't be confirmed" in captured.out
 
