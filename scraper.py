@@ -73,6 +73,15 @@ PRICE_JUMP_PCT_THRESHOLD = 0.08   # 8%
 MAX_RECHECK_ATTEMPTS = 2
 RECHECK_DELAY_RANGE = (2.0, 4.0)  # random delay in seconds between rechecks, be polite to Costco's endpoint
 
+# --- Long-term log of unconfirmed jumps ---
+# get_gas_prices_ajax prints unconfirmed jumps for the current run, but that
+# output isn't kept anywhere - there's no way to tell "this store flags every
+# other run" from "this happened once, ever." This appends one JSON record
+# per unconfirmed jump to a flat file, so patterns become visible over time.
+# JSON Lines (one JSON object per line) is used instead of one big JSON array
+# so appending an entry never requires reading/re-writing the whole file.
+UNCONFIRMED_JUMPS_LOG_FILE = 'unconfirmed_jumps_log.jsonl'
+
 def format_price(v) -> float | None:
     """Format a raw price string into a float rounded to 2 decimals, or None if invalid."""
     if v is None or str(v).strip().lower() in ("", "n/a"):
@@ -469,6 +478,54 @@ def confirm_or_revert_price(state: str, city: str, reg: float | None, prem: floa
     return final_reg, final_prem, unconfirmed
 
 
+def log_unconfirmed_jumps(records: list[dict], filepath: str = UNCONFIRMED_JUMPS_LOG_FILE) -> None:
+    """Appends one JSON line per unconfirmed price jump. Each record carries
+    enough context (last known price, the raw suspicious fetch, and what was
+    finally kept) to investigate later without re-running anything. Failing
+    to write this log is never allowed to break a scrape run - it's purely
+    diagnostic - so errors are caught and just printed."""
+    if not records:
+        return
+    try:
+        with open(filepath, 'a', encoding='utf-8') as f:
+            for record in records:
+                f.write(json.dumps(record, separators=(',', ':')) + '\n')
+    except OSError as e:
+        print(f"⚠️  Couldn't write to unconfirmed-jumps log '{filepath}': {e}")
+
+
+def summarize_unconfirmed_jumps(filepath: str = UNCONFIRMED_JUMPS_LOG_FILE, top_n: int = 15) -> None:
+    """Reads the unconfirmed-jumps log and prints the stores that show up
+    most often, so recurring offenders (a flaky store, a bad warehouse ID,
+    a store that's genuinely volatile) are easy to spot."""
+    if not os.path.exists(filepath):
+        print(f"No unconfirmed-jumps log found at '{filepath}' yet.")
+        return
+
+    counts: dict[tuple[str, str], int] = {}
+    total = 0
+    with open(filepath, 'r', encoding='utf-8') as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                record = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            key = (record.get("state", "?"), record.get("city", "?"))
+            counts[key] = counts.get(key, 0) + 1
+            total += 1
+
+    if total == 0:
+        print(f"'{filepath}' exists but has no valid records yet.")
+        return
+
+    print(f"{total} unconfirmed jump(s) logged across {len(counts)} store(s). Top offenders:")
+    for (state, city), count in sorted(counts.items(), key=lambda kv: kv[1], reverse=True)[:top_n]:
+        print(f"  {count:>3}x  {city}, {state}")
+
+
 def load_latest_prices(latest_path: str) -> dict:
     """Loads just the {state: {city: [reg, prem]}} prices out of an existing
     *_latest.json, used as the baseline for the jump-confirmation check.
@@ -486,8 +543,18 @@ def load_latest_prices(latest_path: str) -> dict:
 
 
 def get_gas_prices_ajax(locations: dict, source_filepath: str | None = None,
-                         last_known_prices: dict | None = None) -> dict:
-    """Concurrently fetches gas prices from Costco's AJAX API."""
+                         last_known_prices: dict | None = None,
+                         jump_log_filepath: str | None = None,
+                         dataset_label: str | None = None) -> dict:
+    """Concurrently fetches gas prices from Costco's AJAX API.
+
+    jump_log_filepath: if given, every unconfirmed price jump this run gets
+    appended to this file (see log_unconfirmed_jumps) for later analysis.
+    Left as None by default so ad-hoc/test calls don't write files unless
+    a caller explicitly opts in.
+    dataset_label: optional tag (e.g. "Local"/"CA"/"US") included in each
+    logged record, since the same store can appear in more than one dataset.
+    """
     fetched_prices = {}
     session = create_session()
     last_known_prices = last_known_prices or {}
@@ -524,24 +591,35 @@ def get_gas_prices_ajax(locations: dict, source_filepath: str | None = None,
 
         result = attempt_fetch()
         if result is None:
-            return target_state, target_city, None, False
+            return target_state, target_city, None, False, None
 
         reg, prem = result
         last = last_known_prices.get(target_state, {}).get(target_city)
         last_reg, last_prem = (last[0], last[1]) if last else (None, None)
 
+        raw_reg, raw_prem = reg, prem  # the fetch that first looked suspicious, before any recheck
         flagged = False
         if is_suspicious_jump(reg, last_reg) or is_suspicious_jump(prem, last_prem):
             reg, prem, flagged = confirm_or_revert_price(
                 target_state, target_city, reg, prem, last_reg, last_prem, attempt_fetch
             )
 
-        return target_state, target_city, [reg, prem], flagged
+        jump_detail = None
+        if flagged:
+            jump_detail = {
+                "last_reg": last_reg, "last_prem": last_prem,
+                "raw_reg": raw_reg, "raw_prem": raw_prem,
+                "final_reg": reg, "final_prem": prem,
+            }
+
+        return target_state, target_city, [reg, prem], flagged, jump_detail
 
     print("Fetching live gas prices...")
     total_stores = 0
     failed_stores: list[tuple[str, str]] = []
     unconfirmed_jumps: list[tuple[str, str]] = []
+    jump_log_records: list[dict] = []
+    run_timestamp = time.strftime("%Y-%m-%d %H:%M", time.localtime())
 
     with ThreadPoolExecutor(max_workers=10) as executor:
         futures = []
@@ -552,11 +630,19 @@ def get_gas_prices_ajax(locations: dict, source_filepath: str | None = None,
                 futures.append(executor.submit(fetch_price, state, city, info))
 
         for future in as_completed(futures):
-            state, city, prices, flagged = future.result()
+            state, city, prices, flagged, jump_detail = future.result()
             if prices:
                 fetched_prices[state][city] = prices
                 if flagged:
                     unconfirmed_jumps.append((state, city))
+                    if jump_detail:
+                        jump_log_records.append({
+                            "timestamp": run_timestamp,
+                            "state": state,
+                            "city": city,
+                            "dataset": dataset_label,
+                            **jump_detail,
+                        })
             else:
                 failed_stores.append((state, city))
 
@@ -568,6 +654,9 @@ def get_gas_prices_ajax(locations: dict, source_filepath: str | None = None,
         )
         for state, city in unconfirmed_jumps:
             print(f"  - {city}, {state}")
+
+        if jump_log_filepath:
+            log_unconfirmed_jumps(jump_log_records, jump_log_filepath)
 
     # Prices that WERE fetched successfully are always kept - a partial run
     # still produces useful, fresher data for the stores that responded.
@@ -601,9 +690,8 @@ def get_gas_prices_ajax(locations: dict, source_filepath: str | None = None,
 
     # Clean up empty states
     fetched_prices = {k: v for k, v in fetched_prices.items() if v}
-    timestamp = time.strftime("%Y-%m-%d %H:%M", time.localtime())
 
-    return {timestamp: fetched_prices}
+    return {run_timestamp: fetched_prices}
 
 
 def fetch_directory_html(url: str) -> str | None:
@@ -722,7 +810,10 @@ def process_and_save(locations: dict, source_filepath: str, history_file: str, l
     snapshot's completeness, and only saves it if it passes. Returns True if
     saved, False if rejected - callers should treat False as a failed run
     (e.g. exit non-zero) so CI doesn't push an incomplete update."""
-    prices = get_gas_prices_ajax(locations, source_filepath, load_latest_prices(latest_file))
+    prices = get_gas_prices_ajax(
+        locations, source_filepath, load_latest_prices(latest_file),
+        jump_log_filepath=UNCONFIRMED_JUMPS_LOG_FILE, dataset_label=label,
+    )
     timestamp = next(iter(prices))
     fetched = prices[timestamp]
 
@@ -752,6 +843,7 @@ def main():
         print("3: Update US Prices")
         print("4: Update All Prices")
         print("5: FULL REBUILD (Fetch ALL store addresses, coordinates, and prices for the US)")
+        print("7: Show unconfirmed price-jump summary (which stores flag most often)")
         try:
             run_type = int(input("Enter choice: "))
         except ValueError:
@@ -819,6 +911,9 @@ def main():
 
         us_stores = load_store_locations('us_stores.json') or {}
         discover_new_stores(list(states_to_scrape), us_stores, 'us_stores.json')
+
+    elif run_type == 7:
+        summarize_unconfirmed_jumps()
 
 
 if __name__ == '__main__':
