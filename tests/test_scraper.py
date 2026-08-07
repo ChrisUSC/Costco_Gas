@@ -16,6 +16,8 @@ from scraper import (
     _prices_match,
     confirm_or_revert_price,
     load_latest_prices,
+    log_unconfirmed_jumps,
+    summarize_unconfirmed_jumps,
 )
 
 
@@ -411,6 +413,101 @@ def test_get_gas_prices_ajax_no_baseline_never_triggers_recheck(mock_sleep, mock
     ts = next(iter(result))
     assert result[ts]["CA"]["Danville"] == [1.00, 1.50]
     mock_session.get.assert_called_once()
+
+
+@patch('scraper.create_session')
+@patch('scraper.time.sleep', return_value=None)
+def test_get_gas_prices_ajax_logs_unconfirmed_jump_when_path_given(mock_sleep, mock_create_session, tmp_path):
+    # Same "inconclusive" scenario as above, but this time pass a
+    # jump_log_filepath and confirm a record actually gets written.
+    mock_session = MagicMock()
+    mock_session.get.side_effect = [
+        _resp("1.00", "5.60"), _resp("2.00", "5.60"), _resp("3.00", "5.60"), _resp("4.00", "5.60"),
+    ]
+    mock_create_session.return_value = mock_session
+
+    log_file = tmp_path / "jumps.jsonl"
+    locations = {"CA": {"Danville": {"warehouse_id": "12345"}}}
+    last_known = {"CA": {"Danville": [5.10, 5.60]}}
+    get_gas_prices_ajax(
+        locations, None, last_known,
+        jump_log_filepath=str(log_file), dataset_label="Local",
+    )
+
+    lines = log_file.read_text().strip().splitlines()
+    assert len(lines) == 1
+    record = json.loads(lines[0])
+    assert record["state"] == "CA"
+    assert record["city"] == "Danville"
+    assert record["dataset"] == "Local"
+    assert record["last_reg"] == 5.10
+    assert record["raw_reg"] == 1.00
+    assert record["final_reg"] == 4.00
+
+
+@patch('scraper.create_session')
+@patch('scraper.time.sleep', return_value=None)
+def test_get_gas_prices_ajax_no_log_file_written_when_no_jumps(mock_sleep, mock_create_session, tmp_path):
+    # Confirming a normal (non-suspicious) fetch shouldn't touch the log file at all.
+    mock_session = MagicMock()
+    mock_session.get.return_value = _resp("5.15", "5.65")
+    mock_create_session.return_value = mock_session
+
+    log_file = tmp_path / "jumps.jsonl"
+    locations = {"CA": {"Danville": {"warehouse_id": "12345"}}}
+    last_known = {"CA": {"Danville": [5.10, 5.60]}}
+    get_gas_prices_ajax(locations, None, last_known, jump_log_filepath=str(log_file))
+
+    assert not log_file.exists()
+
+
+def test_log_unconfirmed_jumps_appends_without_clobbering(tmp_path):
+    log_file = tmp_path / "jumps.jsonl"
+    log_unconfirmed_jumps([{"state": "CA", "city": "Danville"}], str(log_file))
+    log_unconfirmed_jumps([{"state": "TX", "city": "Austin"}], str(log_file))
+
+    lines = log_file.read_text().strip().splitlines()
+    assert len(lines) == 2
+    assert json.loads(lines[0])["city"] == "Danville"
+    assert json.loads(lines[1])["city"] == "Austin"
+
+
+def test_log_unconfirmed_jumps_empty_records_no_op(tmp_path):
+    log_file = tmp_path / "jumps.jsonl"
+    log_unconfirmed_jumps([], str(log_file))
+    assert not log_file.exists()
+
+
+def test_summarize_unconfirmed_jumps_missing_file(capsys):
+    summarize_unconfirmed_jumps("does_not_exist_12345.jsonl")
+    captured = capsys.readouterr()
+    assert "No unconfirmed-jumps log found" in captured.out
+
+
+def test_summarize_unconfirmed_jumps_counts_and_ranks(tmp_path, capsys):
+    log_file = tmp_path / "jumps.jsonl"
+    records = (
+        [{"state": "CA", "city": "Danville"}] * 3
+        + [{"state": "TX", "city": "Austin"}] * 1
+    )
+    log_unconfirmed_jumps(records, str(log_file))
+
+    summarize_unconfirmed_jumps(str(log_file))
+    captured = capsys.readouterr()
+    assert "4 unconfirmed jump(s) logged across 2 store(s)" in captured.out
+    # Danville (3x) should be ranked above Austin (1x)
+    danville_pos = captured.out.find("Danville")
+    austin_pos = captured.out.find("Austin")
+    assert 0 <= danville_pos < austin_pos
+
+
+def test_summarize_unconfirmed_jumps_skips_corrupt_lines(tmp_path, capsys):
+    log_file = tmp_path / "jumps.jsonl"
+    log_file.write_text('{"state": "CA", "city": "Danville"}\nnot valid json\n\n')
+
+    summarize_unconfirmed_jumps(str(log_file))
+    captured = capsys.readouterr()
+    assert "1 unconfirmed jump(s) logged across 1 store(s)" in captured.out
 
 
 @patch('scraper.create_session')
