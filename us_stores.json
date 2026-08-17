@@ -1269,6 +1269,13 @@
             "lat": 43.1001966,
             "lng": -89.52230145,
             "address": "2150 DEMING WAY, MIDDLETON, WI 53562-5507"
+        },
+        "Oconomowoc": {
+            "url": "https://www.costco.com/w/-/wi/oconomowoc/1803",
+            "warehouse_id": "1803",
+            "lat": 43.064586350828606,
+            "lng": -88.44796871237186,
+            "address": "1855 KIRKLAND WAY, OCONOMOWOC, WI 53066-4457"
         }
     },
     "CO": {
@@ -1771,6 +1778,13 @@
             "lat": 45.54867354,
             "lng": -94.20003809,
             "address": "3636 2ND ST S, SAINT CLOUD, MN 56301-3732"
+        },
+        "Otsego": {
+            "url": "https://www.costco.com/w/-/mn/otsego/1743",
+            "warehouse_id": "1743",
+            "lat": 45.23972502328801,
+            "lng": -93.6444325930782,
+            "address": "11910 60TH STREET NE, OTSEGO, MN 55301-9730"
         }
     },
     "MA": {
@@ -4100,6 +4114,13 @@
             "lat": 40.57280632,
             "lng": -74.16903638,
             "address": "2975 RICHMOND AVE, STATEN ISLAND, NY 10314-5851"
+        },
+        "Albany NY": {
+            "url": "https://www.costco.com/w/-/ny/albany/1634",
+            "warehouse_id": "1634",
+            "lat": 42.68881,
+            "lng": -73.856144,
+            "address": "1701 WESTERN AVE, ALBANY, NY 12203-4219"
         }
     }
 }
