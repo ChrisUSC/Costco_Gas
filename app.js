@@ -144,6 +144,7 @@ function escapeHtml(str) {
 // parseScraperTimestamp() below resolve the string against the correct
 // timezone (DST-aware) so "time ago" math comes out right everywhere.
 const SCRAPER_TIMEZONE = 'America/Los_Angeles';
+const CARTO_API_KEY = 'cb1_2q9b_1_6d41dfc2a130168400103206';
 
 // Returns the offset (in minutes) such that UTC = wallClockTimeInZone + offset,
 // for whatever instant `utcGuess` represents.
@@ -399,9 +400,13 @@ function setGasPref(pref) {
 function setMapTiles() {
     if (mapTileLayer) map.removeLayer(mapTileLayer);
     const url = isDarkMode ?
-        'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' :
-        'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
-    mapTileLayer = L.tileLayer(url, { attribution: '&copy; CARTO', maxZoom: 19 }).addTo(map);
+        `https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png?key=${CARTO_API_KEY}` :
+        `https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?key=${CARTO_API_KEY}`;
+    mapTileLayer = L.tileLayer(url, {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; <a href="https://carto.com/attributions">CARTO</a>',
+        subdomains: 'abcd',
+        maxZoom: 20
+    }).addTo(map);
 }
 
 function checkZoomLevel() {
