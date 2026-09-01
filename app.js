@@ -144,7 +144,7 @@ function escapeHtml(str) {
 // parseScraperTimestamp() below resolve the string against the correct
 // timezone (DST-aware) so "time ago" math comes out right everywhere.
 const SCRAPER_TIMEZONE = 'America/Los_Angeles';
-const CARTO_API_KEY = 'cb1_2q9b_1_6d41dfc2a130168400103206'; // TODO: replace with your actual CARTO API key
+const CARTO_API_KEY = 'cb1_2q9b_1_6d41dfc2a130168400103206';
 
 // Returns the offset (in minutes) such that UTC = wallClockTimeInZone + offset,
 // for whatever instant `utcGuess` represents.
