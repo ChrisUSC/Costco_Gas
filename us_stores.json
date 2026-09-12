@@ -2275,6 +2275,13 @@
             "lat": 34.119874,
             "lng": -84.5157021,
             "address": "113 LINCOLN ST, WOODSTOCK, GA 30188-7800"
+        },
+        "Stone Mountain": {
+            "url": "https://www.costco.com/w/-/ga/stone-mountain/1769",
+            "warehouse_id": "1769",
+            "lat": 33.821192,
+            "lng": -84.123901,
+            "address": "1915 WEST PARK PLACE BLVD, STONE MOUNTAIN, GA 30087-3310"
         }
     },
     "FL": {
@@ -3929,6 +3936,20 @@
             "lat": 29.53337765,
             "lng": -95.13909854,
             "address": "1310 JASMINE AVE, WEBSTER, TX 77598-3210"
+        },
+        "Mansfield": {
+            "url": "https://www.costco.com/w/-/tx/mansfield/1793",
+            "warehouse_id": "1793",
+            "lat": 32.538871377481335,
+            "lng": -97.10726321431162,
+            "address": "1500 S. US HWY 287, MANSFIELD, TX 76063-3829"
+        },
+        "Celina": {
+            "url": "https://www.costco.com/w/-/tx/celina/1645",
+            "warehouse_id": "1645",
+            "lat": 33.277008,
+            "lng": -96.786849,
+            "address": "3445 S. PRESTON RD, CELINA, TX 75009-3947"
         }
     },
     "KS": {
