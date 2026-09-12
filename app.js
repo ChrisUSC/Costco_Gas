@@ -102,6 +102,23 @@ function hasGradeData(store, grade) {
     return v !== undefined && v !== Infinity && !isNaN(v);
 }
 
+// Regular/premium are reported at virtually every warehouse, so a store
+// missing one of those is almost always a transient data gap - worth still
+// showing (with an "N/A" fallback) rather than silently disappearing.
+// Diesel is genuinely only sold at a minority of warehouses, so when it's
+// the active preference, stores that don't offer it shouldn't clutter the
+// map/list at all - only diesel stores should show for onward Diesel views.
+function shouldFilterStoresByGrade(grade) {
+    return grade === 'diesel';
+}
+
+// Applies the above to a list of stores for map/list rendering, given the
+// currently-selected gas preference.
+function filterStoresForCurrentGrade(dataArray) {
+    if (!shouldFilterStoresByGrade(gasPref)) return dataArray;
+    return dataArray.filter(store => hasGradeData(store, gasPref));
+}
+
 // Safely parse data (Handles BOTH new Array format [4.84, 5.20] and old {"Regular": "$4.84"} format)
 const getValidPrice = (val) => {
     if (val === null || val === undefined || val === "N/A") return Infinity;
@@ -1141,7 +1158,7 @@ function ensureHistoryLoaded() {
 
 function renderMap(dataArray) {
     markersLayer.clearLayers();
-    dataArray.forEach(store => {
+    filterStoresForCurrentGrade(dataArray).forEach(store => {
         if (!store.lat || !store.lng) return;
 
         const displayPrice = gradeStr(store, gasPref);
@@ -1405,6 +1422,7 @@ function renderStoresList(searchTerm) {
         s.address.toLowerCase().includes(searchTerm) ||
         s.state.toLowerCase().includes(searchTerm)
     );
+    filtered = filterStoresForCurrentGrade(filtered);
 
     // SORT: Make the sidebar list also prioritize by distance to the map view
     if (map && filtered.length > 0) {
