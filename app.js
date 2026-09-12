@@ -62,6 +62,46 @@ function loadJsonPref(key, fallback) {
     }
 }
 
+// --- Gas grade metadata ---
+// Central place for the three grades the scraper can report. Adding a grade
+// here (label + color) is the only thing that should need to change to add
+// another one in the future - every helper below reads from this instead of
+// hardcoding 'regular'/'premium' branches.
+const GRADE_INFO = {
+    regular: { label: 'Regular', color: '#059669' },
+    premium: { label: 'Premium', color: '#E31837' },
+    diesel: { label: 'Diesel', color: '#7c3aed' }
+};
+const GRADE_KEYS = Object.keys(GRADE_INFO); // ['regular', 'premium', 'diesel']
+
+// Per-store price fields are still stored under their own named properties
+// (regVal/premVal/dieselVal, etc.) rather than a nested object, to minimize
+// disruption to existing code - these helpers are the single place that maps
+// a grade key to the right property, so callers can stay grade-agnostic.
+function gradeVal(store, grade) {
+    if (grade === 'regular') return store.regVal;
+    if (grade === 'premium') return store.premVal;
+    return store.dieselVal;
+}
+function gradePrevVal(store, grade) {
+    if (grade === 'regular') return store.prevRegVal;
+    if (grade === 'premium') return store.prevPremVal;
+    return store.prevDieselVal;
+}
+function gradeStr(store, grade) {
+    if (grade === 'regular') return store.regularStr;
+    if (grade === 'premium') return store.premiumStr;
+    return store.dieselStr;
+}
+// Most Costco warehouses don't sell diesel at all, so unlike regular/premium
+// (which are basically always present), diesel needs an explicit "does this
+// store actually report a diesel price" check before we bother showing a row
+// for it - otherwise nearly every card/popup would show a noisy "Diesel: N/A".
+function hasGradeData(store, grade) {
+    const v = gradeVal(store, grade);
+    return v !== undefined && v !== Infinity && !isNaN(v);
+}
+
 // Safely parse data (Handles BOTH new Array format [4.84, 5.20] and old {"Regular": "$4.84"} format)
 const getValidPrice = (val) => {
     if (val === null || val === undefined || val === "N/A") return Infinity;
@@ -358,9 +398,8 @@ function initPreferences() {
         document.body.classList.add('dark-mode');
         document.getElementById('themeToggle').innerText = '☀️';
     }
-    document.getElementById('btn-regular').classList.remove('active');
-    document.getElementById('btn-premium').classList.remove('active');
-    document.getElementById(`btn-${gasPref}`).classList.add('active');
+    GRADE_KEYS.forEach(g => document.getElementById(`btn-${g}`)?.classList.remove('active'));
+    document.getElementById(`btn-${gasPref}`)?.classList.add('active');
 }
 
 function toggleTheme() {
@@ -381,9 +420,8 @@ function setGasPref(pref) {
     gasPref = pref;
     localStorage.setItem('gasPref', pref);
 
-    document.getElementById('btn-regular').classList.remove('active');
-    document.getElementById('btn-premium').classList.remove('active');
-    document.getElementById(`btn-${pref}`).classList.add('active');
+    GRADE_KEYS.forEach(g => document.getElementById(`btn-${g}`)?.classList.remove('active'));
+    document.getElementById(`btn-${pref}`)?.classList.add('active');
 
     if (globalStoreData.length > 0) {
         renderMap(globalStoreData);
@@ -938,14 +976,21 @@ function placeUserLocationMarker(loc, { openPopup = false } = {}) {
     return marker;
 }
 
-function extractRegPrem(pData) {
+function extractGradePrices(pData) {
     // Null safety guard
-    if (!pData) return [undefined, undefined];
+    if (!pData) return [undefined, undefined, undefined];
 
     if (Array.isArray(pData)) {
-        return [pData[0], pData[1]];
+        // Old snapshots/history are 2-element [reg, prem] with no diesel at
+        // all; pData[2] is simply undefined for those, which getValidPrice
+        // already treats the same as "no data" (-> Infinity -> "N/A").
+        return [pData[0], pData[1], pData[2]];
     }
-    return [pData.Regular ?? pData.regular, pData.Premium ?? pData.premium];
+    return [
+        pData.Regular ?? pData.regular,
+        pData.Premium ?? pData.premium,
+        pData.Diesel ?? pData.diesel
+    ];
 }
 
 async function loadData() {
@@ -989,16 +1034,18 @@ async function loadData() {
             for (const [cityName, info] of Object.entries(storeData[stateCode])) {
                 const pData = timestampedPrices[stateCode][cityName];
                 if (pData) {
-                    const [rRaw, pRaw] = extractRegPrem(pData);
+                    const [rRaw, pRaw, dRaw] = extractGradePrices(pData);
                     const regVal = getValidPrice(rRaw);
                     const premVal = getValidPrice(pRaw);
+                    const dieselVal = getValidPrice(dRaw);
 
-                    let prevRegVal, prevPremVal;
+                    let prevRegVal, prevPremVal, prevDieselVal;
                     const prevData = previousPrices[stateCode] && previousPrices[stateCode][cityName];
                     if (prevData) {
-                        const [prevRRaw, prevPRaw] = extractRegPrem(prevData);
+                        const [prevRRaw, prevPRaw, prevDRaw] = extractGradePrices(prevData);
                         prevRegVal = getValidPrice(prevRRaw);
                         prevPremVal = getValidPrice(prevPRaw);
+                        prevDieselVal = getValidPrice(prevDRaw);
                     }
 
                     globalStoreData.push({
@@ -1006,10 +1053,13 @@ async function loadData() {
                         lat: info.lat, lng: info.lng, url: info.url,
                         regularStr: formatPriceDisplay(regVal),
                         premiumStr: formatPriceDisplay(premVal),
+                        dieselStr: formatPriceDisplay(dieselVal),
                         regVal: regVal,
                         premVal: premVal,
+                        dieselVal: dieselVal,
                         prevRegVal: prevRegVal,
-                        prevPremVal: prevPremVal
+                        prevPremVal: prevPremVal,
+                        prevDieselVal: prevDieselVal
                     });
                 }
             }
@@ -1067,13 +1117,14 @@ function ensureHistoryLoaded() {
                     const key = `${stateCode}_${cityName}`;
                     if (!globalHistory[key]) globalHistory[key] = [];
 
-                    const [rRaw, pRaw] = extractRegPrem(priceData[ts][stateCode][cityName]);
+                    const [rRaw, pRaw, dRaw] = extractGradePrices(priceData[ts][stateCode][cityName]);
 
                     globalHistory[key].push({
                         rawDate: d,
                         dayStr: dayStr,
                         reg: getValidPrice(rRaw),
-                        prem: getValidPrice(pRaw)
+                        prem: getValidPrice(pRaw),
+                        diesel: getValidPrice(dRaw)
                     });
                 }
             }
@@ -1093,8 +1144,8 @@ function renderMap(dataArray) {
     dataArray.forEach(store => {
         if (!store.lat || !store.lng) return;
 
-        const displayPrice = gasPref === 'regular' ? store.regularStr : store.premiumStr;
-        const priceColor = gasPref === 'regular' ? '#059669' : '#E31837';
+        const displayPrice = gradeStr(store, gasPref);
+        const priceColor = GRADE_INFO[gasPref].color;
         const isFav = isFavoriteStore(store.state, store.city);
         const favBadge = isFav ? `<div class="pin-favorite-badge">★</div>` : '';
 
@@ -1121,6 +1172,13 @@ function renderMap(dataArray) {
         const safeCity = store.city.replace(/'/g, "\\'");
         const regTrend = getTrendArrow(store.regVal, store.prevRegVal);
         const premTrend = getTrendArrow(store.premVal, store.prevPremVal);
+        const dieselTrend = getTrendArrow(store.dieselVal, store.prevDieselVal);
+        // Diesel box only shown for the (rare) stores that actually report a
+        // diesel price - most Costco warehouses don't sell it, so unconditionally
+        // adding a "Diesel: N/A" row to every single popup would just be noise.
+        const dieselBoxHtml = hasGradeData(store, 'diesel') ? `
+            <div class="popup-price-box"><span>Diesel</span><strong>${store.dieselStr} ${dieselTrend}</strong></div>
+        ` : '';
 
         marker.bindPopup(`
             <div class="popup-store-name">${store.city}, ${store.state}</div>
@@ -1128,6 +1186,7 @@ function renderMap(dataArray) {
             <div class="popup-prices-grid">
                 <div class="popup-price-box"><span>Regular</span><strong>${store.regularStr || 'N/A'} ${regTrend}</strong></div>
                 <div class="popup-price-box"><span>Premium</span><strong>${store.premiumStr || 'N/A'} ${premTrend}</strong></div>
+                ${dieselBoxHtml}
             </div>
             <a href="${store.url}" target="_blank" rel="noopener noreferrer" class="popup-btn popup-btn-outline">View Store</a>
             <button class="popup-btn" style="margin-top:8px;" onclick="openHistoryModal('${store.state}', '${safeCity}')">📈 Price History</button>
@@ -1249,6 +1308,12 @@ function renderPriceChart(state, city) {
     const labels = dedupedHistory.map(h => h.rawDate);
     const regData = dedupedHistory.map(h => h.reg === Infinity ? null : h.reg);
     const premData = dedupedHistory.map(h => h.prem === Infinity ? null : h.prem);
+    const dieselData = dedupedHistory.map(h => h.diesel === Infinity ? null : h.diesel);
+    // Most stores/history never have a diesel figure at all - only add the
+    // dataset (and its legend entry) when at least one point in the visible
+    // range actually has one, so the legend doesn't show a permanently-empty
+    // "Diesel" line for the vast majority of stores.
+    const hasAnyDiesel = dieselData.some(v => v !== null);
 
     const textColor = isDarkMode ? '#f8fafc' : '#1e293b';
     const gridColor = isDarkMode ? '#334155' : '#e2e8f0';
@@ -1256,30 +1321,43 @@ function renderPriceChart(state, city) {
     const ctx = document.getElementById('priceChart').getContext('2d');
     if (priceChartInstance) priceChartInstance.destroy();
 
+    const datasets = [
+        {
+            label: 'Regular',
+            data: regData,
+            borderColor: GRADE_INFO.regular.color,
+            backgroundColor: GRADE_INFO.regular.color,
+            tension: 0.1,
+            pointRadius: 4,
+            spanGaps: true
+        },
+        {
+            label: 'Premium',
+            data: premData,
+            borderColor: GRADE_INFO.premium.color,
+            backgroundColor: GRADE_INFO.premium.color,
+            tension: 0.1,
+            pointRadius: 4,
+            spanGaps: true
+        }
+    ];
+    if (hasAnyDiesel) {
+        datasets.push({
+            label: 'Diesel',
+            data: dieselData,
+            borderColor: GRADE_INFO.diesel.color,
+            backgroundColor: GRADE_INFO.diesel.color,
+            tension: 0.1,
+            pointRadius: 4,
+            spanGaps: true
+        });
+    }
+
     priceChartInstance = new Chart(ctx, {
         type: 'line',
         data: {
             labels: labels,
-            datasets: [
-                {
-                    label: 'Regular',
-                    data: regData,
-                    borderColor: '#059669',
-                    backgroundColor: '#059669',
-                    tension: 0.1,
-                    pointRadius: 4,
-                    spanGaps: true
-                },
-                {
-                    label: 'Premium',
-                    data: premData,
-                    borderColor: '#E31837',
-                    backgroundColor: '#E31837',
-                    tension: 0.1,
-                    pointRadius: 4,
-                    spanGaps: true
-                }
-            ]
+            datasets: datasets
         },
         options: {
             responsive: true,
@@ -1374,14 +1452,14 @@ function renderLowestPrices(stateOverride = null) {
     container.innerHTML += dropdownHTML;
 
     const stateData = globalStoreData.filter(s => s.state === currentStateContext);
-    const isReg = gasPref === 'regular';
+    const gradeLabel = GRADE_INFO[gasPref].label;
 
     const sortedData = [...stateData]
-        .filter(s => isReg ? s.regVal !== Infinity : s.premVal !== Infinity)
-        .sort((a, b) => isReg ? a.regVal - b.regVal : a.premVal - b.premVal)
+        .filter(s => hasGradeData(s, gasPref))
+        .sort((a, b) => gradeVal(a, gasPref) - gradeVal(b, gasPref))
         .slice(0, 10);
 
-    container.innerHTML += `<div class="leaderboard-header">Top 10 Cheapest ${isReg ? 'Regular' : 'Premium'}</div>`;
+    container.innerHTML += `<div class="leaderboard-header">Top 10 Cheapest ${gradeLabel}</div>`;
     if (sortedData.length === 0) {
         container.innerHTML += `<p style="text-align:center; color:var(--text-muted); font-size: 13px;">No pricing data found for this state.</p>`;
     }
@@ -1417,7 +1495,7 @@ function renderNearbyPrices() {
         return;
     }
 
-    const isReg = gasPref === 'regular';
+    const gradeLabel = GRADE_INFO[gasPref].label;
     const controlsHtml = `
         <div class="nearby-controls">
             <div class="nearby-control-group">
@@ -1446,10 +1524,10 @@ function renderNearbyPrices() {
     }
 
     const sortedData = [...nearbyStores]
-        .filter(s => isReg ? s.regVal !== Infinity : s.premVal !== Infinity)
+        .filter(s => hasGradeData(s, gasPref))
         .sort((a, b) => {
-            const valA = isReg ? a.regVal : a.premVal;
-            const valB = isReg ? b.regVal : b.premVal;
+            const valA = gradeVal(a, gasPref);
+            const valB = gradeVal(b, gasPref);
             if (nearbySortMode === 'distance') {
                 return a.distance !== b.distance ? a.distance - b.distance : valA - valB;
             }
@@ -1457,13 +1535,13 @@ function renderNearbyPrices() {
         }).slice(0, 10);
 
     const headerLabel = nearbySortMode === 'distance'
-        ? `Closest Stations &middot; ${isReg ? 'Regular' : 'Premium'} (Within ${nearbyRadiusMiles} Miles)`
-        : `Cheapest ${isReg ? 'Regular' : 'Premium'} (Within ${nearbyRadiusMiles} Miles)`;
+        ? `Closest Stations &middot; ${gradeLabel} (Within ${nearbyRadiusMiles} Miles)`
+        : `Cheapest ${gradeLabel} (Within ${nearbyRadiusMiles} Miles)`;
 
     container.innerHTML = controlsHtml + `<div class="leaderboard-header">${headerLabel}</div>`;
 
     if (sortedData.length === 0) {
-        container.innerHTML += `<p style="text-align:center; color:var(--text-muted); margin-top:20px;">No stations within ${nearbyRadiusMiles} miles have a ${isReg ? 'regular' : 'premium'} price right now.</p>`;
+        container.innerHTML += `<p style="text-align:center; color:var(--text-muted); margin-top:20px;">No stations within ${nearbyRadiusMiles} miles have a ${gradeLabel.toLowerCase()} price right now.</p>`;
         return;
     }
 
@@ -1540,6 +1618,7 @@ function createStoreCard(store, highlight = null, index = null, showDistance = f
 
     let regClass = highlight === 'regular' ? 'highlight' : '';
     let premClass = highlight === 'premium' ? 'highlight' : '';
+    let dieselClass = highlight === 'diesel' ? 'highlight' : '';
 
     let badgeHtml = '';
     if (showDistance && store.distance !== undefined) {
@@ -1551,7 +1630,15 @@ function createStoreCard(store, highlight = null, index = null, showDistance = f
     const safeCity = store.city.replace(/'/g, "\\'");
     const regTrend = getTrendArrow(store.regVal, store.prevRegVal);
     const premTrend = getTrendArrow(store.premVal, store.prevPremVal);
+    const dieselTrend = getTrendArrow(store.dieselVal, store.prevDieselVal);
     const isFav = isFavoriteStore(store.state, store.city);
+
+    // Same "only show if this store actually has it" rule as the map popup -
+    // see the comment on hasGradeData().
+    const dieselTagHtml = hasGradeData(store, 'diesel') ? `
+            <div class="price-tag ${dieselClass}">
+                <span>Diesel</span><span class="val">${store.dieselStr} ${dieselTrend}</span>
+            </div>` : '';
 
     div.innerHTML = `
         <h3><span>${store.city}, ${store.state}</span> ${badgeHtml}</h3>
@@ -1563,6 +1650,7 @@ function createStoreCard(store, highlight = null, index = null, showDistance = f
             <div class="price-tag ${premClass}">
                 <span>Premium</span><span class="val">${store.premiumStr || 'N/A'} ${premTrend}</span>
             </div>
+            ${dieselTagHtml}
         </div>
         <div class="card-actions">
             <button class="btn-action" style="flex:1; background: transparent; color: var(--costco-blue); border: 2px solid var(--costco-blue);"
@@ -1815,12 +1903,12 @@ function cancelEditRoute() {
 function renderRouteResults(state) {
     const el = document.getElementById('routeResultsContainer');
     if (!el) return;
-    const isReg = gasPref === 'regular';
+    const gradeLabel = GRADE_INFO[gasPref].label;
     const { along, route, bufferMiles } = state;
 
     const sorted = along
-        .filter(s => isReg ? s.regVal !== Infinity : s.premVal !== Infinity)
-        .sort((a, b) => (isReg ? a.regVal - b.regVal : a.premVal - b.premVal));
+        .filter(s => hasGradeData(s, gasPref))
+        .sort((a, b) => gradeVal(a, gasPref) - gradeVal(b, gasPref));
 
     let html = '';
     if (route.isApproximate) {
@@ -1834,7 +1922,7 @@ function renderRouteResults(state) {
         return;
     }
 
-    el.innerHTML += `<div class="leaderboard-header">Cheapest ${isReg ? 'Regular' : 'Premium'} Along the Way</div>`;
+    el.innerHTML += `<div class="leaderboard-header">Cheapest ${gradeLabel} Along the Way</div>`;
     sorted.forEach((store, index) => el.appendChild(createStoreCard(store, gasPref, index, true, ' off route')));
 }
 

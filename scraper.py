@@ -92,6 +92,7 @@ PRICE_MATCH_TOLERANCE = 0.01
 # JSON Lines (one JSON object per line) is used instead of one big JSON array
 # so appending an entry never requires reading/re-writing the whole file.
 UNCONFIRMED_JUMPS_LOG_FILE = 'unconfirmed_jumps_log.jsonl'
+GRADES = ("regular", "premium", "diesel")
 
 def format_price(v) -> float | None:
     """Format a raw price string into a float rounded to 2 decimals, or None if invalid."""
@@ -136,17 +137,25 @@ def get_warehouse_id(url: str) -> str:
     return url.rstrip('/').split('/')[-1].replace('.html', '').replace('warehouseid=', '')
 
 
+def _grade_price(prices: list, idx: int) -> float | None:
+    """Safely reads prices[idx], treating a too-short list (old 2-element
+    [reg, prem] entries saved before diesel was tracked) as None instead of
+    raising IndexError."""
+    return prices[idx] if idx < len(prices) else None
+
+
 def print_lowest_prices(prices: dict) -> None:
     for timestamp, states_data in prices.items():
         lowest: dict[str, tuple[float, list[str]]] = {
             "Regular": (float('inf'), []),
             "Premium": (float('inf'), []),
+            "Diesel": (float('inf'), []),
         }
 
         for state, cities in states_data.items():
             for city, gas_prices in cities.items():
-                for idx, gas_type in enumerate(["Regular", "Premium"]):
-                    price = gas_prices[idx]
+                for idx, gas_type in enumerate(["Regular", "Premium", "Diesel"]):
+                    price = _grade_price(gas_prices, idx)
                     if price is None:
                         continue
                     cur_low, cur_cities = lowest[gas_type]
@@ -297,6 +306,7 @@ def save_data(data: dict, history_path: str, latest_path: str) -> None:
 
     print(f"Saved latest snapshot -> {latest_path} | appended history -> {history_path}")
 
+
 def write_pretty_top_level(data: dict, file_path: str) -> None:
     """Writes JSON with one line per top-level key, compact nested content."""
     with open(file_path, "w", encoding='utf-8') as fp:
@@ -380,13 +390,11 @@ def enrich_store_list(state_urls: dict) -> dict:
     enriched_data = {}
     session = create_session()
 
-    # Changed parameter names to avoid shadowing the loop below
     def fetch_single_store(target_state, target_city, target_url):
         try:
             resp = session.get(target_url, headers={'User-Agent': random.choice(USER_AGENTS)}, timeout=10)
             resp.raise_for_status()
             metadata = extract_store_metadata(resp.text)
-            # No parentheses!
             return target_state, target_city, target_url, metadata
         except (requests.exceptions.RequestException, ValueError, KeyError):
             return target_state, target_city, target_url, None
@@ -401,7 +409,6 @@ def enrich_store_list(state_urls: dict) -> dict:
                 futures.append(executor.submit(fetch_single_store, state, city, url))
 
         for future in as_completed(futures):
-            # Renamed these variables so they don't shadow the 'state' and 'city' loops above
             res_state, res_city, res_url, meta = future.result()
 
             if meta and meta["has_gas"]:
@@ -472,13 +479,14 @@ def _quorum_value(samples: list[float | None]) -> float | None:
     return winning[-1][0]
 
 
-def confirm_or_revert_price(state: str, city: str, reg: float | None, prem: float | None,
-                             last_reg: float | None, last_prem: float | None,
-                             refetch_fn) -> tuple[float | None, float | None, bool]:
+def confirm_or_revert_price(state: str, city: str, grade_prices: dict[str, float | None],
+                             last_grade_prices: dict[str, float | None],
+                             refetch_fn) -> tuple[dict[str, float | None], bool]:
     """Called when a freshly-fetched price looks like a suspiciously big jump
-    vs. the last saved price. Re-fetches (cache-busted, with a randomized
-    delay so we're not hammering Costco back-to-back, and not just replaying
-    a cached response) up to MAX_RECHECK_ATTEMPTS times per grade.
+    vs. the last saved price, for one or more grades (regular/premium/diesel).
+    Re-fetches (cache-busted, with a randomized delay so we're not hammering
+    Costco back-to-back, and not just replaying a cached response) up to
+    MAX_RECHECK_ATTEMPTS times.
 
     A value - whether it's the new price, the old price, or something else
     entirely - is only trusted once CONFIRMATION_QUORUM independently-fetched
@@ -486,19 +494,18 @@ def confirm_or_revert_price(state: str, city: str, reg: float | None, prem: floa
     own, since one recheck can't distinguish "the price really moved" from
     "the endpoint served the same cached/glitchy response twice."
 
-    Returns (final_reg, final_prem, unconfirmed) where unconfirmed is True if
-    at least one grade never reached quorum after all rechecks - in that case
-    the freshest fetched value is kept (not the stale old one), just flagged
-    for visibility.
-    """
-    reg_suspicious = is_suspicious_jump(reg, last_reg)
-    prem_suspicious = is_suspicious_jump(prem, last_prem)
+    grade_prices / last_grade_prices are {"regular": ..., "premium": ..., "diesel": ...}.
+    Returns (final_prices, unconfirmed) where unconfirmed is True if at least
+    one grade never reached quorum after all rechecks - in that case the
+    freshest fetched value is kept (not the stale old one), just flagged for
+    visibility."""
+    suspicious = {
+        grade: is_suspicious_jump(grade_prices.get(grade), last_grade_prices.get(grade))
+        for grade in GRADES
+    }
 
-    details = []
-    if reg_suspicious:
-        details.append(f"reg {last_reg}->{reg}")
-    if prem_suspicious:
-        details.append(f"prem {last_prem}->{prem}")
+    details = [f"{grade} {last_grade_prices.get(grade)}->{grade_prices.get(grade)}"
+               for grade in GRADES if suspicious[grade]]
     print(f"  ⚠ Suspicious jump for {city}, {state}: {', '.join(details)}. Re-checking...")
 
     # Deliberately NOT seeded with the original (suspicious) fetch. If the
@@ -506,47 +513,39 @@ def confirm_or_revert_price(state: str, city: str, reg: float | None, prem: floa
     # satisfy CONFIRMATION_QUORUM=2 by itself - exactly the weak "one
     # recheck confirms it" behavior this was meant to replace. Quorum must
     # be reached among independently-fetched *rechecks*.
-    reg_samples: list[float | None] = []
-    prem_samples: list[float | None] = []
-    final_reg, final_prem = reg, prem
+    samples: dict[str, list[float | None]] = {grade: [] for grade in GRADES}
+    final_prices = dict(grade_prices)
 
     for attempt in range(MAX_RECHECK_ATTEMPTS):
         time.sleep(random.uniform(*RECHECK_DELAY_RANGE))
         recheck = refetch_fn()
         if recheck is None:
             continue
-        recheck_reg, recheck_prem = recheck
+        recheck_prices = recheck  # {"regular": ..., "premium": ..., "diesel": ...}
 
-        if reg_suspicious:
-            reg_samples.append(recheck_reg)
-            quorum_reg = _quorum_value(reg_samples)
-            if quorum_reg is not None:
-                final_reg = quorum_reg
-                reg_suspicious = False
+        for grade in GRADES:
+            if not suspicious[grade]:
+                continue
+            samples[grade].append(recheck_prices.get(grade))
+            quorum_val = _quorum_value(samples[grade])
+            if quorum_val is not None:
+                final_prices[grade] = quorum_val
+                suspicious[grade] = False
             else:
-                final_reg = recheck_reg  # freshest sample, in case we run out of attempts
+                final_prices[grade] = recheck_prices.get(grade)  # freshest sample, in case we run out of attempts
 
-        if prem_suspicious:
-            prem_samples.append(recheck_prem)
-            quorum_prem = _quorum_value(prem_samples)
-            if quorum_prem is not None:
-                final_prem = quorum_prem
-                prem_suspicious = False
-            else:
-                final_prem = recheck_prem
-
-        if not reg_suspicious and not prem_suspicious:
+        if not any(suspicious.values()):
             break
 
-    unconfirmed = reg_suspicious or prem_suspicious
+    unconfirmed = any(suspicious.values())
     if unconfirmed:
         print(f"  ⚠ {city}, {state}: couldn't confirm after {MAX_RECHECK_ATTEMPTS} recheck(s) - "
-              f"keeping most recent fetch (reg={final_reg}, prem={final_prem}), flagging as unconfirmed "
-              f"[reg samples: {reg_samples}, prem samples: {prem_samples}]")
+              f"keeping most recent fetch ({final_prices}), flagging as unconfirmed "
+              f"[samples: {samples}]")
     else:
-        print(f"  ✓ Resolved {city}, {state}: reg={final_reg}, prem={final_prem}")
+        print(f"  ✓ Resolved {city}, {state}: {final_prices}")
 
-    return final_reg, final_prem, unconfirmed
+    return final_prices, unconfirmed
 
 
 def log_unconfirmed_jumps(records: list[dict], filepath: str = UNCONFIRMED_JUMPS_LOG_FILE) -> None:
@@ -598,11 +597,11 @@ def summarize_unconfirmed_jumps(filepath: str = UNCONFIRMED_JUMPS_LOG_FILE, top_
 
 
 def load_latest_prices(latest_path: str) -> dict:
-    """Loads just the {state: {city: [reg, prem]}} prices out of an existing
-    *_latest.json, used as the baseline for the jump-confirmation check.
-    Returns {} if the file doesn't exist yet or is unreadable - in that case
-    the check simply has nothing to compare against and skips (no baseline,
-    no false positives on the very first run)."""
+    """Loads just the {state: {city: [reg, prem, diesel]}} prices out of an
+    existing *_latest.json, used as the baseline for the jump-confirmation
+    check. Returns {} if the file doesn't exist yet or is unreadable - in
+    that case the check simply has nothing to compare against and skips (no
+    baseline, no false positives on the very first run)."""
     if not os.path.exists(latest_path):
         return {}
     try:
@@ -617,7 +616,8 @@ def get_gas_prices_ajax(locations: dict, source_filepath: str | None = None,
                          last_known_prices: dict | None = None,
                          jump_log_filepath: str | None = None,
                          dataset_label: str | None = None) -> dict:
-    """Concurrently fetches gas prices from Costco's AJAX API.
+    """Concurrently fetches gas prices (regular, premium, diesel) from
+    Costco's AJAX API.
 
     jump_log_filepath: if given, every unconfirmed price jump this run gets
     appended to this file (see log_unconfirmed_jumps) for later analysis.
@@ -626,6 +626,7 @@ def get_gas_prices_ajax(locations: dict, source_filepath: str | None = None,
     dataset_label: optional tag (e.g. "Local"/"CA"/"US") included in each
     logged record, since the same store can appear in more than one dataset.
     """
+
     fetched_prices = {}
     session = create_session()
     last_known_prices = last_known_prices or {}
@@ -640,10 +641,6 @@ def get_gas_prices_ajax(locations: dict, source_filepath: str | None = None,
             for attempt in range(MAX_FETCH_ATTEMPTS):
                 try:
                     time.sleep(1 + attempt)  # Delay to respect rate limits
-                    # Cache-bust + explicitly ask for a fresh response every
-                    # call - this function is also used as the "recheck"
-                    # fetch, and a cached response would let a bad price
-                    # falsely confirm itself.
                     resp = session.get(
                         _cache_busted_url(ajax_url),
                         headers={
@@ -664,9 +661,10 @@ def get_gas_prices_ajax(locations: dict, source_filepath: str | None = None,
 
                     reg = format_price(normalized.get('regular'))
                     prem = format_price(normalized.get('premium'))
+                    diesel = format_price(normalized.get('diesel'))
 
-                    if reg is not None or prem is not None:
-                        return reg, prem
+                    if reg is not None or prem is not None or diesel is not None:
+                        return {"regular": reg, "premium": prem, "diesel": diesel}
 
                 except (requests.exceptions.RequestException, json.JSONDecodeError, ValueError, KeyError):
                     pass
@@ -676,26 +674,33 @@ def get_gas_prices_ajax(locations: dict, source_filepath: str | None = None,
         if result is None:
             return target_state, target_city, None, False, None
 
-        reg, prem = result
         last = last_known_prices.get(target_state, {}).get(target_city)
-        last_reg, last_prem = (last[0], last[1]) if last else (None, None)
+        last_grade_prices = {
+            "regular": _grade_price(last, 0) if last else None,
+            "premium": _grade_price(last, 1) if last else None,
+            "diesel": _grade_price(last, 2) if last else None,
+        }
 
-        raw_reg, raw_prem = reg, prem  # the fetch that first looked suspicious, before any recheck
+        raw_result = dict(result)  # the fetch that first looked suspicious, before any recheck
         flagged = False
-        if is_suspicious_jump(reg, last_reg) or is_suspicious_jump(prem, last_prem):
-            reg, prem, flagged = confirm_or_revert_price(
-                target_state, target_city, reg, prem, last_reg, last_prem, attempt_fetch
+        if any(is_suspicious_jump(result.get(grade), last_grade_prices.get(grade)) for grade in GRADES):
+            result, flagged = confirm_or_revert_price(
+                target_state, target_city, result, last_grade_prices, attempt_fetch
             )
 
         jump_detail = None
         if flagged:
             jump_detail = {
-                "last_reg": last_reg, "last_prem": last_prem,
-                "raw_reg": raw_reg, "raw_prem": raw_prem,
-                "final_reg": reg, "final_prem": prem,
+                "last_reg": last_grade_prices["regular"], "last_prem": last_grade_prices["premium"],
+                "last_diesel": last_grade_prices["diesel"],
+                "raw_reg": raw_result["regular"], "raw_prem": raw_result["premium"],
+                "raw_diesel": raw_result["diesel"],
+                "final_reg": result["regular"], "final_prem": result["premium"],
+                "final_diesel": result["diesel"],
             }
 
-        return target_state, target_city, [reg, prem], flagged, jump_detail
+        prices_list = [result["regular"], result["premium"], result["diesel"]]
+        return target_state, target_city, prices_list, flagged, jump_detail
 
     print("Fetching live gas prices...")
     total_stores = 0
@@ -741,13 +746,6 @@ def get_gas_prices_ajax(locations: dict, source_filepath: str | None = None,
         if jump_log_filepath:
             log_unconfirmed_jumps(jump_log_records, jump_log_filepath)
 
-    # Prices that WERE fetched successfully are always kept - a partial run
-    # still produces useful, fresher data for the stores that responded.
-    # Deleting stores from the master file is the one *irreversible* action
-    # here, so it gets a safety check: only prune individual failures when
-    # they look like isolated cases (e.g. one store's gas station closed),
-    # not when a large fraction of the whole run failed, which is a much
-    # stronger signal of rate limiting/blocking than of mass store closures.
     failure_rate = (len(failed_stores) / total_stores) if total_stores else 0
     circuit_tripped = (
         (len(failed_stores) >= MIN_STORES_FOR_CIRCUIT_BREAKER and failure_rate > FAILURE_RATE_THRESHOLD)
@@ -859,16 +857,12 @@ def build_and_save_master_db(states_to_update: list, output_filepath: str):
         if html:
             standard_stores = extract_stores_from_html(html)
             if standard_stores:
-                # This fetches coordinates and prunes locations without gas
                 enriched = enrich_store_list({state: standard_stores})
                 if state in enriched:
                     master_stores[state] = enriched[state]
 
     new_total = sum(len(cities) for cities in master_stores.values())
 
-    # Same safety valve as get_gas_prices_ajax: a full rebuild rebuilds
-    # us_stores.json from scratch, so a network block/rate-limit here would
-    # otherwise silently overwrite a good file with a much smaller one.
     if os.path.exists(output_filepath):
         existing = load_store_locations(output_filepath) or {}
         existing_total = sum(len(cities) for cities in existing.values())
@@ -926,6 +920,7 @@ def main():
         print("3: Update US Prices")
         print("4: Update All Prices")
         print("5: FULL REBUILD (Fetch ALL store addresses, coordinates, and prices for the US)")
+        print("6: Discover new stores")
         print("7: Show unconfirmed price-jump summary (which stores flag most often)")
         try:
             run_type = int(input("Enter choice: "))
