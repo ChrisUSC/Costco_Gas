@@ -112,8 +112,8 @@ def test_load_store_locations(tmp_path):
 
     data = load_store_locations(str(file))
     assert data is not None
-
     assert data["CA"]["Los Angeles"]["warehouse_id"] == "123"
+
 
 def test_load_store_locations_missing():
     assert load_store_locations("does_not_exist.json") is None
@@ -121,12 +121,12 @@ def test_load_store_locations_missing():
 
 def test_write_pretty_top_level(tmp_path):
     file = tmp_path / "output.json"
-    test_data = {"2023-10-27 12:00": {"CA": {"LA": [4.99, 5.29]}}}
+    test_data = {"2023-10-27 12:00": {"CA": {"LA": [4.99, 5.29, None]}}}
     write_pretty_top_level(test_data, str(file))
 
     content = file.read_text()
     assert "{" in content
-    assert '"2023-10-27 12:00": {"CA":{"LA":[4.99,5.29]}}' in content
+    assert '"2023-10-27 12:00": {"CA":{"LA":[4.99,5.29,null]}}' in content
 
 
 def test_remove_location_from_file(tmp_path):
@@ -148,40 +148,39 @@ def test_remove_location_from_file(tmp_path):
 
 def test_save_data_appends_correctly(tmp_path):
     history_file = tmp_path / "historical_prices.json"
-    latest_file = tmp_path / "latest_prices.json"  # Added dummy latest file
+    latest_file = tmp_path / "latest_prices.json"
 
-    initial_data = {"2023-10-01 10:00": {"CA": {"LA": [4.50, 4.80]}}}
+    initial_data = {"2023-10-01 10:00": {"CA": {"LA": [4.50, 4.80, None]}}}
     history_file.write_text(json.dumps(initial_data))
 
-    new_data = {"2023-10-02 10:00": {"CA": {"LA": [4.45, 4.75]}}}
+    new_data = {"2023-10-02 10:00": {"CA": {"LA": [4.45, 4.75, 5.15]}}}
 
-    # Pass both paths to the function
     save_data(new_data, str(history_file), str(latest_file))
 
     saved_content = json.loads(history_file.read_text())
     assert "2023-10-01 10:00" in saved_content
     assert "2023-10-02 10:00" in saved_content
-    assert saved_content["2023-10-02 10:00"]["CA"]["LA"] == [4.45, 4.75]
+    assert saved_content["2023-10-02 10:00"]["CA"]["LA"] == [4.45, 4.75, 5.15]
 
-    # Optional: You can also assert the latest file was created correctly
     latest_content = json.loads(latest_file.read_text())
     assert latest_content["timestamp"] == "2023-10-02 10:00"
+    assert latest_content["prices"]["CA"]["LA"] == [4.45, 4.75, 5.15]
 
 
 def test_save_data_handles_corrupt_json(tmp_path, capsys):
     history_file = tmp_path / "corrupt.json"
-    latest_file = tmp_path / "latest_prices.json"  # Added dummy latest file
+    latest_file = tmp_path / "latest_prices.json"
 
     history_file.write_text("{ THIS IS NOT VALID JSON }")
 
-    new_data = {"2023-10-02 10:00": {"CA": {"LA": [4.45, 4.75]}}}
+    new_data = {"2023-10-02 10:00": {"CA": {"LA": [4.45, 4.75, None]}}}
 
-    # Pass both paths to the function
     save_data(new_data, str(history_file), str(latest_file))
 
     assert history_file.read_text() == "{ THIS IS NOT VALID JSON }"
     captured = capsys.readouterr()
     assert "contains invalid JSON" in captured.out
+
 
 # --- NETWORK MOCKING TESTS ---
 
@@ -205,7 +204,7 @@ def test_get_gas_prices_ajax(mock_create_session):
 
     timestamp_key = next(iter(result.keys()))
     prices = result[timestamp_key]["CA"]["Los Angeles"]
-    assert prices == [4.99, 5.29]
+    assert prices == [4.99, 5.29, None]
     mock_session.get.assert_called_once()
 
 
@@ -225,18 +224,19 @@ def test_get_gas_prices_ajax_max_retries(mock_sleep, mock_create_session, tmp_pa
     timestamp_key = next(iter(result.keys()))
     assert result[timestamp_key] == {}
     assert mock_session.get.call_count == 5
-
-    # FIX: Use mock_sleep to ensure the backoff delay was actually called 5 times
     assert mock_sleep.call_count == 5
 
 
 # --- PRICE-JUMP SANITY CHECK TESTS ---
 
-def _resp(reg, prem):
+def _resp(reg, prem, diesel=None):
     """Fake requests.Response-like object matching Costco's AJAX shape."""
     mock_response = MagicMock()
     mock_response.raise_for_status.return_value = None
-    mock_response.json.return_value = {"12345": {"regular": reg, "premium": prem}}
+    data = {"regular": reg, "premium": prem}
+    if diesel is not None:
+        data["diesel"] = diesel
+    mock_response.json.return_value = {"12345": data}
     return mock_response
 
 
@@ -248,18 +248,15 @@ def test_is_suspicious_jump_no_baseline_never_flags():
 
 def test_is_suspicious_jump_small_move_not_suspicious():
     assert is_suspicious_jump(5.00, 5.00) is False
-    assert is_suspicious_jump(5.05, 5.00) is False  # $0.05 / 1%
-    assert is_suspicious_jump(5.25, 5.00) is False  # $0.25 / 5% - under both thresholds
+    assert is_suspicious_jump(5.05, 5.00) is False
+    assert is_suspicious_jump(5.25, 5.00) is False
 
 
 def test_is_suspicious_jump_exact_absolute_threshold_triggers():
-    # Exactly $0.30 - would be missed if the diff weren't rounded first
-    # (float subtraction can land at 0.2999999999999998).
     assert is_suspicious_jump(5.30, 5.00) is True
 
 
 def test_is_suspicious_jump_percentage_threshold_triggers_on_cheap_gas():
-    # diff=$0.05 (< $0.30 abs) but 10% (>= 8% pct) on a cheap $0.50 baseline
     assert is_suspicious_jump(0.55, 0.50) is True
 
 
@@ -273,42 +270,58 @@ def test_prices_match():
 
 @patch('scraper.time.sleep', return_value=None)
 def test_confirm_or_revert_price_confirms_real_change(mock_sleep):
-    # Two independent rechecks agree with the NEW (suspicious) price -> trust it
-    # (a single agreeing recheck is no longer enough - CONFIRMATION_QUORUM=2)
-    refetch = MagicMock(side_effect=[(4.50, 5.60), (4.50, 5.60)])
-    reg, prem, flagged = confirm_or_revert_price("CA", "Danville", 4.50, 5.60, 5.10, 5.60, refetch)
-    assert (reg, prem, flagged) == (4.50, 5.60, False)
+    new_prices = {"regular": 4.50, "premium": 5.60, "diesel": None}
+    last_prices = {"regular": 5.10, "premium": 5.60, "diesel": None}
+    refetch = MagicMock(side_effect=[
+        {"regular": 4.50, "premium": 5.60, "diesel": None},
+        {"regular": 4.50, "premium": 5.60, "diesel": None}
+    ])
+    final_prices, flagged = confirm_or_revert_price("CA", "Danville", new_prices, last_prices, refetch)
+    assert final_prices == {"regular": 4.50, "premium": 5.60, "diesel": None}
+    assert flagged is False
     assert refetch.call_count == 2
 
 
 @patch('scraper.time.sleep', return_value=None)
 def test_confirm_or_revert_price_reverts_glitch(mock_sleep):
-    # Two independent rechecks agree with the OLD/last-known price -> original fetch was the glitch
-    refetch = MagicMock(side_effect=[(5.10, 5.60), (5.10, 5.60)])
-    reg, prem, flagged = confirm_or_revert_price("CA", "Danville", 1.00, 5.60, 5.10, 5.60, refetch)
-    assert (reg, prem, flagged) == (5.10, 5.60, False)
+    glitch_prices = {"regular": 1.00, "premium": 5.60, "diesel": None}
+    last_prices = {"regular": 5.10, "premium": 5.60, "diesel": None}
+    refetch = MagicMock(side_effect=[
+        {"regular": 5.10, "premium": 5.60, "diesel": None},
+        {"regular": 5.10, "premium": 5.60, "diesel": None}
+    ])
+    final_prices, flagged = confirm_or_revert_price("CA", "Danville", glitch_prices, last_prices, refetch)
+    assert final_prices == {"regular": 5.10, "premium": 5.60, "diesel": None}
+    assert flagged is False
     assert refetch.call_count == 2
 
 
 @patch('scraper.time.sleep', return_value=None)
 def test_confirm_or_revert_price_inconclusive_keeps_freshest_and_flags(mock_sleep):
-    # Three mutually-disagreeing rechecks -> no cluster ever reaches quorum,
-    # so all MAX_RECHECK_ATTEMPTS (3) are used and the freshest (last) recheck
-    # sample is kept, flagged as unconfirmed.
-    refetch = MagicMock(side_effect=[(2.00, 5.60), (3.00, 5.60), (4.00, 5.60)])
-    reg, prem, flagged = confirm_or_revert_price("CA", "Danville", 1.00, 5.60, 5.10, 5.60, refetch)
-    assert (reg, prem) == (4.00, 5.60)
+    glitch_prices = {"regular": 1.00, "premium": 5.60, "diesel": None}
+    last_prices = {"regular": 5.10, "premium": 5.60, "diesel": None}
+    refetch = MagicMock(side_effect=[
+        {"regular": 2.00, "premium": 5.60, "diesel": None},
+        {"regular": 3.00, "premium": 5.60, "diesel": None},
+        {"regular": 4.00, "premium": 5.60, "diesel": None}
+    ])
+    final_prices, flagged = confirm_or_revert_price("CA", "Danville", glitch_prices, last_prices, refetch)
+    assert final_prices == {"regular": 4.00, "premium": 5.60, "diesel": None}
     assert flagged is True
     assert refetch.call_count == 3
 
 
 @patch('scraper.time.sleep', return_value=None)
 def test_confirm_or_revert_price_mixed_only_suspicious_grade_confirmed(mock_sleep):
-    # Premium jumped, regular didn't move at all - only premium should need
-    # confirming, and it needs two agreeing rechecks to reach quorum.
-    refetch = MagicMock(side_effect=[(5.10, 6.50), (5.10, 6.50)])
-    reg, prem, flagged = confirm_or_revert_price("CA", "Danville", 5.10, 6.50, 5.10, 5.60, refetch)
-    assert (reg, prem, flagged) == (5.10, 6.50, False)
+    mixed_prices = {"regular": 5.10, "premium": 6.50, "diesel": None}
+    last_prices = {"regular": 5.10, "premium": 5.60, "diesel": None}
+    refetch = MagicMock(side_effect=[
+        {"regular": 5.10, "premium": 6.50, "diesel": None},
+        {"regular": 5.10, "premium": 6.50, "diesel": None}
+    ])
+    final_prices, flagged = confirm_or_revert_price("CA", "Danville", mixed_prices, last_prices, refetch)
+    assert final_prices == {"regular": 5.10, "premium": 6.50, "diesel": None}
+    assert flagged is False
     assert refetch.call_count == 2
 
 
@@ -318,8 +331,8 @@ def test_load_latest_prices_missing_file_returns_empty():
 
 def test_load_latest_prices_valid_file(tmp_path):
     file = tmp_path / "us_latest.json"
-    file.write_text(json.dumps({"timestamp": "2026-01-01 00:00", "prices": {"CA": {"Danville": [5.1, 5.6]}}}))
-    assert load_latest_prices(str(file)) == {"CA": {"Danville": [5.1, 5.6]}}
+    file.write_text(json.dumps({"timestamp": "2026-01-01 00:00", "prices": {"CA": {"Danville": [5.1, 5.6, 5.8]}}}))
+    assert load_latest_prices(str(file)) == {"CA": {"Danville": [5.1, 5.6, 5.8]}}
 
 
 def test_load_latest_prices_corrupt_file_returns_empty(tmp_path):
@@ -336,53 +349,49 @@ def test_get_gas_prices_ajax_no_jump_makes_single_call(mock_sleep, mock_create_s
     mock_create_session.return_value = mock_session
 
     locations = {"CA": {"Danville": {"warehouse_id": "12345"}}}
-    last_known = {"CA": {"Danville": [5.10, 5.60]}}
+    last_known = {"CA": {"Danville": [5.10, 5.60, None]}}
     result = get_gas_prices_ajax(locations, None, last_known)
 
     ts = next(iter(result))
-    assert result[ts]["CA"]["Danville"] == [5.15, 5.65]
+    assert result[ts]["CA"]["Danville"] == [5.15, 5.65, None]
     mock_session.get.assert_called_once()
 
 
 @patch('scraper.create_session')
 @patch('scraper.time.sleep', return_value=None)
 def test_get_gas_prices_ajax_real_change_confirmed(mock_sleep, mock_create_session):
-    # Initial fetch + 2 agreeing rechecks (CONFIRMATION_QUORUM=2) = 3 calls
     mock_session = MagicMock()
     mock_session.get.side_effect = [_resp("4.50", "5.60"), _resp("4.50", "5.60"), _resp("4.50", "5.60")]
     mock_create_session.return_value = mock_session
 
     locations = {"CA": {"Danville": {"warehouse_id": "12345"}}}
-    last_known = {"CA": {"Danville": [5.10, 5.60]}}
+    last_known = {"CA": {"Danville": [5.10, 5.60, None]}}
     result = get_gas_prices_ajax(locations, None, last_known)
 
     ts = next(iter(result))
-    assert result[ts]["CA"]["Danville"] == [4.50, 5.60]
+    assert result[ts]["CA"]["Danville"] == [4.50, 5.60, None]
     assert mock_session.get.call_count == 3
 
 
 @patch('scraper.create_session')
 @patch('scraper.time.sleep', return_value=None)
 def test_get_gas_prices_ajax_glitch_reverted(mock_sleep, mock_create_session):
-    # Initial (glitchy) fetch + 2 agreeing rechecks pointing at the old price
     mock_session = MagicMock()
     mock_session.get.side_effect = [_resp("1.00", "5.60"), _resp("5.10", "5.60"), _resp("5.10", "5.60")]
     mock_create_session.return_value = mock_session
 
     locations = {"CA": {"Danville": {"warehouse_id": "12345"}}}
-    last_known = {"CA": {"Danville": [5.10, 5.60]}}
+    last_known = {"CA": {"Danville": [5.10, 5.60, None]}}
     result = get_gas_prices_ajax(locations, None, last_known)
 
     ts = next(iter(result))
-    assert result[ts]["CA"]["Danville"] == [5.10, 5.60]
+    assert result[ts]["CA"]["Danville"] == [5.10, 5.60, None]
     assert mock_session.get.call_count == 3
 
 
 @patch('scraper.create_session')
 @patch('scraper.time.sleep', return_value=None)
 def test_get_gas_prices_ajax_inconclusive_flags_but_keeps_freshest(mock_sleep, mock_create_session, capsys):
-    # Initial fetch + 3 mutually-disagreeing rechecks (MAX_RECHECK_ATTEMPTS=3)
-    # -> no quorum reached, freshest (last) recheck sample is kept and flagged
     mock_session = MagicMock()
     mock_session.get.side_effect = [
         _resp("1.00", "5.60"), _resp("2.00", "5.60"), _resp("3.00", "5.60"), _resp("4.00", "5.60"),
@@ -390,11 +399,11 @@ def test_get_gas_prices_ajax_inconclusive_flags_but_keeps_freshest(mock_sleep, m
     mock_create_session.return_value = mock_session
 
     locations = {"CA": {"Danville": {"warehouse_id": "12345"}}}
-    last_known = {"CA": {"Danville": [5.10, 5.60]}}
+    last_known = {"CA": {"Danville": [5.10, 5.60, None]}}
     result = get_gas_prices_ajax(locations, None, last_known)
 
     ts = next(iter(result))
-    assert result[ts]["CA"]["Danville"] == [4.00, 5.60]
+    assert result[ts]["CA"]["Danville"] == [4.00, 5.60, None]
     captured = capsys.readouterr()
     assert "couldn't be confirmed" in captured.out
 
@@ -402,7 +411,6 @@ def test_get_gas_prices_ajax_inconclusive_flags_but_keeps_freshest(mock_sleep, m
 @patch('scraper.create_session')
 @patch('scraper.time.sleep', return_value=None)
 def test_get_gas_prices_ajax_no_baseline_never_triggers_recheck(mock_sleep, mock_create_session):
-    # First-ever run: no *_latest.json yet, so last_known_prices is {}
     mock_session = MagicMock()
     mock_session.get.return_value = _resp("1.00", "1.50")
     mock_create_session.return_value = mock_session
@@ -411,15 +419,13 @@ def test_get_gas_prices_ajax_no_baseline_never_triggers_recheck(mock_sleep, mock
     result = get_gas_prices_ajax(locations, None, None)
 
     ts = next(iter(result))
-    assert result[ts]["CA"]["Danville"] == [1.00, 1.50]
+    assert result[ts]["CA"]["Danville"] == [1.00, 1.50, None]
     mock_session.get.assert_called_once()
 
 
 @patch('scraper.create_session')
 @patch('scraper.time.sleep', return_value=None)
 def test_get_gas_prices_ajax_logs_unconfirmed_jump_when_path_given(mock_sleep, mock_create_session, tmp_path):
-    # Same "inconclusive" scenario as above, but this time pass a
-    # jump_log_filepath and confirm a record actually gets written.
     mock_session = MagicMock()
     mock_session.get.side_effect = [
         _resp("1.00", "5.60"), _resp("2.00", "5.60"), _resp("3.00", "5.60"), _resp("4.00", "5.60"),
@@ -428,7 +434,7 @@ def test_get_gas_prices_ajax_logs_unconfirmed_jump_when_path_given(mock_sleep, m
 
     log_file = tmp_path / "jumps.jsonl"
     locations = {"CA": {"Danville": {"warehouse_id": "12345"}}}
-    last_known = {"CA": {"Danville": [5.10, 5.60]}}
+    last_known = {"CA": {"Danville": [5.10, 5.60, None]}}
     get_gas_prices_ajax(
         locations, None, last_known,
         jump_log_filepath=str(log_file), dataset_label="Local",
@@ -448,14 +454,13 @@ def test_get_gas_prices_ajax_logs_unconfirmed_jump_when_path_given(mock_sleep, m
 @patch('scraper.create_session')
 @patch('scraper.time.sleep', return_value=None)
 def test_get_gas_prices_ajax_no_log_file_written_when_no_jumps(mock_sleep, mock_create_session, tmp_path):
-    # Confirming a normal (non-suspicious) fetch shouldn't touch the log file at all.
     mock_session = MagicMock()
     mock_session.get.return_value = _resp("5.15", "5.65")
     mock_create_session.return_value = mock_session
 
     log_file = tmp_path / "jumps.jsonl"
     locations = {"CA": {"Danville": {"warehouse_id": "12345"}}}
-    last_known = {"CA": {"Danville": [5.10, 5.60]}}
+    last_known = {"CA": {"Danville": [5.10, 5.60, None]}}
     get_gas_prices_ajax(locations, None, last_known, jump_log_filepath=str(log_file))
 
     assert not log_file.exists()
@@ -495,7 +500,6 @@ def test_summarize_unconfirmed_jumps_counts_and_ranks(tmp_path, capsys):
     summarize_unconfirmed_jumps(str(log_file))
     captured = capsys.readouterr()
     assert "4 unconfirmed jump(s) logged across 2 store(s)" in captured.out
-    # Danville (3x) should be ranked above Austin (1x)
     danville_pos = captured.out.find("Danville")
     austin_pos = captured.out.find("Austin")
     assert 0 <= danville_pos < austin_pos
@@ -513,16 +517,14 @@ def test_summarize_unconfirmed_jumps_skips_corrupt_lines(tmp_path, capsys):
 @patch('scraper.create_session')
 @patch('scraper.time.sleep', return_value=None)
 def test_get_gas_prices_ajax_missing_grade_does_not_false_flag(mock_sleep, mock_create_session):
-    # Premium comes back "N/A" (format_price -> None). A None new-value should
-    # never be treated as a suspicious jump against a real last-known price.
     mock_session = MagicMock()
     mock_session.get.return_value = _resp("5.15", "N/A")
     mock_create_session.return_value = mock_session
 
     locations = {"CA": {"Danville": {"warehouse_id": "12345"}}}
-    last_known = {"CA": {"Danville": [5.10, 5.60]}}
+    last_known = {"CA": {"Danville": [5.10, 5.60, None]}}
     result = get_gas_prices_ajax(locations, None, last_known)
 
     ts = next(iter(result))
-    assert result[ts]["CA"]["Danville"] == [5.15, None]
+    assert result[ts]["CA"]["Danville"] == [5.15, None, None]
     mock_session.get.assert_called_once()
