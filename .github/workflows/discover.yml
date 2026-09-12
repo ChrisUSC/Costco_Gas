@@ -35,5 +35,6 @@ jobs:
             Automated weekly scan found changes to `us_stores.json`. Please review the diff before merging.
           branch: auto/costco-gas-stations
           delete-branch: true
+          reviewers: ChrisUSC
           add-paths: |
             us_stores.json
