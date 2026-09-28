@@ -372,6 +372,22 @@
         .popup-btn:hover { background: #004785; }
         .popup-btn-outline { background: transparent; border: 2px solid var(--costco-blue); color: var(--costco-blue) !important; margin-top: 6px;}
         .popup-btn-outline:hover { background: var(--tag-bg); }
+
+        /* --- GAS HOURS / OPEN-NOW STATUS --- */
+        .gas-status { font-size: 12px; font-weight: 600; font-family: 'Inter', sans-serif; margin: 4px 0 8px; }
+        .gas-status.open { color: var(--price-color); }
+        .gas-status.closing-soon { color: #b45309; }
+        body.dark-mode .gas-status.closing-soon { color: #fbbf24; }
+        .gas-status.closed { color: var(--costco-red); }
+        /* the address above already has a bottom margin; tuck the status up under it */
+        .store-card .address + .gas-status { margin-top: -6px; margin-bottom: 10px; }
+        .popup-address + .gas-status { margin-top: -8px; }
+        .gas-hours { margin: 0 0 10px 0; font-size: 12px; font-family: 'Inter', sans-serif; }
+        .gas-hours summary { cursor: pointer; color: var(--costco-blue); font-weight: 600; }
+        .gas-hours-row { display: flex; justify-content: space-between; gap: 12px; padding: 2px 0; color: var(--text-main); }
+        .gas-hours-row span:first-child { color: var(--text-muted); }
+        .popup-phone { margin: 0 0 10px 0; font-size: 12px; font-family: 'Inter', sans-serif; }
+        .popup-phone a { color: var(--costco-blue); text-decoration: none; }
         .costco-custom-icon { background: none; border: none; }
 
         /* --- DYNAMIC MAP PRICE BADGES --- */

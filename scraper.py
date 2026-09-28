@@ -94,6 +94,9 @@ PRICE_MATCH_TOLERANCE = 0.01
 UNCONFIRMED_JUMPS_LOG_FILE = 'unconfirmed_jumps_log.jsonl'
 GRADES = ("regular", "premium", "diesel")
 
+# Optional per-store details scraped from each store page and kept in *_stores.json.
+STORE_DETAIL_FIELDS = ("phone", "gas_hours", "tz")
+
 def format_price(v) -> float | None:
     """Format a raw price string into a float rounded to 2 decimals, or None if invalid."""
     if v is None or str(v).strip().lower() in ("", "n/a"):
@@ -349,8 +352,141 @@ def remove_location_from_file(filepath: str | None, state: str, city: str) -> No
         print(f"Failed to remove {city} from {filepath}: {e}")
 
 
+# --- Store hours parsing -----------------------------------------------------
+# Hours change rarely, so they live in the static *_stores.json files (not in
+# the price snapshots). Format: {"mon": ["06:00", "22:00"], ..., "sun": None}
+# where None means closed that day. A missing "gas_hours" key means "unknown".
+DAY_KEYS = ("mon", "tue", "wed", "thu", "fri", "sat", "sun")
+_DAY_ALIASES = {
+    "mon": "mon", "monday": "mon", "tue": "tue", "tues": "tue", "tuesday": "tue",
+    "wed": "wed", "wednesday": "wed", "thu": "thu", "thur": "thu", "thurs": "thu",
+    "thursday": "thu", "fri": "fri", "friday": "fri", "sat": "sat", "saturday": "sat",
+    "sun": "sun", "sunday": "sun",
+}
+_DAY_RE = r"(?:mon|tue|tues|wed|thu|thur|thurs|fri|sat|sun)[a-z]*"
+_TIME_RE = r"\d{1,2}(?::\d{2})?\s*[ap]\.?m\.?"
+# e.g. "Mon-Fri: 6:00 AM - 10:00 PM", "Sat:6:00 AM - 8:30 PM", "Sun: Closed"
+_HOURS_LINE_RE = re.compile(
+    rf"({_DAY_RE})(?:\s*(?:-|–|to)\s*({_DAY_RE}))?\s*:?\s*"
+    rf"(?:({_TIME_RE})\s*(?:-|–|to)\s*({_TIME_RE})|(closed))",
+    re.IGNORECASE,
+)
+
+
+def _to_24h(t: str) -> str | None:
+    """'6:00 AM' -> '06:00', '8:30 pm' -> '20:30', '10 PM' -> '22:00'."""
+    m = re.match(r"(\d{1,2})(?::(\d{2}))?\s*([ap])", t.strip().lower())
+    if not m:
+        return None
+    hour, minute, ap = int(m.group(1)), int(m.group(2) or 0), m.group(3)
+    if not (1 <= hour <= 12 and 0 <= minute < 60):
+        return None
+    hour = hour % 12 + (12 if ap == "p" else 0)
+    return f"{hour:02d}:{minute:02d}"
+
+
+def _expand_days(start: str, end: str | None) -> list[str]:
+    s = _DAY_ALIASES.get(start.lower())
+    e = _DAY_ALIASES.get((end or start).lower())
+    if not s or not e:
+        return []
+    i, j = DAY_KEYS.index(s), DAY_KEYS.index(e)
+    return [DAY_KEYS[(i + k) % 7] for k in range((j - i) % 7 + 1)]
+
+
+def parse_hours_text(text: str) -> dict | None:
+    """Parses visible hours text like 'Mon-Fri: 6:00 AM - 10:00 PM Sat: ...'
+    into {"mon": ["06:00","22:00"], ...}. Returns None unless all 7 days are
+    covered, so a half-parsed result never gets saved as if it were complete."""
+    hours: dict = {}
+    for m in _HOURS_LINE_RE.finditer(text or ""):
+        start, end, t_open, t_close, closed = m.groups()
+        if closed:
+            value = None
+        else:
+            o, c = _to_24h(t_open), _to_24h(t_close)
+            if not o or not c:
+                continue
+            value = [o, c]
+        for day in _expand_days(start, end):
+            hours[day] = value
+    if set(hours) != set(DAY_KEYS):
+        return None
+    return {d: hours[d] for d in DAY_KEYS}
+
+
+def _hours_from_opening_spec(spec) -> dict | None:
+    """schema.org openingHoursSpecification -> our format (all 7 days or None).
+    Days absent from the spec are treated as closed, which is how schema.org
+    represents them; we still require at least one open day."""
+    if isinstance(spec, dict):
+        spec = [spec]
+    if not isinstance(spec, list):
+        return None
+    hours: dict = {d: None for d in DAY_KEYS}
+    found = False
+    for item in spec:
+        if not isinstance(item, dict):
+            continue
+        days = item.get("dayOfWeek", [])
+        days = [days] if isinstance(days, str) else days
+        opens, closes = str(item.get("opens", "")), str(item.get("closes", ""))
+        om, cm = re.match(r"(\d{1,2}):(\d{2})", opens), re.match(r"(\d{1,2}):(\d{2})", closes)
+        if not om or not cm:
+            continue
+        window = [f"{int(om.group(1)):02d}:{om.group(2)}", f"{int(cm.group(1)):02d}:{cm.group(2)}"]
+        for d in days:
+            key = _DAY_ALIASES.get(str(d).rsplit("/", 1)[-1].lower())
+            if key:
+                hours[key] = window
+                found = True
+    return hours if found else None
+
+
+def extract_gas_hours(html_content: str, ld_data: dict | None = None) -> dict | None:
+    """Best-effort gas station hours for one store page. Tries structured
+    JSON-LD first (department -> openingHoursSpecification), then falls back
+    to parsing the visible 'Gas Station' block in the Warehouse Services
+    section. Returns None if neither yields a full 7-day schedule."""
+    if ld_data:
+        departments = ld_data.get("department", [])
+        departments = [departments] if isinstance(departments, dict) else departments
+        for dept in departments if isinstance(departments, list) else []:
+            if dept.get("@type") == "GasStation" or dept.get("name") == "Gas Station":
+                hours = _hours_from_opening_spec(dept.get("openingHoursSpecification"))
+                if hours:
+                    return hours
+
+    text = BeautifulSoup(html_content, "html.parser").get_text(" ", strip=True)
+    # Warehouse hours also appear earlier on the page, so anchor on the
+    # "Gas Station" heading and stop at the pump-price disclaimer / next service.
+    for m in re.finditer(r"Gas Station", text):
+        segment = text[m.end(): m.end() + 400]
+        cut = re.search(r"Prices shown here|Food Court|Pharmacy|Tire Service|Car Wash|Optical", segment)
+        hours = parse_hours_text(segment[: cut.start()] if cut else segment)
+        if hours:
+            return hours
+    return None
+
+
+def _lookup_timezone(lat: float, lng: float) -> str | None:
+    """IANA timezone name for a coordinate (needed to compute 'open now' for a
+    store in its own local time). Optional: needs `pip install timezonefinder`."""
+    try:
+        from timezonefinder import TimezoneFinder
+    except ImportError:
+        return None
+    global _TZ_FINDER
+    try:
+        _TZ_FINDER
+    except NameError:
+        _TZ_FINDER = TimezoneFinder()
+    return _TZ_FINDER.timezone_at(lat=lat, lng=lng)
+
+
 def extract_store_metadata(html_content: str) -> dict | None:
-    """Extracts coordinates, address, and checks for gas from hidden JSON-LD script."""
+    """Extracts coordinates, address, phone, gas hours and timezone from a store page
+    (mostly the hidden JSON-LD script; gas hours can fall back to the visible HTML)."""
     soup = BeautifulSoup(html_content, 'html.parser')
     scripts = soup.find_all('script', type='application/ld+json')
 
@@ -379,7 +515,17 @@ def extract_store_metadata(html_content: str) -> dict | None:
                     if departments.get('@type') == 'GasStation' or departments.get('name') == 'Gas Station':
                         has_gas = True
 
-                return {"lat": lat, "lng": lng, "address": address, "has_gas": has_gas}
+                meta = {"lat": lat, "lng": lng, "address": address, "has_gas": has_gas}
+                phone = data.get('telephone')
+                if phone:
+                    meta["phone"] = str(phone).strip()
+                gas_hours = extract_gas_hours(html_content, data) if has_gas else None
+                if gas_hours:
+                    meta["gas_hours"] = gas_hours
+                tz = _lookup_timezone(lat, lng)
+                if tz:
+                    meta["tz"] = tz
+                return meta
         except (json.JSONDecodeError, KeyError, ValueError, TypeError):
             continue
 
@@ -420,6 +566,9 @@ def enrich_store_list(state_urls: dict) -> dict:
                     "lng": meta["lng"],
                     "address": meta["address"]
                 }
+                for optional in STORE_DETAIL_FIELDS:
+                    if optional in meta:
+                        enriched_data[res_state][res_city][optional] = meta[optional]
                 print(f"Added {res_city}, {res_state} (ID: {wh_id})")
             elif meta and not meta["has_gas"]:
                 print(f"Skipping {res_city}, {res_state} - No Gas Station.")
@@ -882,6 +1031,45 @@ def build_and_save_master_db(states_to_update: list, output_filepath: str):
     print(f"\nMaster database '{output_filepath}' updated successfully.")
 
 
+def refresh_store_details(stores: dict, filepath: str) -> int:
+    """Re-fetches each store's page and fills in/updates the optional detail
+    fields (phone, gas_hours, tz) on stores that already exist in `filepath`.
+
+    Additive only: never removes a store, and a store whose page fails to
+    fetch/parse keeps whatever it had before. Returns how many stores changed."""
+    session = create_session()
+
+    def fetch(state, city, info):
+        url = info.get("url") if isinstance(info, dict) else info
+        try:
+            resp = session.get(url, headers={'User-Agent': random.choice(USER_AGENTS)}, timeout=10)
+            resp.raise_for_status()
+            return state, city, extract_store_metadata(resp.text)
+        except (requests.exceptions.RequestException, ValueError, KeyError):
+            return state, city, None
+
+    jobs = [(s, c, i) for s, cities in stores.items() for c, i in cities.items() if isinstance(i, dict)]
+    changed = failed = 0
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        for future in as_completed([executor.submit(fetch, *j) for j in jobs]):
+            state, city, meta = future.result()
+            if not meta:
+                failed += 1
+                continue
+            info = stores[state][city]
+            for field in STORE_DETAIL_FIELDS:
+                if field in meta and info.get(field) != meta[field]:
+                    info[field] = meta[field]
+                    changed += 1
+
+    print(f"Refreshed details for {len(jobs) - failed}/{len(jobs)} stores in '{filepath}' "
+          f"({changed} field(s) changed, {failed} fetch/parse failure(s)).")
+    if changed:
+        with open(filepath, 'w', encoding='utf-8') as f:
+            json.dump(stores, f, indent=4)
+    return changed
+
+
 def process_and_save(locations: dict, source_filepath: str, history_file: str, latest_file: str, label: str) -> bool:
     """Fetches prices for one dataset (local/CA/US), validates the resulting
     snapshot's completeness, and only saves it if it passes. Returns True if
@@ -922,6 +1110,7 @@ def main():
         print("5: FULL REBUILD (Fetch ALL store addresses, coordinates, and prices for the US)")
         print("6: Discover new stores")
         print("7: Show unconfirmed price-jump summary (which stores flag most often)")
+        print("8: Refresh store details (gas hours, phone, timezone) for existing stores")
         try:
             run_type = int(input("Enter choice: "))
         except ValueError:
@@ -988,10 +1177,20 @@ def main():
                     states_to_scrape.add(state_code)
 
         us_stores = load_store_locations('us_stores.json') or {}
-        discover_new_stores(list(states_to_scrape), us_stores, 'us_stores.json')
+        us_stores = discover_new_stores(list(states_to_scrape), us_stores, 'us_stores.json')
+        # Discovery only enriches stores that are new to us_stores.json, so also
+        # refresh gas hours / phone / timezone on the existing ones (additive only).
+        refresh_store_details(us_stores, 'us_stores.json')
 
     elif run_type == 7:
         summarize_unconfirmed_jumps()
+
+    elif run_type == 8:
+        for stores, path in ((nearby_stores, 'local_stores.json'),
+                             (ca_stores, 'ca_stores.json'),
+                             (us_stores, 'us_stores.json')):
+            if stores:
+                refresh_store_details(stores, path)
 
 
 if __name__ == '__main__':

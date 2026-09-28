@@ -168,6 +168,124 @@ function getRouteBoundsPadded(routeCoords, bufferMiles) {
     return { minLat: minLat - padLat, maxLat: maxLat + padLat, minLng: minLng - padLng, maxLng: maxLng + padLng };
 }
 
+// --- Gas station hours ---
+// Store details (gas_hours / tz) come from us_stores.json. gas_hours looks like
+//   {"mon": ["06:00","22:00"], ..., "sun": null}   (null = closed that day)
+// and is simply absent for stores the scraper couldn't parse - everything below
+// degrades to "show nothing" in that case. "Open now" is computed in the
+// STORE's timezone (store.tz), never the viewer's.
+const GAS_DAYS_SUN_FIRST = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+const GAS_DAYS_MON_FIRST = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+const GAS_DAY_LABELS = { mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu', fri: 'Fri', sat: 'Sat', sun: 'Sun' };
+const GAS_CLOSING_SOON_MINUTES = 60;
+
+function gasTimeToMinutes(t) {
+    const [h, m] = t.split(':').map(Number);
+    return h * 60 + m;
+}
+
+function formatGasTime(t) {
+    const [h, m] = t.split(':').map(Number);
+    const suffix = h >= 12 ? 'PM' : 'AM';
+    const h12 = h % 12 === 0 ? 12 : h % 12;
+    return m ? `${h12}:${String(m).padStart(2, '0')} ${suffix}` : `${h12} ${suffix}`;
+}
+
+// Current weekday + minutes-since-midnight in the given IANA timezone, or null
+// if the timezone is missing/invalid.
+function getStoreLocalNow(tz, now = new Date()) {
+    if (!tz) return null;
+    try {
+        const parts = new Intl.DateTimeFormat('en-US', {
+            timeZone: tz, weekday: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
+        }).formatToParts(now);
+        const get = type => parts.find(p => p.type === type)?.value;
+        return {
+            day: get('weekday').toLowerCase().slice(0, 3),
+            minutes: parseInt(get('hour'), 10) * 60 + parseInt(get('minute'), 10)
+        };
+    } catch (e) {
+        return null;
+    }
+}
+
+// Returns null (no data / no timezone), or
+// { isOpen, closingSoon, text } e.g. "Open · closes 10 PM", "Closed · opens 6 AM".
+function getGasStatus(store, now = new Date()) {
+    const hours = store.gasHours;
+    const local = getStoreLocalNow(store.tz, now);
+    if (!hours || !local) return null;
+
+    const dayIdx = GAS_DAYS_SUN_FIRST.indexOf(local.day);
+    if (dayIdx === -1) return null;
+    const mins = local.minutes;
+    const today = hours[GAS_DAYS_SUN_FIRST[dayIdx]];
+    const yesterday = hours[GAS_DAYS_SUN_FIRST[(dayIdx + 6) % 7]];
+
+    const openResult = (closeMins, closeLabel) => {
+        const closingSoon = closeMins - mins <= GAS_CLOSING_SOON_MINUTES && closeMins - mins > 0;
+        return {
+            isOpen: true, closingSoon,
+            text: closingSoon ? `Closing soon · ${closeLabel}` : `Open · closes ${closeLabel}`
+        };
+    };
+
+    // Still inside an overnight window that started yesterday?
+    if (yesterday) {
+        const yo = gasTimeToMinutes(yesterday[0]), yc = gasTimeToMinutes(yesterday[1]);
+        if (yc < yo && mins < yc) return openResult(yc, formatGasTime(yesterday[1]));
+    }
+
+    if (today) {
+        const o = gasTimeToMinutes(today[0]), c = gasTimeToMinutes(today[1]);
+        if (o === c) return { isOpen: true, closingSoon: false, text: 'Open 24 hours' };
+        if (c > o && mins >= o && mins < c) return openResult(c, formatGasTime(today[1]));
+        if (c < o && mins >= o) return { isOpen: true, closingSoon: false, text: `Open · closes ${formatGasTime(today[1])} tomorrow` };
+        if (mins < o) return { isOpen: false, closingSoon: false, text: `Closed · opens ${formatGasTime(today[0])}` };
+    }
+
+    // Closed for the rest of today - find the next day with hours.
+    for (let i = 1; i <= 7; i++) {
+        const next = hours[GAS_DAYS_SUN_FIRST[(dayIdx + i) % 7]];
+        if (next) {
+            const when = i === 1 ? 'tomorrow' : GAS_DAY_LABELS[GAS_DAYS_SUN_FIRST[(dayIdx + i) % 7]];
+            return { isOpen: false, closingSoon: false, text: `Closed · opens ${when} ${formatGasTime(next[0])}` };
+        }
+    }
+    return { isOpen: false, closingSoon: false, text: 'Closed' };
+}
+
+// Collapses identical consecutive days: "Mon–Fri 6 AM – 10 PM", "Sat 6 AM – 8:30 PM".
+function groupGasHours(hours) {
+    const fmt = h => h ? `${formatGasTime(h[0])} – ${formatGasTime(h[1])}` : 'Closed';
+    const rows = [];
+    for (const day of GAS_DAYS_MON_FIRST) {
+        const text = fmt(hours[day]);
+        const last = rows[rows.length - 1];
+        if (last && last.text === text) last.end = day;
+        else rows.push({ start: day, end: day, text });
+    }
+    return rows.map(r => ({
+        label: r.start === r.end ? GAS_DAY_LABELS[r.start] : `${GAS_DAY_LABELS[r.start]}–${GAS_DAY_LABELS[r.end]}`,
+        text: r.text
+    }));
+}
+
+function gasStatusHtml(store) {
+    const status = getGasStatus(store);
+    if (!status) return '';
+    const cls = status.isOpen ? (status.closingSoon ? 'closing-soon' : 'open') : 'closed';
+    return `<div class="gas-status ${cls}">● ${status.text}</div>`;
+}
+
+function gasHoursDetailsHtml(store) {
+    if (!store.gasHours) return '';
+    const rows = groupGasHours(store.gasHours)
+        .map(r => `<div class="gas-hours-row"><span>${r.label}</span><span>${r.text}</span></div>`)
+        .join('');
+    return `<details class="gas-hours"><summary>Gas hours</summary>${rows}</details>`;
+}
+
 function escapeHtml(str) {
     const div = document.createElement('div');
     div.textContent = str;
@@ -1051,6 +1169,7 @@ async function loadData() {
                     globalStoreData.push({
                         state: stateCode, city: cityName, address: info.address,
                         lat: info.lat, lng: info.lng, url: info.url,
+                        gasHours: info.gas_hours || null, tz: info.tz || null, phone: info.phone || null,
                         regularStr: formatPriceDisplay(regVal),
                         premiumStr: formatPriceDisplay(premVal),
                         dieselStr: formatPriceDisplay(dieselVal),
@@ -1180,9 +1299,12 @@ function renderMap(dataArray) {
             <div class="popup-price-box"><span>Diesel</span><strong>${store.dieselStr} ${dieselTrend}</strong></div>
         ` : '';
 
-        marker.bindPopup(`
+        marker.bindPopup(() => `
             <div class="popup-store-name">${store.city}, ${store.state}</div>
             <div class="popup-address">${store.address}</div>
+            ${gasStatusHtml(store)}
+            ${gasHoursDetailsHtml(store)}
+            ${store.phone ? `<div class="popup-phone"><a href="tel:${store.phone.replace(/[^0-9+]/g, '')}">${escapeHtml(store.phone)}</a></div>` : ''}
             <div class="popup-prices-grid">
                 <div class="popup-price-box"><span>Regular</span><strong>${store.regularStr || 'N/A'} ${regTrend}</strong></div>
                 <div class="popup-price-box"><span>Premium</span><strong>${store.premiumStr || 'N/A'} ${premTrend}</strong></div>
@@ -1643,6 +1765,7 @@ function createStoreCard(store, highlight = null, index = null, showDistance = f
     div.innerHTML = `
         <h3><span>${store.city}, ${store.state}</span> ${badgeHtml}</h3>
         <div class="address">${store.address}</div>
+        ${gasStatusHtml(store)}
         <div class="prices">
             <div class="price-tag ${regClass}">
                 <span>Regular</span><span class="val">${store.regularStr || 'N/A'} ${regTrend}</span>
