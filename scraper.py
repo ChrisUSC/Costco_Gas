@@ -1177,7 +1177,7 @@ def main():
                     states_to_scrape.add(state_code)
 
         print(f"Found {len(states_to_scrape)} states to process.")
-        build_and_save_master_db(list(states_to_scrape), "us_stores.json")
+        build_and_save_master_db(sorted(list(states_to_scrape)), "us_stores.json")
         #us_stores = load_store_locations('us_stores.json') or {}
         #if not process_and_save(us_stores, 'us_stores.json', US_HISTORY_FILE, US_LATEST_FILE, "US"):
         #    sys.exit(1)
