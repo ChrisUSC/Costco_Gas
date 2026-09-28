@@ -2290,34 +2290,13 @@
             "address": "5401 KATELLA AVE, CYPRESS, CA 90720-2809",
             "phone": "(562) 668-5150",
             "gas_hours": {
-                "mon": [
-                    "00:00",
-                    "00:00"
-                ],
-                "tue": [
-                    "00:00",
-                    "00:00"
-                ],
-                "wed": [
-                    "00:00",
-                    "00:00"
-                ],
-                "thu": [
-                    "00:00",
-                    "00:00"
-                ],
-                "fri": [
-                    "00:00",
-                    "00:00"
-                ],
-                "sat": [
-                    "00:00",
-                    "00:00"
-                ],
-                "sun": [
-                    "00:00",
-                    "00:00"
-                ]
+                "mon": null,
+                "tue": null,
+                "wed": null,
+                "thu": null,
+                "fri": null,
+                "sat": null,
+                "sun": null
             },
             "tz": "America/Los_Angeles"
         },
@@ -4162,34 +4141,13 @@
             "address": "2680 REYNOLDS RANCH PKWY, LODI, CA 95240-6848",
             "phone": "(209) 366-7300",
             "gas_hours": {
-                "mon": [
-                    "00:00",
-                    "00:00"
-                ],
-                "tue": [
-                    "00:00",
-                    "00:00"
-                ],
-                "wed": [
-                    "00:00",
-                    "00:00"
-                ],
-                "thu": [
-                    "00:00",
-                    "00:00"
-                ],
-                "fri": [
-                    "00:00",
-                    "00:00"
-                ],
-                "sat": [
-                    "00:00",
-                    "00:00"
-                ],
-                "sun": [
-                    "00:00",
-                    "00:00"
-                ]
+                "mon": null,
+                "tue": null,
+                "wed": null,
+                "thu": null,
+                "fri": null,
+                "sat": null,
+                "sun": null
             },
             "tz": "America/Los_Angeles"
         },
@@ -12382,34 +12340,13 @@
             "address": "645 BARRETT PARKWAY NW, KENNESAW, GA 30144-4922",
             "phone": "(770) 794-1767",
             "gas_hours": {
-                "mon": [
-                    "00:00",
-                    "00:00"
-                ],
-                "tue": [
-                    "00:00",
-                    "00:00"
-                ],
-                "wed": [
-                    "00:00",
-                    "00:00"
-                ],
-                "thu": [
-                    "00:00",
-                    "00:00"
-                ],
-                "fri": [
-                    "00:00",
-                    "00:00"
-                ],
-                "sat": [
-                    "00:00",
-                    "00:00"
-                ],
-                "sun": [
-                    "00:00",
-                    "00:00"
-                ]
+                "mon": null,
+                "tue": null,
+                "wed": null,
+                "thu": null,
+                "fri": null,
+                "sat": null,
+                "sun": null
             },
             "tz": "America/New_York"
         },
@@ -13125,34 +13062,13 @@
             "address": "3333 UNIVERSITY BLVD, WINTER PARK, FL 32792-7428",
             "phone": "(407) 681-2119",
             "gas_hours": {
-                "mon": [
-                    "00:00",
-                    "00:00"
-                ],
-                "tue": [
-                    "00:00",
-                    "00:00"
-                ],
-                "wed": [
-                    "00:00",
-                    "00:00"
-                ],
-                "thu": [
-                    "00:00",
-                    "00:00"
-                ],
-                "fri": [
-                    "00:00",
-                    "00:00"
-                ],
-                "sat": [
-                    "00:00",
-                    "00:00"
-                ],
-                "sun": [
-                    "00:00",
-                    "00:00"
-                ]
+                "mon": null,
+                "tue": null,
+                "wed": null,
+                "thu": null,
+                "fri": null,
+                "sat": null,
+                "sun": null
             },
             "tz": "America/New_York"
         },
@@ -14808,34 +14724,13 @@
             "address": "2746 N CLYBOURN AVE, CHICAGO, IL 60614-1006",
             "phone": "(773) 360-2053",
             "gas_hours": {
-                "mon": [
-                    "00:00",
-                    "00:00"
-                ],
-                "tue": [
-                    "00:00",
-                    "00:00"
-                ],
-                "wed": [
-                    "00:00",
-                    "00:00"
-                ],
-                "thu": [
-                    "00:00",
-                    "00:00"
-                ],
-                "fri": [
-                    "00:00",
-                    "00:00"
-                ],
-                "sat": [
-                    "00:00",
-                    "00:00"
-                ],
-                "sun": [
-                    "00:00",
-                    "00:00"
-                ]
+                "mon": null,
+                "tue": null,
+                "wed": null,
+                "thu": null,
+                "fri": null,
+                "sat": null,
+                "sun": null
             },
             "tz": "America/Chicago"
         },
@@ -16922,34 +16817,13 @@
             "address": "202 COSTCO DR, PITTSBURGH, PA 15205-4858",
             "phone": "(412) 490-2204",
             "gas_hours": {
-                "mon": [
-                    "00:00",
-                    "00:00"
-                ],
-                "tue": [
-                    "00:00",
-                    "00:00"
-                ],
-                "wed": [
-                    "00:00",
-                    "00:00"
-                ],
-                "thu": [
-                    "00:00",
-                    "00:00"
-                ],
-                "fri": [
-                    "00:00",
-                    "00:00"
-                ],
-                "sat": [
-                    "00:00",
-                    "00:00"
-                ],
-                "sun": [
-                    "00:00",
-                    "00:00"
-                ]
+                "mon": null,
+                "tue": null,
+                "wed": null,
+                "thu": null,
+                "fri": null,
+                "sat": null,
+                "sun": null
             },
             "tz": "America/New_York"
         },
@@ -17355,34 +17229,13 @@
             "address": "20000 HAGGERTY RD, LIVONIA, MI 48152-1011",
             "phone": "(734) 464-6399",
             "gas_hours": {
-                "mon": [
-                    "00:00",
-                    "00:00"
-                ],
-                "tue": [
-                    "00:00",
-                    "00:00"
-                ],
-                "wed": [
-                    "00:00",
-                    "00:00"
-                ],
-                "thu": [
-                    "00:00",
-                    "00:00"
-                ],
-                "fri": [
-                    "00:00",
-                    "00:00"
-                ],
-                "sat": [
-                    "00:00",
-                    "00:00"
-                ],
-                "sun": [
-                    "00:00",
-                    "00:00"
-                ]
+                "mon": null,
+                "tue": null,
+                "wed": null,
+                "thu": null,
+                "fri": null,
+                "sat": null,
+                "sun": null
             },
             "tz": "America/Detroit"
         },
@@ -22601,34 +22454,13 @@
             "address": "2975 RICHMOND AVE, STATEN ISLAND, NY 10314-5851",
             "phone": "(718) 982-9525",
             "gas_hours": {
-                "mon": [
-                    "00:00",
-                    "00:00"
-                ],
-                "tue": [
-                    "00:00",
-                    "00:00"
-                ],
-                "wed": [
-                    "00:00",
-                    "00:00"
-                ],
-                "thu": [
-                    "00:00",
-                    "00:00"
-                ],
-                "fri": [
-                    "00:00",
-                    "00:00"
-                ],
-                "sat": [
-                    "00:00",
-                    "00:00"
-                ],
-                "sun": [
-                    "00:00",
-                    "00:00"
-                ]
+                "mon": null,
+                "tue": null,
+                "wed": null,
+                "thu": null,
+                "fri": null,
+                "sat": null,
+                "sun": null
             },
             "tz": "America/New_York"
         },

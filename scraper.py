@@ -435,6 +435,8 @@ def _hours_from_opening_spec(spec) -> dict | None:
         if not om or not cm:
             continue
         window = [f"{int(om.group(1)):02d}:{om.group(2)}", f"{int(cm.group(1)):02d}:{cm.group(2)}"]
+        if window == ["00:00", "00:00"]:
+            window = None
         for d in days:
             key = _DAY_ALIASES.get(str(d).rsplit("/", 1)[-1].lower())
             if key:
