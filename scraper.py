@@ -522,6 +522,12 @@ def extract_store_metadata(html_content: str) -> dict | None:
                 if phone:
                     meta["phone"] = str(phone).strip()
                 gas_hours = extract_gas_hours(html_content, data) if has_gas else None
+
+                if gas_hours and all(hours is None for hours in gas_hours.values()):
+                    has_gas = False
+                    meta["has_gas"] = False
+                    gas_hours = None
+
                 if gas_hours:
                     meta["gas_hours"] = gas_hours
                 tz = _lookup_timezone(lat, lng)
