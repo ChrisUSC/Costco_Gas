@@ -36,7 +36,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Lexington": {
             "url": "https://www.costco.com/w/-/ky/lexington/1156",
@@ -74,7 +75,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Louisville": {
             "url": "https://www.costco.com/w/-/ky/louisville/1238",
@@ -112,7 +114,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Kentucky/Louisville"
         },
         "NE Louisville": {
             "url": "https://www.costco.com/w/-/ky/louisville/634",
@@ -150,7 +153,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Kentucky/Louisville"
         }
     },
     "AL": {
@@ -190,7 +194,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Madison": {
             "url": "https://www.costco.com/w/-/al/madison/1712",
@@ -228,7 +233,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Huntsville": {
             "url": "https://www.costco.com/w/-/al/huntsville/356",
@@ -266,7 +272,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Mobile": {
             "url": "https://www.costco.com/w/-/al/mobile/1192",
@@ -304,7 +311,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Hoover": {
             "url": "https://www.costco.com/w/-/al/hoover/362",
@@ -342,7 +350,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         }
     },
     "ID": {
@@ -382,7 +391,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Twin Falls": {
             "url": "https://www.costco.com/w/-/id/twin-falls/145",
@@ -420,7 +430,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Boise"
         },
         "Boise": {
             "url": "https://www.costco.com/w/-/id/boise/761",
@@ -458,7 +469,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Boise"
         },
         "Idaho Falls": {
             "url": "https://www.costco.com/w/-/id/idaho-falls/1379",
@@ -496,7 +508,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Boise"
         },
         "Pocatello": {
             "url": "https://www.costco.com/w/-/id/pocatello/1033",
@@ -534,7 +547,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Boise"
         },
         "Nampa": {
             "url": "https://www.costco.com/w/-/id/nampa/734",
@@ -572,7 +586,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Boise"
         },
         "Meridian": {
             "url": "https://www.costco.com/w/-/id/meridian/1343",
@@ -610,7 +625,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Boise"
         }
     },
     "SD": {
@@ -650,7 +666,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         }
     },
     "AK": {
@@ -690,7 +707,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Anchorage"
         },
         "Anchorage": {
             "url": "https://www.costco.com/w/-/ak/anchorage/10",
@@ -728,7 +746,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Anchorage"
         },
         "NE Anchorage": {
             "url": "https://www.costco.com/w/-/ak/anchorage/63",
@@ -766,7 +785,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Anchorage"
         }
     },
     "ME": {
@@ -806,7 +826,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         }
     },
     "MT": {
@@ -846,7 +867,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Denver"
         },
         "Missoula": {
             "url": "https://www.costco.com/w/-/mt/missoula/67",
@@ -884,7 +906,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Denver"
         },
         "Helena": {
             "url": "https://www.costco.com/w/-/mt/helena/633",
@@ -922,7 +945,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Denver"
         },
         "Billings": {
             "url": "https://www.costco.com/w/-/mt/billings/1644",
@@ -960,7 +984,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Denver"
         },
         "Kalispell": {
             "url": "https://www.costco.com/w/-/mt/kalispell/1746",
@@ -998,7 +1023,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Denver"
         }
     },
     "DE": {
@@ -1038,7 +1064,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         }
     },
     "OH": {
@@ -1078,7 +1105,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Centerville": {
             "url": "https://www.costco.com/w/-/oh/centerville/1185",
@@ -1116,7 +1144,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Liberty Township": {
             "url": "https://www.costco.com/w/-/oh/liberty-township/1632",
@@ -1154,7 +1183,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Mayfield Heights": {
             "url": "https://www.costco.com/w/-/oh/cleveland/344",
@@ -1192,7 +1222,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "North Canton": {
             "url": "https://www.costco.com/w/-/oh/north-canton/1635",
@@ -1230,7 +1261,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Perrysburg": {
             "url": "https://www.costco.com/w/-/oh/perrysburg/1194",
@@ -1268,7 +1300,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Strongsville": {
             "url": "https://www.costco.com/w/-/oh/strongsville/625",
@@ -1306,7 +1339,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Deerfield": {
             "url": "https://www.costco.com/w/-/oh/cincinnati/384",
@@ -1344,7 +1378,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Toledo": {
             "url": "https://www.costco.com/w/-/oh/toledo/1007",
@@ -1382,7 +1417,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Easton OH": {
             "url": "https://www.costco.com/w/-/oh/columbus/1160",
@@ -1420,7 +1456,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Avon OH": {
             "url": "https://www.costco.com/w/-/oh/avon/343",
@@ -1458,7 +1495,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "NW Columbus": {
             "url": "https://www.costco.com/w/-/oh/plain-city/1243",
@@ -1496,7 +1534,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Boston Heights": {
             "url": "https://www.costco.com/w/-/oh/boston-heights/1226",
@@ -1534,7 +1573,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         }
     },
     "NM": {
@@ -1574,7 +1614,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Denver"
         },
         "Albuquerque": {
             "url": "https://www.costco.com/w/-/nm/albuquerque/116",
@@ -1612,7 +1653,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Denver"
         },
         "SE Albuquerque": {
             "url": "https://www.costco.com/w/-/nm/albuquerque/667",
@@ -1650,7 +1692,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Denver"
         }
     },
     "CA": {
@@ -1690,7 +1733,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Azusa": {
             "url": "https://www.costco.com/w/-/ca/azusa/412",
@@ -1728,7 +1772,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Antioch": {
             "url": "https://www.costco.com/w/-/ca/antioch/1002",
@@ -1766,7 +1811,8 @@
                     "06:00",
                     "20:00"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Brentwood CA": {
             "url": "https://www.costco.com/w/-/ca/brentwood/1662",
@@ -1804,7 +1850,8 @@
                     "06:00",
                     "20:00"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Bakersfield": {
             "url": "https://www.costco.com/w/-/ca/bakersfield/688",
@@ -1842,7 +1889,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Carlsbad": {
             "url": "https://www.costco.com/w/-/ca/carlsbad/462",
@@ -1880,7 +1928,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Burbank": {
             "url": "https://www.costco.com/w/-/ca/burbank/677",
@@ -1918,7 +1967,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Cal Expo": {
             "url": "https://www.costco.com/w/-/ca/sacramento/471",
@@ -1956,7 +2006,8 @@
                     "06:00",
                     "20:00"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Chico": {
             "url": "https://www.costco.com/w/-/ca/chico/1011",
@@ -1994,7 +2045,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Carmel Mountain": {
             "url": "https://www.costco.com/w/-/ca/san-diego/452",
@@ -2032,7 +2084,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Citrus Heights": {
             "url": "https://www.costco.com/w/-/ca/citrus-heights/771",
@@ -2070,7 +2123,8 @@
                     "06:00",
                     "20:00"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "City Of Industry": {
             "url": "https://www.costco.com/w/-/ca/city-of-industry/679",
@@ -2108,7 +2162,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Concord": {
             "url": "https://www.costco.com/w/-/ca/concord/663",
@@ -2146,7 +2201,8 @@
                     "06:00",
                     "20:00"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Clovis": {
             "url": "https://www.costco.com/w/-/ca/clovis/1360",
@@ -2184,7 +2240,8 @@
                     "06:00",
                     "20:00"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Culver City": {
             "url": "https://www.costco.com/w/-/ca/marina-del-rey/479",
@@ -2222,7 +2279,8 @@
                     "06:00",
                     "20:00"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Cypress CA": {
             "url": "https://www.costco.com/w/-/ca/cypress/748",
@@ -2260,7 +2318,8 @@
                     "00:00",
                     "00:00"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Danville": {
             "url": "https://www.costco.com/w/-/ca/danville/21",
@@ -2298,7 +2357,8 @@
                     "06:00",
                     "20:00"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Eastvale": {
             "url": "https://www.costco.com/w/-/ca/eastvale/1317",
@@ -2336,7 +2396,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "El Camino": {
             "url": "https://www.costco.com/w/-/ca/south-san-francisco/475",
@@ -2374,7 +2435,8 @@
                     "06:00",
                     "20:00"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Eureka": {
             "url": "https://www.costco.com/w/-/ca/eureka/125",
@@ -2412,7 +2474,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Elk Grove": {
             "url": "https://www.costco.com/w/-/ca/elk-grove/1274",
@@ -2450,7 +2513,8 @@
                     "07:00",
                     "20:00"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Fontana": {
             "url": "https://www.costco.com/w/-/ca/fontana/627",
@@ -2488,7 +2552,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Fairfield": {
             "url": "https://www.costco.com/w/-/ca/fairfield/453",
@@ -2526,7 +2591,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "El Centro": {
             "url": "https://www.costco.com/w/-/ca/el-centro/121",
@@ -2564,7 +2630,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Fremont": {
             "url": "https://www.costco.com/w/-/ca/fremont/778",
@@ -2602,7 +2669,8 @@
                     "06:00",
                     "20:00"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Fountain Valley": {
             "url": "https://www.costco.com/w/-/ca/fountain-valley/411",
@@ -2640,7 +2708,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Fresno": {
             "url": "https://www.costco.com/w/-/ca/fresno/31",
@@ -2678,7 +2747,8 @@
                     "06:00",
                     "20:00"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Corona": {
             "url": "https://www.costco.com/w/-/ca/corona/432",
@@ -2716,7 +2786,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Chula Vista": {
             "url": "https://www.costco.com/w/-/ca/chula-vista/781",
@@ -2754,7 +2825,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Garden Grove": {
             "url": "https://www.costco.com/w/-/ca/garden-grove/126",
@@ -2792,7 +2864,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Fullerton": {
             "url": "https://www.costco.com/w/-/ca/fullerton/418",
@@ -2830,7 +2903,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Chino Hills": {
             "url": "https://www.costco.com/w/-/ca/chino-hills/473",
@@ -2868,7 +2942,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Folsom": {
             "url": "https://www.costco.com/w/-/ca/folsom/765",
@@ -2906,7 +2981,8 @@
                     "06:00",
                     "20:00"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Gilroy": {
             "url": "https://www.costco.com/w/-/ca/gilroy/760",
@@ -2944,7 +3020,8 @@
                     "06:00",
                     "20:00"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Great Oaks": {
             "url": "https://www.costco.com/w/-/ca/san-jose/1267",
@@ -2982,7 +3059,8 @@
                     "06:00",
                     "20:00"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Hanford": {
             "url": "https://www.costco.com/w/-/ca/hanford/1244",
@@ -3020,7 +3098,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Hayward": {
             "url": "https://www.costco.com/w/-/ca/hayward/1061",
@@ -3058,7 +3137,8 @@
                     "05:00",
                     "21:00"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Highland": {
             "url": "https://www.costco.com/w/-/ca/highland/1715",
@@ -3096,7 +3176,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Huntington Beach": {
             "url": "https://www.costco.com/w/-/ca/huntington-beach/1110",
@@ -3134,7 +3215,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Inglewood": {
             "url": "https://www.costco.com/w/-/ca/inglewood/769",
@@ -3172,7 +3254,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Hawthorne": {
             "url": "https://www.costco.com/w/-/ca/hawthorne/671",
@@ -3210,7 +3293,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "La Quinta": {
             "url": "https://www.costco.com/w/-/ca/la-quinta/638",
@@ -3248,7 +3332,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "La Mesa": {
             "url": "https://www.costco.com/w/-/ca/la-mesa/469",
@@ -3286,7 +3371,8 @@
                     "05:00",
                     "20:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Irvine": {
             "url": "https://www.costco.com/w/-/ca/irvine/454",
@@ -3324,7 +3410,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Laguna Niguel": {
             "url": "https://www.costco.com/w/-/ca/laguna-niguel/28",
@@ -3362,7 +3449,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Laguna Marketplace": {
             "url": "https://www.costco.com/w/-/ca/laguna-niguel/690",
@@ -3400,7 +3488,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Livermore": {
             "url": "https://www.costco.com/w/-/ca/livermore/146",
@@ -3438,7 +3527,8 @@
                     "06:00",
                     "20:00"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Lancaster CA": {
             "url": "https://www.costco.com/w/-/ca/lancaster/762",
@@ -3476,7 +3566,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Lakewood": {
             "url": "https://www.costco.com/w/-/ca/lakewood/1050",
@@ -3514,7 +3605,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Merced": {
             "url": "https://www.costco.com/w/-/ca/merced/142",
@@ -3552,7 +3644,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Mission Valley": {
             "url": "https://www.costco.com/w/-/ca/san-diego/488",
@@ -3590,7 +3683,8 @@
                     "05:30",
                     "19:00"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Montclair": {
             "url": "https://www.costco.com/w/-/ca/montclair/686",
@@ -3628,7 +3722,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "La Habra": {
             "url": "https://www.costco.com/w/-/ca/la-habra/777",
@@ -3666,7 +3761,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Modesto": {
             "url": "https://www.costco.com/w/-/ca/modesto/661",
@@ -3704,7 +3800,8 @@
                     "06:00",
                     "20:00"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Morena": {
             "url": "https://www.costco.com/w/-/ca/san-diego/401",
@@ -3742,7 +3839,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Moreno Valley": {
             "url": "https://www.costco.com/w/-/ca/moreno-valley/455",
@@ -3780,7 +3878,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Manteca": {
             "url": "https://www.costco.com/w/-/ca/manteca/1031",
@@ -3818,7 +3917,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Murrieta": {
             "url": "https://www.costco.com/w/-/ca/murrieta/1390",
@@ -3856,7 +3956,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Lake Elsinore": {
             "url": "https://www.costco.com/w/-/ca/lake-elsinore/746",
@@ -3894,7 +3995,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "N Fresno": {
             "url": "https://www.costco.com/w/-/ca/fresno/657",
@@ -3932,7 +4034,8 @@
                     "06:00",
                     "20:00"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "N Visalia": {
             "url": "https://www.costco.com/w/-/ca/visalia/1741",
@@ -3970,7 +4073,8 @@
                     "06:00",
                     "20:00"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Monterey Park": {
             "url": "https://www.costco.com/w/-/ca/monterey-park/1318",
@@ -4008,7 +4112,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Newark": {
             "url": "https://www.costco.com/w/-/ca/newark/1660",
@@ -4046,7 +4151,8 @@
                     "06:00",
                     "20:00"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Lodi": {
             "url": "https://www.costco.com/w/-/ca/lodi/1091",
@@ -4084,7 +4190,8 @@
                     "00:00",
                     "00:00"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Napa": {
             "url": "https://www.costco.com/w/-/ca/napa/1679",
@@ -4122,7 +4229,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Northridge": {
             "url": "https://www.costco.com/w/-/ca/northridge/437",
@@ -4160,7 +4268,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Pacoima": {
             "url": "https://www.costco.com/w/-/ca/pacoima/1071",
@@ -4198,7 +4307,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Marysville CA": {
             "url": "https://www.costco.com/w/-/ca/linda/1658",
@@ -4236,7 +4346,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Oxnard": {
             "url": "https://www.costco.com/w/-/ca/oxnard/420",
@@ -4274,7 +4385,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Palm Desert": {
             "url": "https://www.costco.com/w/-/ca/palm-desert/441",
@@ -4312,7 +4424,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Norwalk CA": {
             "url": "https://www.costco.com/w/-/ca/norwalk/410",
@@ -4350,7 +4463,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Rancho Cucamonga": {
             "url": "https://www.costco.com/w/-/ca/rancho-cucamonga/678",
@@ -4388,7 +4502,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Redding": {
             "url": "https://www.costco.com/w/-/ca/redding/1445",
@@ -4426,7 +4541,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Redwood City": {
             "url": "https://www.costco.com/w/-/ca/redwood-city/1042",
@@ -4464,7 +4580,8 @@
                     "06:00",
                     "20:00"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Richmond CA": {
             "url": "https://www.costco.com/w/-/ca/richmond/482",
@@ -4502,7 +4619,8 @@
                     "06:00",
                     "20:00"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Rohnert Park": {
             "url": "https://www.costco.com/w/-/ca/rohnert-park/659",
@@ -4540,7 +4658,8 @@
                     "06:00",
                     "20:00"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Riverbank": {
             "url": "https://www.costco.com/w/-/ca/riverbank/1683",
@@ -4578,7 +4697,8 @@
                     "06:00",
                     "20:00"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "NE San Jose": {
             "url": "https://www.costco.com/w/-/ca/san-jose/1004",
@@ -4616,7 +4736,8 @@
                     "05:00",
                     "21:00"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "S San Francisco": {
             "url": "https://www.costco.com/w/-/ca/south-san-francisco/422",
@@ -4654,7 +4775,8 @@
                     "06:00",
                     "20:00"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Roseville CA": {
             "url": "https://www.costco.com/w/-/ca/roseville/29",
@@ -4692,7 +4814,8 @@
                     "06:00",
                     "20:00"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Rancho Cordova": {
             "url": "https://www.costco.com/w/-/ca/rancho-cordova/438",
@@ -4730,7 +4853,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "San Dimas": {
             "url": "https://www.costco.com/w/-/ca/san-dimas/1015",
@@ -4768,7 +4892,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Sacramento": {
             "url": "https://www.costco.com/w/-/ca/sacramento/464",
@@ -4806,7 +4931,8 @@
                     "06:00",
                     "20:00"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Pleasanton": {
             "url": "https://www.costco.com/w/-/ca/pleasanton/1341",
@@ -4844,7 +4970,8 @@
                     "06:00",
                     "20:00"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Poway": {
             "url": "https://www.costco.com/w/-/ca/poway/775",
@@ -4882,7 +5009,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "San Bernardino": {
             "url": "https://www.costco.com/w/-/ca/san-bernardino/478",
@@ -4920,7 +5048,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "San Juan Capistrano": {
             "url": "https://www.costco.com/w/-/ca/san-juan-capistrano/429",
@@ -4958,7 +5087,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "San Jose": {
             "url": "https://www.costco.com/w/-/ca/san-jose/148",
@@ -4996,7 +5126,8 @@
                     "05:30",
                     "20:00"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "San Leandro": {
             "url": "https://www.costco.com/w/-/ca/san-leandro/118",
@@ -5034,7 +5165,8 @@
                     "06:00",
                     "20:00"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "San Luis Obispo": {
             "url": "https://www.costco.com/w/-/ca/san-luis-obispo/741",
@@ -5072,7 +5204,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Rancho Del Rey": {
             "url": "https://www.costco.com/w/-/ca/chula-vista/460",
@@ -5110,7 +5243,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Santa Clara": {
             "url": "https://www.costco.com/w/-/ca/santa-clara/129",
@@ -5148,7 +5282,8 @@
                     "05:00",
                     "21:00"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Santa Clarita": {
             "url": "https://www.costco.com/w/-/ca/santa-clarita/447",
@@ -5186,7 +5321,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Santa Cruz": {
             "url": "https://www.costco.com/w/-/ca/santa-cruz/149",
@@ -5224,7 +5360,8 @@
                     "06:00",
                     "20:00"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Santee": {
             "url": "https://www.costco.com/w/-/ca/santee/403",
@@ -5262,7 +5399,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Santa Maria": {
             "url": "https://www.costco.com/w/-/ca/santa-maria/1275",
@@ -5300,7 +5438,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Santa Rosa": {
             "url": "https://www.costco.com/w/-/ca/santa-rosa/41",
@@ -5338,7 +5477,8 @@
                     "06:00",
                     "20:00"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Signal Hill": {
             "url": "https://www.costco.com/w/-/ca/signal-hill/424",
@@ -5376,7 +5516,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "SE San Diego": {
             "url": "https://www.costco.com/w/-/ca/san-diego/483",
@@ -5414,7 +5555,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Stockton": {
             "url": "https://www.costco.com/w/-/ca/stockton/38",
@@ -5452,7 +5594,8 @@
                     "06:00",
                     "20:00"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "SW Bakersfield": {
             "url": "https://www.costco.com/w/-/ca/bakersfield/643",
@@ -5490,7 +5633,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Simi Valley": {
             "url": "https://www.costco.com/w/-/ca/simi-valley/128",
@@ -5528,7 +5672,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Temecula": {
             "url": "https://www.costco.com/w/-/ca/temecula/491",
@@ -5566,7 +5711,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Sunnyvale": {
             "url": "https://www.costco.com/w/-/ca/sunnyvale/423",
@@ -5604,7 +5750,8 @@
                     "06:00",
                     "20:00"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Turlock": {
             "url": "https://www.costco.com/w/-/ca/turlock/782",
@@ -5642,7 +5789,8 @@
                     "06:00",
                     "20:00"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Torrance": {
             "url": "https://www.costco.com/w/-/ca/torrance/1202",
@@ -5680,7 +5828,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Tracy": {
             "url": "https://www.costco.com/w/-/ca/tracy/658",
@@ -5718,7 +5867,8 @@
                     "06:00",
                     "20:00"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Tustin": {
             "url": "https://www.costco.com/w/-/ca/tustin/1001",
@@ -5756,7 +5906,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Ukiah": {
             "url": "https://www.costco.com/w/-/ca/ukiah/1297",
@@ -5794,7 +5945,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Vacaville": {
             "url": "https://www.costco.com/w/-/ca/vacaville/694",
@@ -5832,7 +5984,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "San Marcos": {
             "url": "https://www.costco.com/w/-/ca/san-marcos/1080",
@@ -5870,7 +6023,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Van Nuys": {
             "url": "https://www.costco.com/w/-/ca/van-nuys/48",
@@ -5908,7 +6062,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Sand City": {
             "url": "https://www.costco.com/w/-/ca/sand-city/131",
@@ -5946,7 +6101,8 @@
                     "06:00",
                     "20:00"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Tustin Ranch": {
             "url": "https://www.costco.com/w/-/ca/tustin/122",
@@ -5984,7 +6140,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Visalia": {
             "url": "https://www.costco.com/w/-/ca/visalia/1017",
@@ -6022,7 +6179,8 @@
                     "06:00",
                     "20:00"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Victorville": {
             "url": "https://www.costco.com/w/-/ca/victorville/1010",
@@ -6060,7 +6218,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "W Roseville CA": {
             "url": "https://www.costco.com/w/-/ca/roseville/1702",
@@ -6098,7 +6257,8 @@
                     "06:00",
                     "20:00"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Woodland": {
             "url": "https://www.costco.com/w/-/ca/woodland/1003",
@@ -6136,7 +6296,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Vallejo": {
             "url": "https://www.costco.com/w/-/ca/vallejo/132",
@@ -6174,7 +6335,8 @@
                     "06:00",
                     "20:00"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Woodland Hills": {
             "url": "https://www.costco.com/w/-/ca/woodland-hills/1205",
@@ -6212,7 +6374,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Yorba Linda": {
             "url": "https://www.costco.com/w/-/ca/yorba-linda/445",
@@ -6250,7 +6413,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Vista": {
             "url": "https://www.costco.com/w/-/ca/vista/124",
@@ -6288,7 +6452,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         }
     },
     "ND": {
@@ -6328,7 +6493,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Bismarck": {
             "url": "https://www.costco.com/w/-/nd/bismarck/1380",
@@ -6366,7 +6532,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         }
     },
     "WI": {
@@ -6406,7 +6573,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Pleasant Prairie": {
             "url": "https://www.costco.com/w/-/wi/pleasant-prairie/1198",
@@ -6444,7 +6612,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Menomonee Falls": {
             "url": "https://www.costco.com/w/-/wi/menomonee-falls/1209",
@@ -6482,7 +6651,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Verona": {
             "url": "https://www.costco.com/w/-/wi/verona/1491",
@@ -6520,7 +6690,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Grafton": {
             "url": "https://www.costco.com/w/-/wi/grafton/628",
@@ -6558,7 +6729,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Grand Chute": {
             "url": "https://www.costco.com/w/-/wi/grand-chute/1222",
@@ -6596,7 +6768,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Bellevue": {
             "url": "https://www.costco.com/w/-/wi/bellevue/1162",
@@ -6634,7 +6807,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "New Berlin": {
             "url": "https://www.costco.com/w/-/wi/new-berlin/1212",
@@ -6672,7 +6846,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Sun Prairie": {
             "url": "https://www.costco.com/w/-/wi/sun-prairie/1121",
@@ -6710,7 +6885,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Eau Claire": {
             "url": "https://www.costco.com/w/-/wi/eau-claire/1664",
@@ -6748,7 +6924,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Middleton": {
             "url": "https://www.costco.com/w/-/wi/middleton/1020",
@@ -6786,7 +6963,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Oconomowoc": {
             "url": "https://www.costco.com/w/-/wi/oconomowoc/1803",
@@ -6824,7 +7002,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         }
     },
     "CO": {
@@ -6864,7 +7043,8 @@
                     "07:00",
                     "19:00"
                 ]
-            }
+            },
+            "tz": "America/Denver"
         },
         "Aurora": {
             "url": "https://www.costco.com/w/-/co/aurora/439",
@@ -6902,7 +7082,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Denver"
         },
         "Douglas County": {
             "url": "https://www.costco.com/w/-/co/littleton/468",
@@ -6940,7 +7121,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Denver"
         },
         "Parker": {
             "url": "https://www.costco.com/w/-/co/parker/1022",
@@ -6978,7 +7160,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Denver"
         },
         "Arvada": {
             "url": "https://www.costco.com/w/-/co/arvada/676",
@@ -7016,7 +7199,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Denver"
         },
         "Superior": {
             "url": "https://www.costco.com/w/-/co/superior/480",
@@ -7054,7 +7238,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Denver"
         },
         "Sheridan": {
             "url": "https://www.costco.com/w/-/co/sheridan/1027",
@@ -7092,7 +7277,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Denver"
         },
         "NE Denver": {
             "url": "https://www.costco.com/w/-/co/denver/1652",
@@ -7130,7 +7316,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Denver"
         },
         "SW Denver": {
             "url": "https://www.costco.com/w/-/co/littleton/443",
@@ -7168,7 +7355,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Denver"
         },
         "W Colorado Springs": {
             "url": "https://www.costco.com/w/-/co/colorado-springs/1030",
@@ -7206,7 +7394,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Denver"
         },
         "Thornton": {
             "url": "https://www.costco.com/w/-/co/thornton/629",
@@ -7244,7 +7433,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Denver"
         },
         "Gypsum": {
             "url": "https://www.costco.com/w/-/co/gypsum/637",
@@ -7282,7 +7472,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Denver"
         },
         "E Colorado Springs": {
             "url": "https://www.costco.com/w/-/co/colorado-springs/1014",
@@ -7320,7 +7511,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Denver"
         },
         "Timnath": {
             "url": "https://www.costco.com/w/-/co/timnath/1178",
@@ -7358,7 +7550,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Denver"
         },
         "Westminster CO": {
             "url": "https://www.costco.com/w/-/co/westminster/440",
@@ -7396,7 +7589,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Denver"
         }
     },
     "SC": {
@@ -7436,7 +7630,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Charleston": {
             "url": "https://www.costco.com/w/-/sc/charleston/360",
@@ -7474,7 +7669,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Columbia SC": {
             "url": "https://www.costco.com/w/-/sc/columbia/1232",
@@ -7512,7 +7708,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Greenville": {
             "url": "https://www.costco.com/w/-/sc/greenville/1005",
@@ -7550,7 +7747,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Myrtle Beach": {
             "url": "https://www.costco.com/w/-/sc/myrtle-beach/338",
@@ -7588,7 +7786,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Spartanburg": {
             "url": "https://www.costco.com/w/-/sc/spartanburg/1008",
@@ -7626,7 +7825,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Indian Land": {
             "url": "https://www.costco.com/w/-/sc/indian-land/1714",
@@ -7664,7 +7864,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         }
     },
     "VT": {
@@ -7704,7 +7905,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         }
     },
     "WA": {
@@ -7744,7 +7946,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Clarkston": {
             "url": "https://www.costco.com/w/-/wa/clarkston/103",
@@ -7782,7 +7985,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Federal Way": {
             "url": "https://www.costco.com/w/-/wa/federal-way/61",
@@ -7820,7 +8024,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Covington WA": {
             "url": "https://www.costco.com/w/-/wa/covington/1029",
@@ -7858,7 +8063,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Gig Harbor": {
             "url": "https://www.costco.com/w/-/wa/gig-harbor/624",
@@ -7896,7 +8102,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Aurora Village": {
             "url": "https://www.costco.com/w/-/wa/shoreline/106",
@@ -7934,7 +8141,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Issaquah": {
             "url": "https://www.costco.com/w/-/wa/issaquah/110",
@@ -7972,7 +8180,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Burlington WA": {
             "url": "https://www.costco.com/w/-/wa/burlington/662",
@@ -8010,7 +8219,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Kennewick": {
             "url": "https://www.costco.com/w/-/wa/kennewick/486",
@@ -8048,7 +8258,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Kirkland": {
             "url": "https://www.costco.com/w/-/wa/kirkland/8",
@@ -8086,7 +8297,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Lynnwood": {
             "url": "https://www.costco.com/w/-/wa/lynnwood/1190",
@@ -8124,7 +8336,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Lacey": {
             "url": "https://www.costco.com/w/-/wa/lacey/740",
@@ -8162,7 +8375,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Marysville WA": {
             "url": "https://www.costco.com/w/-/wa/marysville/642",
@@ -8200,7 +8414,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Redmond": {
             "url": "https://www.costco.com/w/-/wa/redmond/1225",
@@ -8238,7 +8453,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Ridgefield": {
             "url": "https://www.costco.com/w/-/wa/ridgefield/1703",
@@ -8276,7 +8492,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "N Spokane": {
             "url": "https://www.costco.com/w/-/wa/spokane/1298",
@@ -8314,7 +8531,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Sequim": {
             "url": "https://www.costco.com/w/-/wa/sequim/639",
@@ -8352,7 +8570,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Puyallup": {
             "url": "https://www.costco.com/w/-/wa/puyallup/660",
@@ -8390,7 +8609,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Everett WA": {
             "url": "https://www.costco.com/w/-/wa/everett/114",
@@ -8428,7 +8648,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Richland": {
             "url": "https://www.costco.com/w/-/wa/richland/1718",
@@ -8466,7 +8687,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Seattle": {
             "url": "https://www.costco.com/w/-/wa/seattle/1",
@@ -8504,7 +8726,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "E Vancouver WA": {
             "url": "https://www.costco.com/w/-/wa/camas/1086",
@@ -8542,7 +8765,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Bonney Lake": {
             "url": "https://www.costco.com/w/-/wa/bonney-lake/1278",
@@ -8580,7 +8804,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Tukwila": {
             "url": "https://www.costco.com/w/-/wa/tukwila/6",
@@ -8618,7 +8843,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Silverdale": {
             "url": "https://www.costco.com/w/-/wa/silverdale/13",
@@ -8656,7 +8882,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Vancouver WA": {
             "url": "https://www.costco.com/w/-/wa/vancouver/772",
@@ -8694,7 +8921,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Lake Stevens": {
             "url": "https://www.costco.com/w/-/wa/lake-stevens/1588",
@@ -8732,7 +8960,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Spokane": {
             "url": "https://www.costco.com/w/-/wa/spokane/670",
@@ -8770,7 +8999,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Wenatchee": {
             "url": "https://www.costco.com/w/-/wa/east-wenatchee/112",
@@ -8808,7 +9038,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Union Gap": {
             "url": "https://www.costco.com/w/-/wa/union-gap/1013",
@@ -8846,7 +9077,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Woodinville": {
             "url": "https://www.costco.com/w/-/wa/woodinville/747",
@@ -8884,7 +9116,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Tacoma": {
             "url": "https://www.costco.com/w/-/wa/tacoma/95",
@@ -8922,7 +9155,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Tumwater": {
             "url": "https://www.costco.com/w/-/wa/tumwater/64",
@@ -8960,7 +9194,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         }
     },
     "AR": {
@@ -9000,7 +9235,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         }
     },
     "MN": {
@@ -9040,7 +9276,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Duluth": {
             "url": "https://www.costco.com/w/-/mn/duluth/1422",
@@ -9078,7 +9315,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Maplewood": {
             "url": "https://www.costco.com/w/-/mn/maplewood/1021",
@@ -9116,7 +9354,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Eagan": {
             "url": "https://www.costco.com/w/-/mn/eagan/1363",
@@ -9154,7 +9393,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Burnsville": {
             "url": "https://www.costco.com/w/-/mn/burnsville/1087",
@@ -9192,7 +9432,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Baxter": {
             "url": "https://www.costco.com/w/-/mn/baxter/1122",
@@ -9230,7 +9471,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "St Louis Park": {
             "url": "https://www.costco.com/w/-/mn/saint-louis-park/377",
@@ -9268,7 +9510,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Rochester MN": {
             "url": "https://www.costco.com/w/-/mn/rochester/1125",
@@ -9306,7 +9549,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Eden Prairie": {
             "url": "https://www.costco.com/w/-/mn/eden-prairie/783",
@@ -9344,7 +9588,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Maple Grove": {
             "url": "https://www.costco.com/w/-/mn/maple-grove/648",
@@ -9382,7 +9627,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Chaska": {
             "url": "https://www.costco.com/w/-/mn/chaska/1646",
@@ -9420,7 +9666,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Woodbury": {
             "url": "https://www.costco.com/w/-/mn/woodbury/1272",
@@ -9458,7 +9705,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "St Cloud": {
             "url": "https://www.costco.com/w/-/mn/saint-cloud/1344",
@@ -9496,7 +9744,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Otsego": {
             "url": "https://www.costco.com/w/-/mn/otsego/1743",
@@ -9534,7 +9783,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         }
     },
     "MA": {
@@ -9574,7 +9824,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "West Springfield": {
             "url": "https://www.costco.com/w/-/ma/west-springfield/302",
@@ -9612,7 +9863,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Danvers": {
             "url": "https://www.costco.com/w/-/ma/danvers/301",
@@ -9650,7 +9902,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Dedham": {
             "url": "https://www.costco.com/w/-/ma/dedham/319",
@@ -9688,7 +9941,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         }
     },
     "IA": {
@@ -9728,7 +9982,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "West Des Moines": {
             "url": "https://www.costco.com/w/-/ia/west-des-moines/788",
@@ -9766,7 +10021,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Coralville": {
             "url": "https://www.costco.com/w/-/ia/coralville/1111",
@@ -9804,7 +10060,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Ankeny": {
             "url": "https://www.costco.com/w/-/ia/ankeny/1630",
@@ -9842,7 +10099,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         }
     },
     "AZ": {
@@ -9882,7 +10140,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Phoenix"
         },
         "Mesa": {
             "url": "https://www.costco.com/w/-/az/mesa/1028",
@@ -9920,7 +10179,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Phoenix"
         },
         "Buckeye": {
             "url": "https://www.costco.com/w/-/az/buckeye/1653",
@@ -9958,7 +10218,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Phoenix"
         },
         "Glendale": {
             "url": "https://www.costco.com/w/-/az/glendale/674",
@@ -9996,7 +10257,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Phoenix"
         },
         "Gilbert": {
             "url": "https://www.costco.com/w/-/az/gilbert/481",
@@ -10034,7 +10296,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Phoenix"
         },
         "NW Tucson": {
             "url": "https://www.costco.com/w/-/az/tucson/431",
@@ -10072,7 +10335,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Phoenix"
         },
         "Paradise Valley": {
             "url": "https://www.costco.com/w/-/az/phoenix/1058",
@@ -10110,7 +10374,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Phoenix"
         },
         "Prescott": {
             "url": "https://www.costco.com/w/-/az/prescott/466",
@@ -10148,7 +10413,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Phoenix"
         },
         "Queen Creek": {
             "url": "https://www.costco.com/w/-/az/queen-creek/1620",
@@ -10186,7 +10452,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Phoenix"
         },
         "Scottsdale": {
             "url": "https://www.costco.com/w/-/az/scottsdale/427",
@@ -10224,7 +10491,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Phoenix"
         },
         "Surprise": {
             "url": "https://www.costco.com/w/-/az/surprise/1375",
@@ -10262,7 +10530,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Phoenix"
         },
         "Tempe": {
             "url": "https://www.costco.com/w/-/az/tempe/436",
@@ -10300,7 +10569,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Phoenix"
         },
         "SW Tucson": {
             "url": "https://www.costco.com/w/-/az/tucson/1079",
@@ -10338,7 +10608,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Phoenix"
         },
         "Tucson": {
             "url": "https://www.costco.com/w/-/az/tucson/407",
@@ -10376,7 +10647,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Phoenix"
         },
         "SE Gilbert": {
             "url": "https://www.costco.com/w/-/az/gilbert/644",
@@ -10414,7 +10686,8 @@
                     "06:30",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Phoenix"
         },
         "Thomas Road": {
             "url": "https://www.costco.com/w/-/az/phoenix/465",
@@ -10452,7 +10725,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Phoenix"
         },
         "N Phoenix": {
             "url": "https://www.costco.com/w/-/az/phoenix/490",
@@ -10490,7 +10764,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Phoenix"
         },
         "Avondale": {
             "url": "https://www.costco.com/w/-/az/avondale/691",
@@ -10528,7 +10803,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Phoenix"
         },
         "Cave Creek": {
             "url": "https://www.costco.com/w/-/az/phoenix/738",
@@ -10566,7 +10842,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Phoenix"
         }
     },
     "IN": {
@@ -10606,7 +10883,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Indiana/Indianapolis"
         },
         "Fort Wayne": {
             "url": "https://www.costco.com/w/-/in/fort-wayne/1161",
@@ -10644,7 +10922,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Indiana/Indianapolis"
         },
         "Castleton": {
             "url": "https://www.costco.com/w/-/in/indianapolis/346",
@@ -10682,7 +10961,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Indiana/Indianapolis"
         },
         "Mishawaka": {
             "url": "https://www.costco.com/w/-/in/granger/1183",
@@ -10720,7 +11000,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Indiana/Indianapolis"
         },
         "Avon IN": {
             "url": "https://www.costco.com/w/-/in/avon/1577",
@@ -10758,7 +11039,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Indiana/Indianapolis"
         },
         "Fortune Park": {
             "url": "https://www.costco.com/w/-/in/indianapolis/347",
@@ -10796,7 +11078,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Indiana/Indianapolis"
         },
         "S Indianapolis": {
             "url": "https://www.costco.com/w/-/in/indianapolis/1227",
@@ -10834,7 +11117,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Indiana/Indianapolis"
         },
         "Evansville": {
             "url": "https://www.costco.com/w/-/in/evansville/1331",
@@ -10872,7 +11156,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Merrillville": {
             "url": "https://www.costco.com/w/-/in/merrillville/370",
@@ -10910,7 +11195,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         }
     },
     "MD": {
@@ -10950,7 +11236,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Frederick": {
             "url": "https://www.costco.com/w/-/md/frederick/330",
@@ -10988,7 +11275,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Owings Mills": {
             "url": "https://www.costco.com/w/-/md/owings-mills/1326",
@@ -11026,7 +11314,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "White Marsh": {
             "url": "https://www.costco.com/w/-/md/baltimore/208",
@@ -11064,7 +11353,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Columbia MD": {
             "url": "https://www.costco.com/w/-/md/elkridge/1000",
@@ -11102,7 +11392,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Arundel Mills": {
             "url": "https://www.costco.com/w/-/md/hanover/325",
@@ -11140,7 +11431,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Glen Burnie": {
             "url": "https://www.costco.com/w/-/md/glen-burnie/203",
@@ -11178,7 +11470,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Brandywine": {
             "url": "https://www.costco.com/w/-/md/brandywine/1039",
@@ -11216,7 +11509,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Woodmore Towne Centre": {
             "url": "https://www.costco.com/w/-/md/glenarden/1078",
@@ -11254,7 +11548,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         }
     },
     "CT": {
@@ -11294,7 +11589,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "South Windsor": {
             "url": "https://www.costco.com/w/-/ct/south-windsor/1493",
@@ -11332,7 +11628,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Enfield": {
             "url": "https://www.costco.com/w/-/ct/enfield/780",
@@ -11370,7 +11667,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Milford": {
             "url": "https://www.costco.com/w/-/ct/milford/312",
@@ -11408,7 +11706,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "New Britain": {
             "url": "https://www.costco.com/w/-/ct/new-britain/1196",
@@ -11446,7 +11745,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Waterbury": {
             "url": "https://www.costco.com/w/-/ct/waterbury/313",
@@ -11484,7 +11784,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "E Lyme": {
             "url": "https://www.costco.com/w/-/ct/east-lyme/1372",
@@ -11522,7 +11823,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         }
     },
     "GA": {
@@ -11562,7 +11864,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Alpharetta": {
             "url": "https://www.costco.com/w/-/ga/alpharetta/743",
@@ -11600,7 +11903,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Cumberland Mall": {
             "url": "https://www.costco.com/w/-/ga/atlanta/631",
@@ -11638,7 +11942,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Mall Of Georgia": {
             "url": "https://www.costco.com/w/-/ga/buford/366",
@@ -11676,7 +11981,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Fort Oglethorpe": {
             "url": "https://www.costco.com/w/-/ga/ringgold/1083",
@@ -11714,7 +12020,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Cumming": {
             "url": "https://www.costco.com/w/-/ga/cumming/1175",
@@ -11752,7 +12059,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Pooler": {
             "url": "https://www.costco.com/w/-/ga/pooler/1485",
@@ -11790,7 +12098,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Stockbridge": {
             "url": "https://www.costco.com/w/-/ga/mcdonough/1675",
@@ -11828,7 +12137,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Athens": {
             "url": "https://www.costco.com/w/-/ga/athens/1621",
@@ -11866,7 +12176,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Brookhaven": {
             "url": "https://www.costco.com/w/-/ga/atlanta/1084",
@@ -11904,7 +12215,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Augusta": {
             "url": "https://www.costco.com/w/-/ga/augusta/1102",
@@ -11942,7 +12254,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Perimeter": {
             "url": "https://www.costco.com/w/-/ga/atlanta/188",
@@ -11980,7 +12293,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Sharpsburg": {
             "url": "https://www.costco.com/w/-/ga/sharpsburg/1361",
@@ -12018,7 +12332,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Dallas GA": {
             "url": "https://www.costco.com/w/-/ga/dallas/1389",
@@ -12056,7 +12371,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Town Center": {
             "url": "https://www.costco.com/w/-/ga/kennesaw/189",
@@ -12094,7 +12410,8 @@
                     "00:00",
                     "00:00"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Woodstock": {
             "url": "https://www.costco.com/w/-/ga/woodstock/1295",
@@ -12132,7 +12449,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Stone Mountain": {
             "url": "https://www.costco.com/w/-/ga/stone-mountain/1769",
@@ -12170,7 +12488,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         }
     },
     "FL": {
@@ -12210,7 +12529,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Brandon": {
             "url": "https://www.costco.com/w/-/fl/brandon/358",
@@ -12248,7 +12568,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Boca Raton": {
             "url": "https://www.costco.com/w/-/fl/boca-raton/345",
@@ -12286,7 +12607,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Bradenton": {
             "url": "https://www.costco.com/w/-/fl/bradenton/1364",
@@ -12324,7 +12646,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Lantana": {
             "url": "https://www.costco.com/w/-/fl/lantana/180",
@@ -12362,7 +12685,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Kendall": {
             "url": "https://www.costco.com/w/-/fl/miami/1023",
@@ -12400,7 +12724,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Clermont": {
             "url": "https://www.costco.com/w/-/fl/clermont/1649",
@@ -12438,7 +12763,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Melbourne": {
             "url": "https://www.costco.com/w/-/fl/melbourne/1450",
@@ -12476,7 +12802,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Clearwater": {
             "url": "https://www.costco.com/w/-/fl/clearwater/336",
@@ -12514,7 +12841,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Daytona": {
             "url": "https://www.costco.com/w/-/fl/daytona-beach/1681",
@@ -12552,7 +12880,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "N Miami": {
             "url": "https://www.costco.com/w/-/fl/north-miami/1332",
@@ -12590,7 +12919,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Coral Springs": {
             "url": "https://www.costco.com/w/-/fl/coral-springs/1323",
@@ -12628,7 +12958,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Davie": {
             "url": "https://www.costco.com/w/-/fl/davie/91",
@@ -12666,7 +12997,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Estero": {
             "url": "https://www.costco.com/w/-/fl/fort-myers/621",
@@ -12704,7 +13036,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Fort Myers": {
             "url": "https://www.costco.com/w/-/fl/fort-myers/351",
@@ -12742,7 +13075,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Miami Lakes": {
             "url": "https://www.costco.com/w/-/fl/miami-lakes/181",
@@ -12780,7 +13114,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "E Orlando": {
             "url": "https://www.costco.com/w/-/fl/winter-park/185",
@@ -12818,7 +13153,8 @@
                     "00:00",
                     "00:00"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Royal Palm Beach": {
             "url": "https://www.costco.com/w/-/fl/royal-palm-beach/623",
@@ -12856,7 +13192,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "S Orlando": {
             "url": "https://www.costco.com/w/-/fl/orlando/1235",
@@ -12894,7 +13231,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "St Augustine": {
             "url": "https://www.costco.com/w/-/fl/st.-augustine/1615",
@@ -12932,7 +13270,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Miami": {
             "url": "https://www.costco.com/w/-/fl/miami/1229",
@@ -12970,7 +13309,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Naples": {
             "url": "https://www.costco.com/w/-/fl/naples/354",
@@ -13008,7 +13348,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Palm Beach Gardens": {
             "url": "https://www.costco.com/w/-/fl/palm-beach-gardens/93",
@@ -13046,7 +13387,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Sarasota Mall": {
             "url": "https://www.costco.com/w/-/fl/sarasota/1123",
@@ -13084,7 +13426,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Pembroke Pines": {
             "url": "https://www.costco.com/w/-/fl/pembroke-pines/742",
@@ -13122,7 +13465,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Stuart": {
             "url": "https://www.costco.com/w/-/fl/stuart/1717",
@@ -13160,7 +13504,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "The Villages": {
             "url": "https://www.costco.com/w/-/fl/the-villages/1738",
@@ -13198,7 +13543,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "North Port": {
             "url": "https://www.costco.com/w/-/fl/north-port/1682",
@@ -13236,7 +13582,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Tallahassee": {
             "url": "https://www.costco.com/w/-/fl/tallahassee/1026",
@@ -13274,7 +13621,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Pensacola": {
             "url": "https://www.costco.com/w/-/fl/pensacola/1779",
@@ -13312,7 +13660,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Pompano": {
             "url": "https://www.costco.com/w/-/fl/pompano-beach/88",
@@ -13350,7 +13699,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Wesley Chapel": {
             "url": "https://www.costco.com/w/-/fl/lutz/1249",
@@ -13388,7 +13738,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "W Jacksonville": {
             "url": "https://www.costco.com/w/-/fl/jacksonville/1294",
@@ -13426,7 +13777,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "W Tampa": {
             "url": "https://www.costco.com/w/-/fl/tampa/1262",
@@ -13464,7 +13816,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         }
     },
     "UT": {
@@ -13504,7 +13857,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Denver"
         },
         "Bountiful": {
             "url": "https://www.costco.com/w/-/ut/west-bountiful/735",
@@ -13542,7 +13896,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Denver"
         },
         "Murray": {
             "url": "https://www.costco.com/w/-/ut/murray/764",
@@ -13580,7 +13935,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Denver"
         },
         "Lehi": {
             "url": "https://www.costco.com/w/-/ut/lehi/733",
@@ -13618,7 +13974,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Denver"
         },
         "S St George": {
             "url": "https://www.costco.com/w/-/ut/st.-george/1764",
@@ -13656,7 +14013,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Denver"
         },
         "South Jordan": {
             "url": "https://www.costco.com/w/-/ut/south-jordan/1019",
@@ -13694,7 +14052,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Denver"
         },
         "Sandy": {
             "url": "https://www.costco.com/w/-/ut/sandy/487",
@@ -13732,7 +14091,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Denver"
         },
         "Saratoga Springs": {
             "url": "https://www.costco.com/w/-/ut/saratoga-springs/1383",
@@ -13770,7 +14130,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Denver"
         },
         "South Ogden": {
             "url": "https://www.costco.com/w/-/ut/ogden/770",
@@ -13808,7 +14169,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Denver"
         },
         "Syracuse UT": {
             "url": "https://www.costco.com/w/-/ut/syracuse/1796",
@@ -13846,7 +14208,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Denver"
         },
         "Spanish Fork": {
             "url": "https://www.costco.com/w/-/ut/spanish-fork/1118",
@@ -13884,7 +14247,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Denver"
         },
         "St George": {
             "url": "https://www.costco.com/w/-/ut/saint-george/672",
@@ -13922,7 +14286,8 @@
                     "06:00",
                     "20:00"
                 ]
-            }
+            },
+            "tz": "America/Denver"
         },
         "Logan": {
             "url": "https://www.costco.com/w/-/ut/logan/1633",
@@ -13960,7 +14325,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Denver"
         },
         "Salt Lake City": {
             "url": "https://www.costco.com/w/-/ut/salt-lake-city/113",
@@ -13998,7 +14364,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Denver"
         },
         "Riverton": {
             "url": "https://www.costco.com/w/-/ut/riverton/1441",
@@ -14036,7 +14403,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Denver"
         },
         "West Valley": {
             "url": "https://www.costco.com/w/-/ut/salt-lake-city/622",
@@ -14074,7 +14442,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Denver"
         }
     },
     "NV": {
@@ -14114,7 +14483,8 @@
                     "06:00",
                     "20:00"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Summerlin": {
             "url": "https://www.costco.com/w/-/nv/las-vegas/685",
@@ -14152,7 +14522,8 @@
                     "06:00",
                     "20:00"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Carson City": {
             "url": "https://www.costco.com/w/-/nv/carson-city/127",
@@ -14190,7 +14561,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Centennial": {
             "url": "https://www.costco.com/w/-/nv/las-vegas/737",
@@ -14228,7 +14600,8 @@
                     "06:00",
                     "20:00"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Sparks": {
             "url": "https://www.costco.com/w/-/nv/sparks/646",
@@ -14266,7 +14639,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Henderson": {
             "url": "https://www.costco.com/w/-/nv/henderson/673",
@@ -14304,7 +14678,8 @@
                     "06:00",
                     "20:00"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "SW Henderson": {
             "url": "https://www.costco.com/w/-/nv/henderson/1320",
@@ -14342,7 +14717,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Spring Valley": {
             "url": "https://www.costco.com/w/-/nv/las-vegas/1709",
@@ -14380,7 +14756,8 @@
                     "06:00",
                     "20:00"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         }
     },
     "IL": {
@@ -14420,7 +14797,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Lincoln Park": {
             "url": "https://www.costco.com/w/-/il/chicago/380",
@@ -14458,7 +14836,8 @@
                     "00:00",
                     "00:00"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Bloomingdale": {
             "url": "https://www.costco.com/w/-/il/bloomingdale/371",
@@ -14496,7 +14875,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Chicago South Loop": {
             "url": "https://www.costco.com/w/-/il/chicago/1107",
@@ -14534,7 +14914,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Melrose Park": {
             "url": "https://www.costco.com/w/-/il/melrose-park/1085",
@@ -14572,7 +14953,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Mt Prospect": {
             "url": "https://www.costco.com/w/-/il/mount-prospect/779",
@@ -14610,7 +14992,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "NE Naperville": {
             "url": "https://www.costco.com/w/-/il/naperville/1443",
@@ -14648,7 +15031,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Niles": {
             "url": "https://www.costco.com/w/-/il/niles/383",
@@ -14686,7 +15070,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Bolingbrook": {
             "url": "https://www.costco.com/w/-/il/bolingbrook/1088",
@@ -14724,7 +15109,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "North Riverside IL": {
             "url": "https://www.costco.com/w/-/il/north-riverside/1153",
@@ -14762,7 +15148,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Lake Zurich": {
             "url": "https://www.costco.com/w/-/il/lake-zurich/378",
@@ -14800,7 +15187,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Oak Brook": {
             "url": "https://www.costco.com/w/-/il/oak-brook/388",
@@ -14838,7 +15226,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Champaign": {
             "url": "https://www.costco.com/w/-/il/champaign/1384",
@@ -14876,7 +15265,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Schaumburg": {
             "url": "https://www.costco.com/w/-/il/schaumburg/387",
@@ -14914,7 +15304,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Loves Park": {
             "url": "https://www.costco.com/w/-/il/loves-park/1353",
@@ -14952,7 +15343,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Mettawa": {
             "url": "https://www.costco.com/w/-/il/mettawa/1074",
@@ -14990,7 +15382,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Orland Park": {
             "url": "https://www.costco.com/w/-/il/orland-park/647",
@@ -15028,7 +15421,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "East Peoria": {
             "url": "https://www.costco.com/w/-/il/east-peoria/1126",
@@ -15066,7 +15460,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Lake In The Hills": {
             "url": "https://www.costco.com/w/-/il/lake-in-the-hills/774",
@@ -15104,7 +15499,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Naperville": {
             "url": "https://www.costco.com/w/-/il/naperville/342",
@@ -15142,7 +15538,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "St Charles": {
             "url": "https://www.costco.com/w/-/il/saint-charles/1040",
@@ -15180,7 +15577,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Plainfield": {
             "url": "https://www.costco.com/w/-/il/plainfield/1388",
@@ -15218,7 +15616,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Yorkville": {
             "url": "https://www.costco.com/w/-/il/yorkville/1763",
@@ -15256,7 +15655,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         }
     },
     "MO": {
@@ -15296,7 +15696,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Independence": {
             "url": "https://www.costco.com/w/-/mo/independence/373",
@@ -15334,7 +15735,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Manchester MO": {
             "url": "https://www.costco.com/w/-/mo/manchester/1060",
@@ -15372,7 +15774,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Springfield": {
             "url": "https://www.costco.com/w/-/mo/springfield/1486",
@@ -15410,7 +15813,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "S St Louis": {
             "url": "https://www.costco.com/w/-/mo/saint-louis/368",
@@ -15448,7 +15852,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "N Kansas City": {
             "url": "https://www.costco.com/w/-/mo/kansas-city/1268",
@@ -15486,7 +15891,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "St Peters": {
             "url": "https://www.costco.com/w/-/mo/saint-peters/382",
@@ -15524,7 +15930,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "University City": {
             "url": "https://www.costco.com/w/-/mo/saint-louis/1488",
@@ -15562,7 +15969,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         }
     },
     "HI": {
@@ -15602,7 +16010,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "Pacific/Honolulu"
         },
         "Iwilei": {
             "url": "https://www.costco.com/w/-/hi/honolulu/687",
@@ -15640,7 +16049,8 @@
                     "04:30",
                     "20:30"
                 ]
-            }
+            },
+            "tz": "Pacific/Honolulu"
         },
         "Kona": {
             "url": "https://www.costco.com/w/-/hi/kailua-kona/140",
@@ -15678,7 +16088,8 @@
                     "04:30",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "Pacific/Honolulu"
         },
         "Maui": {
             "url": "https://www.costco.com/w/-/hi/kahului/119",
@@ -15716,7 +16127,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "Pacific/Honolulu"
         },
         "Kapolei": {
             "url": "https://www.costco.com/w/-/hi/kapolei/1038",
@@ -15754,7 +16166,8 @@
                     "05:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "Pacific/Honolulu"
         },
         "Waipio": {
             "url": "https://www.costco.com/w/-/hi/waipahu/485",
@@ -15792,7 +16205,8 @@
                     "05:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "Pacific/Honolulu"
         }
     },
     "NC": {
@@ -15832,7 +16246,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Durham": {
             "url": "https://www.costco.com/w/-/nc/durham/249",
@@ -15870,7 +16285,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Garner": {
             "url": "https://www.costco.com/w/-/nc/raleigh/1587",
@@ -15908,7 +16324,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Matthews": {
             "url": "https://www.costco.com/w/-/nc/matthews/367",
@@ -15946,7 +16363,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Wilmington": {
             "url": "https://www.costco.com/w/-/nc/wilmington/635",
@@ -15984,7 +16402,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Raleigh": {
             "url": "https://www.costco.com/w/-/nc/raleigh/645",
@@ -16022,7 +16441,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Mooresville": {
             "url": "https://www.costco.com/w/-/nc/mooresville/1333",
@@ -16060,7 +16480,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Charlotte": {
             "url": "https://www.costco.com/w/-/nc/charlotte/359",
@@ -16098,7 +16519,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Greensboro": {
             "url": "https://www.costco.com/w/-/nc/greensboro/339",
@@ -16136,7 +16558,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Apex": {
             "url": "https://www.costco.com/w/-/nc/apex/1206",
@@ -16174,7 +16597,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         }
     },
     "PA": {
@@ -16214,7 +16638,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Homestead": {
             "url": "https://www.costco.com/w/-/pa/homestead/649",
@@ -16252,7 +16677,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Concordville": {
             "url": "https://www.costco.com/w/-/pa/glen-mills/1114",
@@ -16290,7 +16716,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Bucks County": {
             "url": "https://www.costco.com/w/-/pa/warminster/1103",
@@ -16328,7 +16755,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Montgomeryville": {
             "url": "https://www.costco.com/w/-/pa/north-wales/248",
@@ -16366,7 +16794,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Allentown": {
             "url": "https://www.costco.com/w/-/pa/allentown/1211",
@@ -16404,7 +16833,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Cranberry Township": {
             "url": "https://www.costco.com/w/-/pa/cranberry-township/328",
@@ -16442,7 +16872,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Harrisburg": {
             "url": "https://www.costco.com/w/-/pa/harrisburg/327",
@@ -16480,7 +16911,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Robinson": {
             "url": "https://www.costco.com/w/-/pa/pittsburgh/332",
@@ -16518,7 +16950,8 @@
                     "00:00",
                     "00:00"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Sanatoga": {
             "url": "https://www.costco.com/w/-/pa/pottstown/1081",
@@ -16556,7 +16989,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Mechanicsburg": {
             "url": "https://www.costco.com/w/-/pa/mechanicsburg/1719",
@@ -16594,7 +17028,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         }
     },
     "LA": {
@@ -16634,7 +17069,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Baton Rouge": {
             "url": "https://www.costco.com/w/-/la/baton-rouge/1172",
@@ -16672,7 +17108,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Lafayette": {
             "url": "https://www.costco.com/w/-/la/lafayette/1201",
@@ -16710,7 +17147,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Covington LA": {
             "url": "https://www.costco.com/w/-/la/covington/1670",
@@ -16748,7 +17186,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         }
     },
     "MI": {
@@ -16788,7 +17227,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Detroit"
         },
         "Fruitport": {
             "url": "https://www.costco.com/w/-/mi/fruitport/1744",
@@ -16826,7 +17266,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Detroit"
         },
         "Grand Rapids": {
             "url": "https://www.costco.com/w/-/mi/grand-rapids/784",
@@ -16864,7 +17305,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Detroit"
         },
         "Auburn Hills": {
             "url": "https://www.costco.com/w/-/mi/auburn-hills/376",
@@ -16902,7 +17344,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Detroit"
         },
         "Haggerty": {
             "url": "https://www.costco.com/w/-/mi/livonia/391",
@@ -16940,7 +17383,8 @@
                     "00:00",
                     "00:00"
                 ]
-            }
+            },
+            "tz": "America/Detroit"
         },
         "Genesee County": {
             "url": "https://www.costco.com/w/-/mi/flint/1716",
@@ -16978,7 +17422,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Detroit"
         },
         "Commerce Township": {
             "url": "https://www.costco.com/w/-/mi/commerce-township/341",
@@ -17016,7 +17461,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Detroit"
         },
         "Madison Heights": {
             "url": "https://www.costco.com/w/-/mi/madison-heights/393",
@@ -17054,7 +17500,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Detroit"
         },
         "Midland": {
             "url": "https://www.costco.com/w/-/mi/midland/1420",
@@ -17092,7 +17539,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Detroit"
         },
         "Pittsfield Township": {
             "url": "https://www.costco.com/w/-/mi/ann-arbor/1106",
@@ -17130,7 +17578,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Detroit"
         },
         "Roseville MI": {
             "url": "https://www.costco.com/w/-/mi/roseville/394",
@@ -17168,7 +17617,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Detroit"
         },
         "Wyoming": {
             "url": "https://www.costco.com/w/-/mi/wyoming/744",
@@ -17206,7 +17656,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Detroit"
         },
         "Lakeside": {
             "url": "https://www.costco.com/w/-/mi/shelby-township/374",
@@ -17244,7 +17695,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Detroit"
         },
         "Kalamazoo": {
             "url": "https://www.costco.com/w/-/mi/kalamazoo/1191",
@@ -17282,7 +17734,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Detroit"
         },
         "East Lansing": {
             "url": "https://www.costco.com/w/-/mi/east-lansing/1277",
@@ -17320,7 +17773,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Detroit"
         },
         "Middlebelt": {
             "url": "https://www.costco.com/w/-/mi/livonia/390",
@@ -17358,7 +17812,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Detroit"
         },
         "Bloomfield": {
             "url": "https://www.costco.com/w/-/mi/bloomfield/1037",
@@ -17396,7 +17851,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Detroit"
         },
         "Traverse City": {
             "url": "https://www.costco.com/w/-/mi/traverse-city/1279",
@@ -17434,7 +17890,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Detroit"
         }
     },
     "VA": {
@@ -17474,7 +17931,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Fairfax": {
             "url": "https://www.costco.com/w/-/va/fairfax/204",
@@ -17512,7 +17970,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Manassas": {
             "url": "https://www.costco.com/w/-/va/manassas/225",
@@ -17550,7 +18009,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Mt Vernon": {
             "url": "https://www.costco.com/w/-/va/alexandria/1115",
@@ -17588,7 +18048,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Potomac Mills": {
             "url": "https://www.costco.com/w/-/va/woodbridge/626",
@@ -17626,7 +18087,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Norfolk": {
             "url": "https://www.costco.com/w/-/va/norfolk/202",
@@ -17664,7 +18126,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Fredericksburg": {
             "url": "https://www.costco.com/w/-/va/fredericksburg/340",
@@ -17702,7 +18165,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Harrisonburg": {
             "url": "https://www.costco.com/w/-/va/harrisonburg/238",
@@ -17740,7 +18204,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Charlottesville": {
             "url": "https://www.costco.com/w/-/va/charlottesville/1184",
@@ -17778,7 +18243,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Leesburg": {
             "url": "https://www.costco.com/w/-/va/leesburg/337",
@@ -17816,7 +18282,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Chesterfield": {
             "url": "https://www.costco.com/w/-/va/north-chesterfield/1089",
@@ -17854,7 +18321,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Sterling": {
             "url": "https://www.costco.com/w/-/va/sterling/218",
@@ -17892,7 +18360,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Winchester": {
             "url": "https://www.costco.com/w/-/va/winchester/239",
@@ -17930,7 +18399,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Newport News": {
             "url": "https://www.costco.com/w/-/va/newport-news/247",
@@ -17968,7 +18438,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "W Henrico": {
             "url": "https://www.costco.com/w/-/va/glen-allen/205",
@@ -18006,7 +18477,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         }
     },
     "NJ": {
@@ -18046,7 +18518,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Brick Township": {
             "url": "https://www.costco.com/w/-/nj/brick/739",
@@ -18084,7 +18557,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Hazlet": {
             "url": "https://www.costco.com/w/-/nj/hazlet/222",
@@ -18122,7 +18596,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Flemington": {
             "url": "https://www.costco.com/w/-/nj/flemington/1236",
@@ -18160,7 +18635,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Marlboro": {
             "url": "https://www.costco.com/w/-/nj/morganville/1093",
@@ -18198,7 +18674,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Ocean Township": {
             "url": "https://www.costco.com/w/-/nj/ocean/329",
@@ -18236,7 +18713,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "North Brunswick": {
             "url": "https://www.costco.com/w/-/nj/north-brunswick/1174",
@@ -18274,7 +18752,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Princeton": {
             "url": "https://www.costco.com/w/-/nj/lawrence-township/1199",
@@ -18312,7 +18791,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Mt Laurel": {
             "url": "https://www.costco.com/w/-/nj/mount-laurel/749",
@@ -18350,7 +18830,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Teterboro": {
             "url": "https://www.costco.com/w/-/nj/teterboro/1214",
@@ -18388,7 +18869,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Clifton": {
             "url": "https://www.costco.com/w/-/nj/clifton/306",
@@ -18426,7 +18908,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "East Hanover": {
             "url": "https://www.costco.com/w/-/nj/east-hanover/244",
@@ -18464,7 +18947,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Manahawkin": {
             "url": "https://www.costco.com/w/-/nj/stafford-township/1025",
@@ -18502,7 +18986,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Bayonne": {
             "url": "https://www.costco.com/w/-/nj/bayonne/1334",
@@ -18540,7 +19025,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Edison": {
             "url": "https://www.costco.com/w/-/nj/edison/323",
@@ -18578,7 +19064,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "North Plainfield": {
             "url": "https://www.costco.com/w/-/nj/north-plainfield/1166",
@@ -18616,7 +19103,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Union": {
             "url": "https://www.costco.com/w/-/nj/union/320",
@@ -18654,7 +19142,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Wharton": {
             "url": "https://www.costco.com/w/-/nj/wharton/315",
@@ -18692,7 +19181,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Wayne": {
             "url": "https://www.costco.com/w/-/nj/wayne/1177",
@@ -18730,7 +19220,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         }
     },
     "OR": {
@@ -18770,7 +19261,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Hillsboro": {
             "url": "https://www.costco.com/w/-/or/hillsboro/692",
@@ -18808,7 +19300,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Albany OR": {
             "url": "https://www.costco.com/w/-/or/albany/682",
@@ -18846,7 +19339,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Central Point": {
             "url": "https://www.costco.com/w/-/or/central-point/1287",
@@ -18884,7 +19378,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Clackamas": {
             "url": "https://www.costco.com/w/-/or/clackamas/97",
@@ -18922,7 +19417,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Roseburg": {
             "url": "https://www.costco.com/w/-/or/roseburg/1073",
@@ -18960,7 +19456,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Eugene": {
             "url": "https://www.costco.com/w/-/or/eugene/17",
@@ -18998,7 +19495,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Bend": {
             "url": "https://www.costco.com/w/-/or/bend/1696",
@@ -19036,7 +19534,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Aloha": {
             "url": "https://www.costco.com/w/-/or/aloha/9",
@@ -19074,7 +19573,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Warrenton": {
             "url": "https://www.costco.com/w/-/or/warrenton/1059",
@@ -19112,7 +19612,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Tigard": {
             "url": "https://www.costco.com/w/-/or/tigard/111",
@@ -19150,7 +19651,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Wilsonville": {
             "url": "https://www.costco.com/w/-/or/wilsonville/766",
@@ -19188,7 +19690,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         },
         "Salem": {
             "url": "https://www.costco.com/w/-/or/salem/1492",
@@ -19226,7 +19729,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Los_Angeles"
         }
     },
     "NE": {
@@ -19266,7 +19770,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "NW Omaha": {
             "url": "https://www.costco.com/w/-/ne/omaha/1690",
@@ -19304,7 +19809,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Omaha": {
             "url": "https://www.costco.com/w/-/ne/omaha/1012",
@@ -19342,7 +19848,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "La Vista": {
             "url": "https://www.costco.com/w/-/ne/la-vista/1237",
@@ -19380,7 +19887,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         }
     },
     "TX": {
@@ -19420,7 +19928,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Arlington": {
             "url": "https://www.costco.com/w/-/tx/arlington/668",
@@ -19458,7 +19967,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Cypress TX": {
             "url": "https://www.costco.com/w/-/tx/cypress/1208",
@@ -19496,7 +20006,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Dallas": {
             "url": "https://www.costco.com/w/-/tx/dallas/1266",
@@ -19534,7 +20045,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Duncanville": {
             "url": "https://www.costco.com/w/-/tx/duncanville/636",
@@ -19572,7 +20084,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "E Plano": {
             "url": "https://www.costco.com/w/-/tx/plano/664",
@@ -19610,7 +20123,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Frisco": {
             "url": "https://www.costco.com/w/-/tx/frisco/1097",
@@ -19648,7 +20162,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Galleria": {
             "url": "https://www.costco.com/w/-/tx/houston/1018",
@@ -19686,7 +20201,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Humble": {
             "url": "https://www.costco.com/w/-/tx/humble/1228",
@@ -19724,7 +20240,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Cedar Park TX": {
             "url": "https://www.costco.com/w/-/tx/cedar-park/1152",
@@ -19762,7 +20279,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "College Station": {
             "url": "https://www.costco.com/w/-/tx/college-station/1614",
@@ -19800,7 +20318,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Liberty Hill": {
             "url": "https://www.costco.com/w/-/tx/liberty-hill/1767",
@@ -19838,7 +20357,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Allen": {
             "url": "https://www.costco.com/w/-/tx/allen/1739",
@@ -19876,7 +20396,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Austin": {
             "url": "https://www.costco.com/w/-/tx/austin/681",
@@ -19914,7 +20435,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Fort Worth": {
             "url": "https://www.costco.com/w/-/tx/fort-worth/489",
@@ -19952,7 +20474,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Forney": {
             "url": "https://www.costco.com/w/-/tx/forney/1771",
@@ -19990,7 +20513,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Midland TX": {
             "url": "https://www.costco.com/w/-/tx/midland/1756",
@@ -20028,7 +20552,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Georgetown": {
             "url": "https://www.costco.com/w/-/tx/georgetown/1385",
@@ -20066,7 +20591,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "New Braunfels": {
             "url": "https://www.costco.com/w/-/tx/new-braunfels/1766",
@@ -20104,7 +20630,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "NW San Antonio": {
             "url": "https://www.costco.com/w/-/tx/san-antonio/689",
@@ -20142,7 +20669,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Lewisville": {
             "url": "https://www.costco.com/w/-/tx/lewisville/683",
@@ -20180,7 +20708,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Kyle": {
             "url": "https://www.costco.com/w/-/tx/kyle/1629",
@@ -20218,7 +20747,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Prosper": {
             "url": "https://www.costco.com/w/-/tx/prosper/1694",
@@ -20256,7 +20786,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Pearland": {
             "url": "https://www.costco.com/w/-/tx/pearland/1221",
@@ -20294,7 +20825,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "McKinney": {
             "url": "https://www.costco.com/w/-/tx/mckinney/1284",
@@ -20332,7 +20864,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Rockwall": {
             "url": "https://www.costco.com/w/-/tx/rockwall/1049",
@@ -20370,7 +20903,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Lubbock TX": {
             "url": "https://www.costco.com/w/-/tx/lubbock/1163",
@@ -20408,7 +20942,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "El Paso": {
             "url": "https://www.costco.com/w/-/tx/el-paso/768",
@@ -20446,7 +20981,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Denver"
         },
         "N Fort Worth": {
             "url": "https://www.costco.com/w/-/tx/fort-worth/1173",
@@ -20484,7 +21020,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Southlake": {
             "url": "https://www.costco.com/w/-/tx/southlake/669",
@@ -20522,7 +21059,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "The Woodlands": {
             "url": "https://www.costco.com/w/-/tx/conroe/1189",
@@ -20560,7 +21098,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Sugar Land": {
             "url": "https://www.costco.com/w/-/tx/sugar-land/1146",
@@ -20598,7 +21137,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "W Katy": {
             "url": "https://www.costco.com/w/-/tx/katy/1167",
@@ -20636,7 +21176,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Pharr": {
             "url": "https://www.costco.com/w/-/tx/pharr/1108",
@@ -20674,7 +21215,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Pflugerville": {
             "url": "https://www.costco.com/w/-/tx/pflugerville/1322",
@@ -20712,7 +21254,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Richmond TX": {
             "url": "https://www.costco.com/w/-/tx/richmond/1697",
@@ -20750,7 +21293,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Selma": {
             "url": "https://www.costco.com/w/-/tx/selma/1006",
@@ -20788,7 +21332,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "W Plano": {
             "url": "https://www.costco.com/w/-/tx/plano/684",
@@ -20826,7 +21371,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Tomball": {
             "url": "https://www.costco.com/w/-/tx/tomball/1687",
@@ -20864,7 +21410,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Weatherford": {
             "url": "https://www.costco.com/w/-/tx/weatherford/1735",
@@ -20902,7 +21449,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "W San Antonio": {
             "url": "https://www.costco.com/w/-/tx/san-antonio/1449",
@@ -20940,7 +21488,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Willowbrook": {
             "url": "https://www.costco.com/w/-/tx/houston/675",
@@ -20978,7 +21527,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Webster": {
             "url": "https://www.costco.com/w/-/tx/webster/1330",
@@ -21016,7 +21566,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Mansfield": {
             "url": "https://www.costco.com/w/-/tx/mansfield/1793",
@@ -21054,7 +21605,8 @@
                     "07:00",
                     "19:00"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Celina": {
             "url": "https://www.costco.com/w/-/tx/celina/1645",
@@ -21092,7 +21644,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         }
     },
     "KS": {
@@ -21132,7 +21685,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Overland Park": {
             "url": "https://www.costco.com/w/-/ks/overland-park/369",
@@ -21170,7 +21724,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Lenexa": {
             "url": "https://www.costco.com/w/-/ks/lenexa/349",
@@ -21208,7 +21763,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         }
     },
     "MS": {
@@ -21248,7 +21804,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         }
     },
     "OK": {
@@ -21288,7 +21845,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Oklahoma City": {
             "url": "https://www.costco.com/w/-/ok/oklahoma-city/1350",
@@ -21326,7 +21884,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Tulsa": {
             "url": "https://www.costco.com/w/-/ok/tulsa/1207",
@@ -21364,7 +21923,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Moore": {
             "url": "https://www.costco.com/w/-/ok/moore/1444",
@@ -21402,7 +21962,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         }
     },
     "TN": {
@@ -21442,7 +22003,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Farragut": {
             "url": "https://www.costco.com/w/-/tn/knoxville/1116",
@@ -21480,7 +22042,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Brentwood TN": {
             "url": "https://www.costco.com/w/-/tn/brentwood/386",
@@ -21518,7 +22081,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Hendersonville": {
             "url": "https://www.costco.com/w/-/tn/hendersonville/1659",
@@ -21556,7 +22120,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "SE Memphis": {
             "url": "https://www.costco.com/w/-/tn/memphis/353",
@@ -21594,7 +22159,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "W Nashville": {
             "url": "https://www.costco.com/w/-/tn/nashville/630",
@@ -21632,7 +22198,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "Mt Juliet": {
             "url": "https://www.costco.com/w/-/tn/mt.-juliet/1686",
@@ -21670,7 +22237,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         },
         "NE Memphis": {
             "url": "https://www.costco.com/w/-/tn/cordova/352",
@@ -21708,7 +22276,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/Chicago"
         }
     },
     "NY": {
@@ -21748,7 +22317,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Oceanside": {
             "url": "https://www.costco.com/w/-/ny/oceanside/1215",
@@ -21786,7 +22356,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Commack": {
             "url": "https://www.costco.com/w/-/ny/commack/240",
@@ -21824,7 +22395,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "New Rochelle": {
             "url": "https://www.costco.com/w/-/ny/new-rochelle/241",
@@ -21862,7 +22434,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Syracuse": {
             "url": "https://www.costco.com/w/-/ny/camillus/1176",
@@ -21900,7 +22473,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Nanuet": {
             "url": "https://www.costco.com/w/-/ny/nanuet/305",
@@ -21938,7 +22512,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Rochester NY": {
             "url": "https://www.costco.com/w/-/ny/rochester/1195",
@@ -21976,7 +22551,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Riverhead": {
             "url": "https://www.costco.com/w/-/ny/riverhead/785",
@@ -22014,7 +22590,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Staten Island": {
             "url": "https://www.costco.com/w/-/ny/staten-island/316",
@@ -22052,7 +22629,8 @@
                     "00:00",
                     "00:00"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         },
         "Albany NY": {
             "url": "https://www.costco.com/w/-/ny/albany/1634",
@@ -22090,7 +22668,8 @@
                     "06:00",
                     "19:30"
                 ]
-            }
+            },
+            "tz": "America/New_York"
         }
     }
 }
