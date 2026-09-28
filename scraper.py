@@ -996,6 +996,11 @@ def discover_new_stores(states_to_check: list, existing_stores: dict, output_fil
     for state, cities in enriched_new.items():
         existing_stores.setdefault(state, {}).update(cities)
 
+    sorted_stores = {
+        state: dict(sorted(cities.items()))
+        for state, cities in sorted(existing_stores.items())
+    }
+
     with open(output_filepath, 'w', encoding='utf-8') as f:
         json.dump(existing_stores, f, indent=4)
 
@@ -1033,6 +1038,10 @@ def build_and_save_master_db(states_to_update: list, output_filepath: str):
                 f"'{output_filepath}' - re-run the rebuild later."
             )
             return
+    sorted_stores = {
+        state: dict(sorted(cities.items()))
+        for state, cities in sorted(master_stores.items())
+    }
 
     with open(output_filepath, 'w', encoding='utf-8') as f:
         json.dump(master_stores, f, indent=4)
@@ -1169,9 +1178,9 @@ def main():
 
         print(f"Found {len(states_to_scrape)} states to process.")
         build_and_save_master_db(list(states_to_scrape), "us_stores.json")
-        us_stores = load_store_locations('us_stores.json') or {}
-        if not process_and_save(us_stores, 'us_stores.json', US_HISTORY_FILE, US_LATEST_FILE, "US"):
-            sys.exit(1)
+        #us_stores = load_store_locations('us_stores.json') or {}
+        #if not process_and_save(us_stores, 'us_stores.json', US_HISTORY_FILE, US_LATEST_FILE, "US"):
+        #    sys.exit(1)
 
     elif run_type == 6:
         target_url = "https://www.costco.com/sitemaps/warehouses-by-state"
