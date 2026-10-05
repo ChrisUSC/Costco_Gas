@@ -12993,6 +12993,45 @@
                 ]
             },
             "tz": "America/Chicago"
+        },
+        "Lees Summit": {
+            "url": "https://www.costco.com/w/-/mo/lees-summit/1838",
+            "warehouse_id": "1838",
+            "lat": 38.90168161340763,
+            "lng": -94.374436177207,
+            "address": "10 SE OLDHAM PARKWAY, LEES SUMMIT, MO 64081-2986",
+            "phone": "(816) 272-2536",
+            "gas_hours": {
+                "mon": [
+                    "06:00",
+                    "22:00"
+                ],
+                "tue": [
+                    "06:00",
+                    "22:00"
+                ],
+                "wed": [
+                    "06:00",
+                    "22:00"
+                ],
+                "thu": [
+                    "06:00",
+                    "22:00"
+                ],
+                "fri": [
+                    "06:00",
+                    "22:00"
+                ],
+                "sat": [
+                    "06:00",
+                    "20:30"
+                ],
+                "sun": [
+                    "06:00",
+                    "19:30"
+                ]
+            },
+            "tz": "America/Chicago"
         }
     },
     "MS": {
