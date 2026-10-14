@@ -13,6 +13,10 @@ let userLocationMarker = null;
 let searchLocationMarker = null;
 let currentTab = 'nearby';
 
+// Mobile View & Bottom Sheet State
+let mobileViewMode = 'map'; // 'map' | 'list'
+let activeMobileStore = null;
+
 // User Preferences State
 let isDarkMode = localStorage.getItem('theme') === 'dark';
 let gasPref = localStorage.getItem('gasPref') || 'regular';
@@ -21,6 +25,109 @@ let nearbySortMode = localStorage.getItem('nearbySort') || 'price'; // 'price' |
 
 let favoriteStoreKeys = new Set(loadJsonPref('favoriteStores', []));
 let favoriteRoutes = loadJsonPref('favoriteRoutes', []);
+
+function isMobileViewport() {
+    return window.innerWidth <= 768;
+}
+
+function setMobileView(mode) {
+    mobileViewMode = mode === 'list' ? 'list' : 'map';
+    const container = document.getElementById('appContainer');
+    if (container) {
+        container.classList.toggle('mobile-view-list', mobileViewMode === 'list');
+    }
+    document.getElementById('btnMobileMap')?.classList.toggle('active', mobileViewMode === 'map');
+    document.getElementById('btnMobileList')?.classList.toggle('active', mobileViewMode === 'list');
+
+    if (mobileViewMode === 'list') {
+        closeMobileStoreCard();
+    }
+    if (map) {
+        setTimeout(() => map.invalidateSize(), 60);
+    }
+}
+
+function renderMobileStoreCardContent(store) {
+    const contentEl = document.getElementById('mobileStoreSheetContent');
+    if (!contentEl || !store) return;
+
+    const safeCity = store.city.replace(/'/g, "\\'");
+    const isFav = isFavoriteStore(store.state, store.city);
+    const priceTagsHtml = getVisibleStoreGrades(store).map(g => {
+        const cls = gasPref === g ? 'highlight' : '';
+        const trend = getTrendArrow(gradeVal(store, g), gradePrevVal(store, g));
+        return `
+            <div class="price-tag ${cls}">
+                <span>${GRADE_INFO[g].label}</span>
+                <span class="val">${gradeStr(store, g) || 'N/A'} ${trend}</span>
+            </div>`;
+    }).join('');
+
+    const phoneHtml = store.phone
+        ? `<div class="popup-phone"><a href="tel:${store.phone.replace(/[^0-9+]/g, '')}">📞 ${escapeHtml(store.phone)}</a></div>`
+        : '';
+
+    contentEl.innerHTML = `
+        <div class="mobile-sheet-header">
+            <h3 class="mobile-sheet-title">${escapeHtml(store.city)}, ${escapeHtml(store.state)}</h3>
+            <button type="button" class="mobile-sheet-close" onclick="closeMobileStoreCard()" aria-label="Close store details">×</button>
+        </div>
+        <div class="mobile-sheet-address">${escapeHtml(store.address)}</div>
+        <div class="mobile-sheet-meta">
+            ${gasStatusHtml(store)}
+            ${phoneHtml}
+        </div>
+        ${gasHoursDetailsHtml(store)}
+        <div class="mobile-sheet-prices">${priceTagsHtml}</div>
+        <div class="mobile-sheet-actions">
+            <button type="button" class="btn-action btn-history" onclick="openHistoryModal('${store.state}', '${safeCity}')">
+                📈 History
+            </button>
+            <a href="${store.url}" target="_blank" rel="noopener noreferrer" class="btn-action btn-outline-blue btn-store-link">
+                Store Page ↗
+            </a>
+            <button type="button" class="btn-action favorite-btn ${isFav ? 'active' : ''}" title="${isFav ? 'Remove from favorites' : 'Add to favorites'}"
+                onclick="toggleFavoriteStore('${store.state}', '${safeCity}')">
+                ${isFav ? '★' : '☆'}
+            </button>
+            <button type="button" class="btn-action share-btn" title="Share this station"
+                onclick="shareStore('${store.state}', '${safeCity}', '${safeCity}, ${store.state}')">
+                🔗
+            </button>
+        </div>
+    `;
+}
+
+function openMobileStoreCard(store) {
+    if (!store) return;
+    activeMobileStore = store;
+    if (mobileViewMode !== 'map') {
+        setMobileView('map');
+    }
+    renderMobileStoreCardContent(store);
+    const sheet = document.getElementById('mobileStoreSheet');
+    const container = document.getElementById('appContainer');
+    if (sheet) {
+        sheet.classList.add('active');
+        sheet.setAttribute('aria-hidden', 'false');
+    }
+    if (container) {
+        container.classList.add('mobile-sheet-open');
+    }
+}
+
+function closeMobileStoreCard() {
+    activeMobileStore = null;
+    const sheet = document.getElementById('mobileStoreSheet');
+    const container = document.getElementById('appContainer');
+    if (sheet) {
+        sheet.classList.remove('active');
+        sheet.setAttribute('aria-hidden', 'true');
+    }
+    if (container) {
+        container.classList.remove('mobile-sheet-open');
+    }
+}
 
 function refreshLastUpdatedLabel() {
     const el = document.getElementById('lastUpdated');
@@ -57,7 +164,19 @@ function toggleFavoriteStore(state, city) {
         showToast('★ Added to favorites');
     }
     localStorage.setItem('favoriteStores', JSON.stringify([...favoriteStoreKeys]));
+
+    if (globalStoreData.length > 0) {
+        renderMap(
+            currentTab === 'route' && lastRouteState?.along?.length > 0
+                ? lastRouteState.along
+                : globalStoreData
+        );
+    }
     refreshCurrentDisplay();
+
+    if (activeMobileStore && activeMobileStore.state === state && activeMobileStore.city === city) {
+        renderMobileStoreCardContent(activeMobileStore);
+    }
 }
 
 async function shareStore(state, city, label) {
@@ -136,6 +255,14 @@ function setGasPref(pref) {
         renderMap(globalStoreData);
     }
     refreshCurrentDisplay();
+
+    if (activeMobileStore) {
+        if (shouldFilterStoresByGrade(gasPref) && !hasGradeData(activeMobileStore, gasPref)) {
+            closeMobileStoreCard();
+        } else {
+            renderMobileStoreCardContent(activeMobileStore);
+        }
+    }
 }
 
 // --- Map Logic ---
@@ -157,6 +284,29 @@ function checkZoomLevel() {
     document.getElementById('map').classList.toggle('map-show-prices', map.getZoom() >= 9);
 }
 
+function setupMobileSheetGestures() {
+    const sheet = document.getElementById('mobileStoreSheet');
+    if (!sheet) return;
+
+    let touchStartY = null;
+    sheet.addEventListener('touchstart', (e) => {
+        if (sheet.scrollTop <= 0) {
+            touchStartY = e.touches[0].clientY;
+        } else {
+            touchStartY = null;
+        }
+    }, { passive: true });
+
+    sheet.addEventListener('touchend', (e) => {
+        if (touchStartY === null) return;
+        const deltaY = e.changedTouches[0].clientY - touchStartY;
+        if (deltaY > 45) {
+            closeMobileStoreCard();
+        }
+        touchStartY = null;
+    }, { passive: true });
+}
+
 function initMap() {
     map = L.map('map', { zoomControl: false }).setView([39.8283, -98.5795], 4);
     L.control.zoom({ position: 'bottomright' }).addTo(map);
@@ -165,7 +315,21 @@ function initMap() {
     routeLayer = L.layerGroup().addTo(map);
 
     map.on('zoomend', checkZoomLevel);
+    map.on('click', () => {
+        if (activeMobileStore) closeMobileStoreCard();
+    });
+
     setupInputAutocomplete('searchInput', 'autocompleteDropdown', 'search');
+    setupMobileSheetGestures();
+
+    window.addEventListener('resize', debounce(() => {
+        if (!isMobileViewport() && activeMobileStore) {
+            closeMobileStoreCard();
+        } else if (isMobileViewport()) {
+            map.closePopup();
+        }
+        map.invalidateSize();
+    }, 150));
 
     document.addEventListener('click', (e) => {
         if (!e.target.closest('.route-input') && !e.target.closest('#searchInput') && !e.target.closest('.autocomplete-dropdown')) {
@@ -205,23 +369,41 @@ function renderMap(dataArray) {
 
         const marker = L.marker([store.lat, store.lng], { icon: dynamicPin });
         const safeCity = store.city.replace(/'/g, "\\'");
-        const priceBoxesHtml = getVisibleStoreGrades(store).map(g => {
-            const trend = getTrendArrow(gradeVal(store, g), gradePrevVal(store, g));
-            return `<div class="popup-price-box"><span>${GRADE_INFO[g].label}</span><strong>${gradeStr(store, g) || 'N/A'} ${trend}</strong></div>`;
-        }).join('');
 
-        marker.bindPopup(() => `
-            <div class="popup-store-name">${store.city}, ${store.state}</div>
-            <div class="popup-address">${store.address}</div>
-            ${gasStatusHtml(store)}
-            ${gasHoursDetailsHtml(store)}
-            ${store.phone ? `<div class="popup-phone"><a href="tel:${store.phone.replace(/[^0-9+]/g, '')}">${escapeHtml(store.phone)}</a></div>` : ''}
-            <div class="popup-prices-grid">${priceBoxesHtml}</div>
-            <a href="${store.url}" target="_blank" rel="noopener noreferrer" class="popup-btn popup-btn-outline">View Store</a>
-            <button class="popup-btn" style="margin-top:8px;" onclick="openHistoryModal('${store.state}', '${safeCity}')">📈 Price History</button>
-            <button class="popup-btn popup-btn-outline" style="margin-top:8px;" onclick="toggleFavoriteStore('${store.state}', '${safeCity}')">${isFav ? '★ Remove Favorite' : '☆ Add to Favorites'}</button>
-            <button class="popup-btn popup-btn-outline" style="margin-top:8px;" onclick="shareStore('${store.state}', '${safeCity}', '${safeCity}, ${store.state}')">🔗 Share This Station</button>
-        `);
+        marker.bindPopup(() => {
+            const currentIsFav = isFavoriteStore(store.state, store.city);
+            const priceBoxesHtml = getVisibleStoreGrades(store).map(g => {
+                const cls = gasPref === g ? 'highlight' : '';
+                const trend = getTrendArrow(gradeVal(store, g), gradePrevVal(store, g));
+                return `<div class="popup-price-box ${cls}"><span>${GRADE_INFO[g].label}</span><strong>${gradeStr(store, g) || 'N/A'} ${trend}</strong></div>`;
+            }).join('');
+
+            return `
+                <div class="popup-store-name">${store.city}, ${store.state}</div>
+                <div class="popup-address">${store.address}</div>
+                ${gasStatusHtml(store)}
+                ${gasHoursDetailsHtml(store)}
+                ${store.phone ? `<div class="popup-phone"><a href="tel:${store.phone.replace(/[^0-9+]/g, '')}">${escapeHtml(store.phone)}</a></div>` : ''}
+                <div class="popup-prices-grid">${priceBoxesHtml}</div>
+                <button class="popup-btn" onclick="openHistoryModal('${store.state}', '${safeCity}')">📈 Price History</button>
+                <div class="popup-actions-row">
+                    <a href="${store.url}" target="_blank" rel="noopener noreferrer" class="popup-btn popup-btn-outline" style="flex:1;">Store Page ↗</a>
+                    <button class="popup-btn popup-btn-outline popup-btn-icon ${currentIsFav ? 'active' : ''}" title="${currentIsFav ? 'Remove Favorite' : 'Add to Favorites'}" onclick="toggleFavoriteStore('${store.state}', '${safeCity}')">${currentIsFav ? '★' : '☆'}</button>
+                    <button class="popup-btn popup-btn-outline popup-btn-icon" title="Share This Station" onclick="shareStore('${store.state}', '${safeCity}', '${safeCity}, ${store.state}')">🔗</button>
+                </div>
+            `;
+        });
+
+        const origOpenPopup = marker.openPopup.bind(marker);
+        marker.openPopup = function(...args) {
+            if (isMobileViewport()) {
+                openMobileStoreCard(store);
+                map.panTo([store.lat, store.lng], { animate: true });
+                return this;
+            }
+            return origOpenPopup(...args);
+        };
+
         marker.addTo(markersLayer);
         store.leafletMarker = marker;
     });
@@ -277,7 +459,7 @@ function placeUserLocationMarker(loc, { openPopup = false } = {}) {
     userLocationMarker = L.circleMarker([loc.lat, loc.lng], {
         radius: 8, fillColor: "#3b82f6", color: "#ffffff", weight: 3, opacity: 1, fillOpacity: 1
     }).addTo(map).bindPopup("<b>You are here!</b>");
-    if (openPopup) userLocationMarker.openPopup();
+    if (openPopup && !isMobileViewport()) userLocationMarker.openPopup();
     return userLocationMarker;
 }
 
@@ -643,6 +825,7 @@ function triggerFindMe() {
             lat: position.coords.latitude,
             lng: position.coords.longitude
         };
+        closeMobileStoreCard();
         placeUserLocationMarker(userLocation, { openPopup: true });
         map.flyTo([userLocation.lat, userLocation.lng], 10, { duration: 2 });
         updateClosestStoreState(userLocation);

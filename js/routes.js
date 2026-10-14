@@ -254,7 +254,12 @@ function renderRouteResults(state) {
     if (route.isApproximate) {
         html += `<p class="route-warning">⚠️ Live routing was unavailable, so this is an approximate straight-line path, not a real driving route.</p>`;
     }
-    html += `<div class="route-summary">${Math.round(route.distanceMiles)} mi route &middot; ${sorted.length} station${sorted.length === 1 ? '' : 's'} found</div>`;
+    html += `
+        <div class="route-summary">${Math.round(route.distanceMiles)} mi route &middot; ${sorted.length} station${sorted.length === 1 ? '' : 's'} found</div>
+        <button type="button" class="btn-action btn-outline-blue view-route-map-btn" onclick="setMobileView('map')">
+            🗺️ View Route on Map
+        </button>
+    `;
     el.innerHTML = html;
 
     if (sorted.length === 0) {
