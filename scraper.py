@@ -1,109 +1,69 @@
-import os
 import json
+import os
 import random
-import time
-import requests
 import re
 import sys
+import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
-from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
 
+import requests
+from bs4 import BeautifulSoup
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
-# List of User-Agents to rotate
 USER_AGENTS = [
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36',
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
-    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36'
+    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36',
 ]
 
 MAX_FETCH_ATTEMPTS = 5
 EXCLUDED_STATES = {"PR"}
 
-# --- Safety valve against wiping the store database ---
-# If more than this fraction of stores fail to return a price in a single run,
-# treat it as a systemic problem (rate limiting / IP block / Costco outage)
-# rather than individual stores losing their gas station, and skip deleting
-# anything from the store file. Only applies once there are enough stores in
-# the run for a failure *rate* to be meaningful.
+# Circuit breakers protecting *_stores.json from mass deletion during rate-limits/outages.
 FAILURE_RATE_THRESHOLD = 0.25
 MIN_STORES_FOR_CIRCUIT_BREAKER = 10
-
-# Second tier: catches near-total blackouts even on small runs (e.g. the 9-store
-# local_stores.json), where the run is too small for the tier above to ever fire.
-# Legitimate same-day closures essentially never hit 80%+ of a batch at once.
 HIGH_FAILURE_RATE_THRESHOLD = 0.8
 MIN_STORES_FOR_HIGH_RATE_CHECK = 3
 
-# --- Snapshot completeness check (separate from the two breakers above) ---
-# Those breakers only protect us_stores.json from having stores *deleted*.
-# They don't stop a partially-failed run from still writing an incomplete
-# snapshot to *_latest.json/*_history.json. This is that second check: it
-# compares what actually came back against what we set out to fetch, and
-# blocks the save entirely if too much of it is missing.
-SNAPSHOT_STATE_COVERAGE_THRESHOLD = 0.85   # need prices for >=85% of expected states
-SNAPSHOT_STORE_COVERAGE_THRESHOLD = 0.75   # need prices for >=75% of expected stores
+# Snapshot completeness thresholds required before saving *_latest.json / *_history.json.
+SNAPSHOT_STATE_COVERAGE_THRESHOLD = 0.85
+SNAPSHOT_STORE_COVERAGE_THRESHOLD = 0.75
 
-# Each price file is now split in two:
-#   *_history.json - full timestamped log (grows over time, used only for charts)
-#   *_latest.json  - just the newest snapshot (small, used for the map/sidebar on every page load)
 LOCAL_HISTORY_FILE, LOCAL_LATEST_FILE = 'local_history.json', 'local_latest.json'
 CA_HISTORY_FILE, CA_LATEST_FILE = 'ca_history.json', 'ca_latest.json'
 US_HISTORY_FILE, US_LATEST_FILE = 'us_history.json', 'us_latest.json'
 
-# --- Trend baseline window ---
-# Runs happen every ~8 hours, so comparing against "whatever the previous
-# run was" (the old behavior) is only ~8h apart - not enough for gas prices
-# to move visibly, which made every trend arrow look flat. Compare against
-# a snapshot from further back instead.
+# Compare current prices against a snapshot ~72h back so trend arrows reflect meaningful moves.
 TREND_LOOKBACK_HOURS = 72
-TREND_LOOKBACK_TOLERANCE_HOURS = 12 # accept the closest match within +/- this many hours
+TREND_LOOKBACK_TOLERANCE_HOURS = 12
 
-# --- Price-jump sanity check ---
-# Costco's AJAX endpoint occasionally returns a stale/cached or otherwise
-# wrong price for a single store on a single fetch. Compare each fresh price
-# against the last *saved* price for that store; if it moved by more than
-# either threshold below, re-fetch a couple of times (with a short random
-# delay) before trusting it, rather than writing a possibly-bogus number -
-# which would also throw a false trend arrow at anyone looking at it.
+# Price-jump sanity check and multi-sample quorum settings.
 PRICE_JUMP_ABS_THRESHOLD = 0.30   # dollars
 PRICE_JUMP_PCT_THRESHOLD = 0.08   # 8%
 MAX_RECHECK_ATTEMPTS = 3
-RECHECK_DELAY_RANGE = (4.0, 8.0)  # random delay in seconds between rechecks, be polite to Costco's endpoint
-
-# A single recheck matching the new (or old) value used to be enough to
-# "confirm" it. That's weak evidence on its own - especially since Costco's
-# AJAX endpoint appears to sit behind caching, so a recheck can just return
-# the exact same (possibly stale/wrong) cached response as the original
-# fetch, "confirming" a bad price with zero independent information. Now we
-# require CONFIRMATION_QUORUM independently-fetched samples (cache-busted,
-# see _cache_busted_url below) to agree with each other before trusting a
-# value at all.
+RECHECK_DELAY_RANGE = (4.0, 8.0)
 CONFIRMATION_QUORUM = 2
 PRICE_MATCH_TOLERANCE = 0.01
 
-# --- Long-term log of unconfirmed jumps ---
-# get_gas_prices_ajax prints unconfirmed jumps for the current run, but that
-# output isn't kept anywhere - there's no way to tell "this store flags every
-# other run" from "this happened once, ever." This appends one JSON record
-# per unconfirmed jump to a flat file, so patterns become visible over time.
-# JSON Lines (one JSON object per line) is used instead of one big JSON array
-# so appending an entry never requires reading/re-writing the whole file.
 UNCONFIRMED_JUMPS_LOG_FILE = 'unconfirmed_jumps_log.jsonl'
 GRADES = ("regular", "premium", "diesel")
-
-# Optional per-store details scraped from each store page and kept in *_stores.json.
 STORE_DETAIL_FIELDS = ("phone", "gas_hours", "tz")
+
+DATASETS = {
+    1: ("Local", "local_stores.json", LOCAL_HISTORY_FILE, LOCAL_LATEST_FILE),
+    2: ("CA", "ca_stores.json", CA_HISTORY_FILE, CA_LATEST_FILE),
+    3: ("US", "us_stores.json", US_HISTORY_FILE, US_LATEST_FILE),
+}
+
 
 def format_price(v) -> float | None:
     """Format a raw price string into a float rounded to 2 decimals, or None if invalid."""
     if v is None or str(v).strip().lower() in ("", "n/a"):
         return None
     try:
-        val = float(str(v).replace('$', '').strip())
-        return round(val, 2)
+        return round(float(str(v).replace('$', '').strip()), 2)
     except ValueError:
         return None
 
@@ -114,50 +74,40 @@ def create_session() -> requests.Session:
         total=3,
         backoff_factor=2,
         status_forcelist=[500, 502, 503, 504],
-        allowed_methods=["GET"]
+        allowed_methods=["GET"],
     )
     session.mount('https://', HTTPAdapter(max_retries=retries))
     return session
 
 
 def _cache_busted_url(base_url: str) -> str:
-    """Appends a random+timestamp query param so a re-fetch can't be silently
-    served the same cached response as a prior fetch to the same URL. Costco's
-    AJAX endpoint appears to sit behind edge/CDN caching, which was making
-    "recheck" calls just replay the original (possibly wrong) cached price
-    instead of independently verifying it."""
+    """Appends a timestamp+random nonce query param to bypass CDN/edge caching on rechecks."""
     sep = '&' if '?' in base_url else '?'
     nonce = f"{int(time.time() * 1000)}{random.randint(1000, 9999)}"
     return f"{base_url}{sep}_={nonce}"
 
 
 def get_warehouse_id(url: str) -> str:
-    """Extracts warehouse ID from either /warehouse-locations/name-123.html or /w/-/st/name/123"""
+    """Extracts warehouse ID from either /warehouse-locations/name-123.html or /w/-/st/name/123."""
     match = re.search(r'(\d+)(?:\.html|/?)$', url)
     if match:
         return match.group(1)
-    # Fallback parsing
     return url.rstrip('/').split('/')[-1].replace('.html', '').replace('warehouseid=', '')
 
 
 def _grade_price(prices: list, idx: int) -> float | None:
-    """Safely reads prices[idx], treating a too-short list (old 2-element
-    [reg, prem] entries saved before diesel was tracked) as None instead of
-    raising IndexError."""
+    """Safely reads prices[idx], returning None for shorter legacy 2-element price lists."""
     return prices[idx] if idx < len(prices) else None
 
 
 def print_lowest_prices(prices: dict) -> None:
+    grade_labels = ("Regular", "Premium", "Diesel")
     for timestamp, states_data in prices.items():
-        lowest: dict[str, tuple[float, list[str]]] = {
-            "Regular": (float('inf'), []),
-            "Premium": (float('inf'), []),
-            "Diesel": (float('inf'), []),
-        }
+        lowest: dict[str, tuple[float, list[str]]] = {g: (float('inf'), []) for g in grade_labels}
 
         for state, cities in states_data.items():
             for city, gas_prices in cities.items():
-                for idx, gas_type in enumerate(["Regular", "Premium", "Diesel"]):
+                for idx, gas_type in enumerate(grade_labels):
                     price = _grade_price(gas_prices, idx)
                     if price is None:
                         continue
@@ -175,18 +125,9 @@ def print_lowest_prices(prices: dict) -> None:
 
 
 def validate_snapshot(fetched_prices: dict, locations: dict) -> tuple[bool, str]:
-    """Sanity-checks a freshly-fetched price snapshot against the location
-    list it was fetched from, before it's allowed to be saved.
-
-    Returns (is_valid, reason). A run can pass the circuit breakers in
-    get_gas_prices_ajax (so nothing gets deleted from the store file) and
-    still be a bad, sparse snapshot - e.g. Costco rate-limits partway
-    through and only 40 of 573 stores return a price. This catches that
-    case and gives the caller a clear reason to refuse the save.
-    """
+    """Verifies that a fetched price snapshot meets state and store coverage thresholds."""
     expected_states = len(locations)
     actual_states = len(fetched_prices)
-
     expected_stores = sum(len(cities) for cities in locations.values())
     actual_stores = sum(len(cities) for cities in fetched_prices.values())
 
@@ -212,23 +153,16 @@ def validate_snapshot(fetched_prices: dict, locations: dict) -> tuple[bool, str]
 
 
 def find_trend_baseline(history: dict, current_timestamp_str: str) -> tuple[dict, str | None]:
-    """Looks back through `history` (the full {timestamp: {state: {city: prices}}}
-    log, NOT yet including the current run) for the snapshot closest to
-    TREND_LOOKBACK_HOURS before the current run's timestamp.
-
-    If nothing falls within TREND_LOOKBACK_TOLERANCE_HOURS (e.g. right after a
-    fresh deploy, before enough history has accumulated), it gracefully falls back
-    to the most recent previous run so trend arrows still function.
-    """
+    """Finds the historical snapshot closest to TREND_LOOKBACK_HOURS before current_timestamp_str,
+    falling back to the most recent prior snapshot if history is too short."""
     try:
         current_dt = datetime.strptime(current_timestamp_str, "%Y-%m-%d %H:%M")
     except ValueError:
         return {}, None
 
     target_dt = current_dt - timedelta(hours=TREND_LOOKBACK_HOURS)
-
     best_ts, best_diff = None, None
-    latest_ts = None  # Track the most recent run for our fallback
+    latest_ts = None
 
     for ts_str in history:
         try:
@@ -236,33 +170,22 @@ def find_trend_baseline(history: dict, current_timestamp_str: str) -> tuple[dict
         except ValueError:
             continue
 
-        # Track the absolute most recent previous snapshot
-        if latest_ts is None or ts_str > latest_ts:
-            if ts_str != current_timestamp_str:
-                latest_ts = ts_str
+        if ts_str != current_timestamp_str and (latest_ts is None or ts_str > latest_ts):
+            latest_ts = ts_str
 
-        # Calculate the closest match to our ideal target
         diff = abs((ts_dt - target_dt).total_seconds())
         if best_diff is None or diff < best_diff:
             best_ts, best_diff = ts_str, diff
 
-    # 1. Ideal scenario: We found a match within our tolerance window
     if best_ts is not None and best_diff <= TREND_LOOKBACK_TOLERANCE_HOURS * 3600:
         return history[best_ts], best_ts
-
-    # 2. Fallback: We don't have data going back far enough yet.
-    # Use the most recent previous run we DO have!
     if latest_ts is not None:
         return history[latest_ts], latest_ts
-
-    # 3. Absolute fallback: No history exists at all
     return {}, None
 
 
 def save_data(data: dict, history_path: str, latest_path: str) -> None:
-    """Appends the new snapshot to the history file AND overwrites the small
-    'latest' file, so the frontend can load a tiny file for the map/sidebar
-    instead of the entire (ever-growing) history on every page view."""
+    """Appends the new snapshot to history_path and writes the compact latest snapshot to latest_path."""
     timestamp_str = next(iter(data.keys()), None)
     if not timestamp_str:
         return
@@ -274,8 +197,6 @@ def save_data(data: dict, history_path: str, latest_path: str) -> None:
         if isinstance(cities, dict)
     }
 
-    # --- 1. Load existing history (needed to append the new snapshot AND to
-    # find a trend baseline further back than "just the previous run") ---
     save_prices = {}
     if os.path.exists(history_path) and os.path.getsize(history_path) > 0:
         try:
@@ -289,15 +210,11 @@ def save_data(data: dict, history_path: str, latest_path: str) -> None:
             print(f"⚠️ ERROR reading {history_path}: {e}")
             return
 
-    # --- 2. Find a trend baseline ~TREND_LOOKBACK_HOURS behind this run,
-    # instead of just carrying forward the immediately-previous run's prices. ---
     previous_prices, previous_timestamp = find_trend_baseline(save_prices, timestamp_str)
 
-    # --- 3. Append the new snapshot to history and write it back ---
     save_prices[timestamp_str] = sorted_states_data
     write_pretty_top_level(save_prices, history_path)
 
-    # --- 4. Overwrite the latest-snapshot file ---
     latest_payload = {
         "timestamp": timestamp_str,
         "prices": sorted_states_data,
@@ -311,7 +228,7 @@ def save_data(data: dict, history_path: str, latest_path: str) -> None:
 
 
 def write_pretty_top_level(data: dict, file_path: str) -> None:
-    """Writes JSON with one line per top-level key, compact nested content."""
+    """Writes JSON with one line per top-level key and compact nested content."""
     with open(file_path, "w", encoding='utf-8') as fp:
         fp.write("{\n")
         items = list(data.items())
@@ -326,9 +243,7 @@ def load_store_locations(file_path: str) -> dict | None:
     try:
         with open(file_path, 'r', encoding='utf-8') as json_file:
             return json.load(json_file)
-    except FileNotFoundError:
-        return None
-    except json.JSONDecodeError:
+    except (FileNotFoundError, json.JSONDecodeError):
         return None
 
 
@@ -353,9 +268,6 @@ def remove_location_from_file(filepath: str | None, state: str, city: str) -> No
 
 
 # --- Store hours parsing -----------------------------------------------------
-# Hours change rarely, so they live in the static *_stores.json files (not in
-# the price snapshots). Format: {"mon": ["06:00", "22:00"], ..., "sun": None}
-# where None means closed that day. A missing "gas_hours" key means "unknown".
 DAY_KEYS = ("mon", "tue", "wed", "thu", "fri", "sat", "sun")
 _DAY_ALIASES = {
     "mon": "mon", "monday": "mon", "tue": "tue", "tues": "tue", "tuesday": "tue",
@@ -365,7 +277,6 @@ _DAY_ALIASES = {
 }
 _DAY_RE = r"(?:mon|tue|tues|wed|thu|thur|thurs|fri|sat|sun)[a-z]*"
 _TIME_RE = r"\d{1,2}(?::\d{2})?\s*[ap]\.?m\.?"
-# e.g. "Mon-Fri: 6:00 AM - 10:00 PM", "Sat:6:00 AM - 8:30 PM", "Sun: Closed"
 _HOURS_LINE_RE = re.compile(
     rf"({_DAY_RE})(?:\s*(?:-|–|to)\s*({_DAY_RE}))?\s*:?\s*"
     rf"(?:({_TIME_RE})\s*(?:-|–|to)\s*({_TIME_RE})|(closed))",
@@ -395,9 +306,7 @@ def _expand_days(start: str, end: str | None) -> list[str]:
 
 
 def parse_hours_text(text: str) -> dict | None:
-    """Parses visible hours text like 'Mon-Fri: 6:00 AM - 10:00 PM Sat: ...'
-    into {"mon": ["06:00","22:00"], ...}. Returns None unless all 7 days are
-    covered, so a half-parsed result never gets saved as if it were complete."""
+    """Parses visible hours text like 'Mon-Fri: 6:00 AM - 10:00 PM Sat: ...' into a 7-day dict."""
     hours: dict = {}
     for m in _HOURS_LINE_RE.finditer(text or ""):
         start, end, t_open, t_close, closed = m.groups()
@@ -416,9 +325,7 @@ def parse_hours_text(text: str) -> dict | None:
 
 
 def _hours_from_opening_spec(spec) -> dict | None:
-    """schema.org openingHoursSpecification -> our format (all 7 days or None).
-    Days absent from the spec are treated as closed, which is how schema.org
-    represents them; we still require at least one open day."""
+    """Converts schema.org openingHoursSpecification into our 7-day hours dict."""
     if isinstance(spec, dict):
         spec = [spec]
     if not isinstance(spec, list):
@@ -445,23 +352,23 @@ def _hours_from_opening_spec(spec) -> dict | None:
     return hours if found else None
 
 
+def _normalize_departments(ld_data: dict) -> list[dict]:
+    departments = ld_data.get("department", [])
+    if isinstance(departments, dict):
+        return [departments]
+    return [d for d in departments if isinstance(d, dict)] if isinstance(departments, list) else []
+
+
 def extract_gas_hours(html_content: str, ld_data: dict | None = None) -> dict | None:
-    """Best-effort gas station hours for one store page. Tries structured
-    JSON-LD first (department -> openingHoursSpecification), then falls back
-    to parsing the visible 'Gas Station' block in the Warehouse Services
-    section. Returns None if neither yields a full 7-day schedule."""
+    """Extracts 7-day gas station hours from JSON-LD or falls back to the visible HTML block."""
     if ld_data:
-        departments = ld_data.get("department", [])
-        departments = [departments] if isinstance(departments, dict) else departments
-        for dept in departments if isinstance(departments, list) else []:
+        for dept in _normalize_departments(ld_data):
             if dept.get("@type") == "GasStation" or dept.get("name") == "Gas Station":
                 hours = _hours_from_opening_spec(dept.get("openingHoursSpecification"))
                 if hours:
                     return hours
 
     text = BeautifulSoup(html_content, "html.parser").get_text(" ", strip=True)
-    # Warehouse hours also appear earlier on the page, so anchor on the
-    # "Gas Station" heading and stop at the pump-price disclaimer / next service.
     for m in re.finditer(r"Gas Station", text):
         segment = text[m.end(): m.end() + 400]
         cut = re.search(r"Prices shown here|Food Court|Pharmacy|Tire Service|Car Wash|Optical", segment)
@@ -472,8 +379,7 @@ def extract_gas_hours(html_content: str, ld_data: dict | None = None) -> dict | 
 
 
 def _lookup_timezone(lat: float, lng: float) -> str | None:
-    """IANA timezone name for a coordinate (needed to compute 'open now' for a
-    store in its own local time). Optional: needs `pip install timezonefinder`."""
+    """Returns the IANA timezone name for a coordinate if timezonefinder is installed."""
     try:
         from timezonefinder import TimezoneFinder
     except ImportError:
@@ -487,96 +393,87 @@ def _lookup_timezone(lat: float, lng: float) -> str | None:
 
 
 def extract_store_metadata(html_content: str) -> dict | None:
-    """Extracts coordinates, address, phone, gas hours and timezone from a store page
-    (mostly the hidden JSON-LD script; gas hours can fall back to the visible HTML)."""
+    """Extracts coordinates, address, phone, gas hours, and timezone from a store page."""
     soup = BeautifulSoup(html_content, 'html.parser')
-    scripts = soup.find_all('script', type='application/ld+json')
-
-    for script in scripts:
-        script_content = script.string
-        if not script_content:
+    for script in soup.find_all('script', type='application/ld+json'):
+        if not script.string:
             continue
         try:
-            data = json.loads(script_content)
+            data = json.loads(script.string)
+            if data.get('@type') != 'LocalBusiness':
+                continue
 
-            if data.get('@type') == 'LocalBusiness':
-                lat = float(data['geo']['latitude'])
-                lng = float(data['geo']['longitude'])
+            lat = float(data['geo']['latitude'])
+            lng = float(data['geo']['longitude'])
+            addr_obj = data.get('address', {})
+            address = (
+                f"{addr_obj.get('streetAddress')}, {addr_obj.get('addressLocality')}, "
+                f"{addr_obj.get('addressRegion')} {addr_obj.get('postalCode')}"
+            )
 
-                addr_obj = data.get('address', {})
-                address = f"{addr_obj.get('streetAddress')}, {addr_obj.get('addressLocality')}, {addr_obj.get('addressRegion')} {addr_obj.get('postalCode')}"
+            has_gas = any(
+                d.get('@type') == 'GasStation' or d.get('name') == 'Gas Station'
+                for d in _normalize_departments(data)
+            )
 
-                has_gas = False
-                departments = data.get('department', [])
-                if isinstance(departments, list):
-                    for dept in departments:
-                        if dept.get('@type') == 'GasStation' or dept.get('name') == 'Gas Station':
-                            has_gas = True
-                            break
-                elif isinstance(departments, dict):
-                    if departments.get('@type') == 'GasStation' or departments.get('name') == 'Gas Station':
-                        has_gas = True
+            meta = {"lat": lat, "lng": lng, "address": address, "has_gas": has_gas}
+            if phone := data.get('telephone'):
+                meta["phone"] = str(phone).strip()
 
-                meta = {"lat": lat, "lng": lng, "address": address, "has_gas": has_gas}
-                phone = data.get('telephone')
-                if phone:
-                    meta["phone"] = str(phone).strip()
-                gas_hours = extract_gas_hours(html_content, data) if has_gas else None
+            gas_hours = extract_gas_hours(html_content, data) if has_gas else None
+            if gas_hours and all(h is None for h in gas_hours.values()):
+                meta["has_gas"] = False
+                gas_hours = None
+            if gas_hours:
+                meta["gas_hours"] = gas_hours
 
-                if gas_hours and all(hours is None for hours in gas_hours.values()):
-                    has_gas = False
-                    meta["has_gas"] = False
-                    gas_hours = None
-
-                if gas_hours:
-                    meta["gas_hours"] = gas_hours
-                tz = _lookup_timezone(lat, lng)
-                if tz:
-                    meta["tz"] = tz
-                return meta
+            if tz := _lookup_timezone(lat, lng):
+                meta["tz"] = tz
+            return meta
         except (json.JSONDecodeError, KeyError, ValueError, TypeError):
             continue
 
     return None
 
 
+def _fetch_store_page_metadata(session: requests.Session, url: str) -> dict | None:
+    try:
+        resp = session.get(url, headers={'User-Agent': random.choice(USER_AGENTS)}, timeout=10)
+        resp.raise_for_status()
+        return extract_store_metadata(resp.text)
+    except (requests.exceptions.RequestException, ValueError, KeyError):
+        return None
+
+
 def enrich_store_list(state_urls: dict) -> dict:
-    enriched_data = {}
+    enriched_data: dict = {state: {} for state in state_urls}
     session = create_session()
 
-    def fetch_single_store(target_state, target_city, target_url):
-        try:
-            resp = session.get(target_url, headers={'User-Agent': random.choice(USER_AGENTS)}, timeout=10)
-            resp.raise_for_status()
-            metadata = extract_store_metadata(resp.text)
-            return target_state, target_city, target_url, metadata
-        except (requests.exceptions.RequestException, ValueError, KeyError):
-            return target_state, target_city, target_url, None
-
     print("Fetching exact store metadata (Coordinates & Addresses)...")
-
     with ThreadPoolExecutor(max_workers=10) as executor:
-        futures = []
-        for state, cities in state_urls.items():
-            enriched_data[state] = {}
-            for city, url in cities.items():
-                futures.append(executor.submit(fetch_single_store, state, city, url))
+        future_to_store = {
+            executor.submit(_fetch_store_page_metadata, session, url): (state, city, url)
+            for state, cities in state_urls.items()
+            for city, url in cities.items()
+        }
 
-        for future in as_completed(futures):
-            res_state, res_city, res_url, meta = future.result()
+        for future in as_completed(future_to_store):
+            res_state, res_city, res_url = future_to_store[future]
+            meta = future.result()
 
             if meta and meta["has_gas"]:
                 wh_id = get_warehouse_id(res_url)
-                enriched_data[res_state][res_city] = {
+                entry = {
                     "url": res_url,
                     "warehouse_id": wh_id,
                     "lat": meta["lat"],
                     "lng": meta["lng"],
-                    "address": meta["address"]
+                    "address": meta["address"],
                 }
                 for optional in STORE_DETAIL_FIELDS:
                     if optional in meta:
-                        enriched_data[res_state][res_city][optional] = meta[optional]
+                        entry[optional] = meta[optional]
+                enriched_data[res_state][res_city] = entry
                 print(f"Added {res_city}, {res_state} (ID: {wh_id})")
             elif meta and not meta["has_gas"]:
                 print(f"Skipping {res_city}, {res_state} - No Gas Station.")
@@ -585,10 +482,7 @@ def enrich_store_list(state_urls: dict) -> dict:
 
 
 def is_suspicious_jump(new_price: float | None, last_price: float | None) -> bool:
-    """True if new_price moved far enough from last_price to warrant a
-    re-check before trusting it. Either threshold alone is enough to flag -
-    a small absolute move on a cheap tank of gas and a large dollar move on
-    an expensive one should both be catchable."""
+    """True if new_price moved from last_price by >= PRICE_JUMP_ABS_THRESHOLD or >= PRICE_JUMP_PCT_THRESHOLD."""
     if new_price is None or last_price is None:
         return False
     diff = round(abs(new_price - last_price), 2)
@@ -605,30 +499,23 @@ def _prices_match(a: float | None, b: float | None, tol: float = PRICE_MATCH_TOL
 
 
 def _quorum_value(samples: list[float | None]) -> float | None:
-    """Given a list of independently-fetched samples for one grade (oldest
-    first), returns the value that has reached CONFIRMATION_QUORUM mutually-
-    agreeing samples, or None if no such value exists yet. Ties (e.g. two
-    different clusters both reaching quorum at once) favor the most recently
-    seen cluster, since that's the freshest evidence."""
+    """Returns the value that has reached CONFIRMATION_QUORUM agreeing samples (favoring the freshest cluster)."""
     if not samples:
         return None
-    clusters: list[list[float]] = []  # list of groups of matching values
+    clusters: list[list[float]] = []
     for val in samples:
         if val is None:
             continue
-        placed = False
         for cluster in clusters:
             if _prices_match(cluster[0], val):
                 cluster.append(val)
-                placed = True
                 break
-        if not placed:
+        else:
             clusters.append([val])
 
     winning = [c for c in clusters if len(c) >= CONFIRMATION_QUORUM]
     if not winning:
         return None
-    # Prefer whichever qualifying cluster contains the most recent sample.
     for val in reversed(samples):
         for cluster in winning:
             if val is not None and _prices_match(cluster[0], val):
@@ -636,26 +523,15 @@ def _quorum_value(samples: list[float | None]) -> float | None:
     return winning[-1][0]
 
 
-def confirm_or_revert_price(state: str, city: str, grade_prices: dict[str, float | None],
-                             last_grade_prices: dict[str, float | None],
-                             refetch_fn) -> tuple[dict[str, float | None], bool]:
-    """Called when a freshly-fetched price looks like a suspiciously big jump
-    vs. the last saved price, for one or more grades (regular/premium/diesel).
-    Re-fetches (cache-busted, with a randomized delay so we're not hammering
-    Costco back-to-back, and not just replaying a cached response) up to
-    MAX_RECHECK_ATTEMPTS times.
-
-    A value - whether it's the new price, the old price, or something else
-    entirely - is only trusted once CONFIRMATION_QUORUM independently-fetched
-    samples agree on it. A single matching recheck is no longer enough on its
-    own, since one recheck can't distinguish "the price really moved" from
-    "the endpoint served the same cached/glitchy response twice."
-
-    grade_prices / last_grade_prices are {"regular": ..., "premium": ..., "diesel": ...}.
-    Returns (final_prices, unconfirmed) where unconfirmed is True if at least
-    one grade never reached quorum after all rechecks - in that case the
-    freshest fetched value is kept (not the stale old one), just flagged for
-    visibility."""
+def confirm_or_revert_price(
+    state: str,
+    city: str,
+    grade_prices: dict[str, float | None],
+    last_grade_prices: dict[str, float | None],
+    refetch_fn,
+) -> tuple[dict[str, float | None], bool]:
+    """Re-fetches up to MAX_RECHECK_ATTEMPTS times when a price jump looks suspicious,
+    requiring CONFIRMATION_QUORUM agreeing recheck samples to confirm."""
     suspicious = {
         grade: is_suspicious_jump(grade_prices.get(grade), last_grade_prices.get(grade))
         for grade in GRADES
@@ -665,20 +541,14 @@ def confirm_or_revert_price(state: str, city: str, grade_prices: dict[str, float
                for grade in GRADES if suspicious[grade]]
     print(f"  ⚠ Suspicious jump for {city}, {state}: {', '.join(details)}. Re-checking...")
 
-    # Deliberately NOT seeded with the original (suspicious) fetch. If the
-    # original counted as a free sample, a single agreeing recheck would
-    # satisfy CONFIRMATION_QUORUM=2 by itself - exactly the weak "one
-    # recheck confirms it" behavior this was meant to replace. Quorum must
-    # be reached among independently-fetched *rechecks*.
     samples: dict[str, list[float | None]] = {grade: [] for grade in GRADES}
     final_prices = dict(grade_prices)
 
-    for attempt in range(MAX_RECHECK_ATTEMPTS):
+    for _ in range(MAX_RECHECK_ATTEMPTS):
         time.sleep(random.uniform(*RECHECK_DELAY_RANGE))
-        recheck = refetch_fn()
-        if recheck is None:
+        recheck_prices = refetch_fn()
+        if recheck_prices is None:
             continue
-        recheck_prices = recheck  # {"regular": ..., "premium": ..., "diesel": ...}
 
         for grade in GRADES:
             if not suspicious[grade]:
@@ -689,7 +559,7 @@ def confirm_or_revert_price(state: str, city: str, grade_prices: dict[str, float
                 final_prices[grade] = quorum_val
                 suspicious[grade] = False
             else:
-                final_prices[grade] = recheck_prices.get(grade)  # freshest sample, in case we run out of attempts
+                final_prices[grade] = recheck_prices.get(grade)
 
         if not any(suspicious.values()):
             break
@@ -706,11 +576,7 @@ def confirm_or_revert_price(state: str, city: str, grade_prices: dict[str, float
 
 
 def log_unconfirmed_jumps(records: list[dict], filepath: str = UNCONFIRMED_JUMPS_LOG_FILE) -> None:
-    """Appends one JSON line per unconfirmed price jump. Each record carries
-    enough context (last known price, the raw suspicious fetch, and what was
-    finally kept) to investigate later without re-running anything. Failing
-    to write this log is never allowed to break a scrape run - it's purely
-    diagnostic - so errors are caught and just printed."""
+    """Appends one JSON line per unconfirmed price jump for diagnostic tracking."""
     if not records:
         return
     try:
@@ -722,9 +588,7 @@ def log_unconfirmed_jumps(records: list[dict], filepath: str = UNCONFIRMED_JUMPS
 
 
 def summarize_unconfirmed_jumps(filepath: str = UNCONFIRMED_JUMPS_LOG_FILE, top_n: int = 15) -> None:
-    """Reads the unconfirmed-jumps log and prints the stores that show up
-    most often, so recurring offenders (a flaky store, a bad warehouse ID,
-    a store that's genuinely volatile) are easy to spot."""
+    """Prints the stores that appear most frequently in the unconfirmed-jumps log."""
     if not os.path.exists(filepath):
         print(f"No unconfirmed-jumps log found at '{filepath}' yet.")
         return
@@ -754,11 +618,7 @@ def summarize_unconfirmed_jumps(filepath: str = UNCONFIRMED_JUMPS_LOG_FILE, top_
 
 
 def load_latest_prices(latest_path: str) -> dict:
-    """Loads just the {state: {city: [reg, prem, diesel]}} prices out of an
-    existing *_latest.json, used as the baseline for the jump-confirmation
-    check. Returns {} if the file doesn't exist yet or is unreadable - in
-    that case the check simply has nothing to compare against and skips (no
-    baseline, no false positives on the very first run)."""
+    """Loads the 'prices' dict from an existing *_latest.json file, or {} if missing/corrupt."""
     if not os.path.exists(latest_path):
         return {}
     try:
@@ -769,35 +629,26 @@ def load_latest_prices(latest_path: str) -> dict:
         return {}
 
 
-def get_gas_prices_ajax(locations: dict, source_filepath: str | None = None,
-                         last_known_prices: dict | None = None,
-                         jump_log_filepath: str | None = None,
-                         dataset_label: str | None = None) -> dict:
-    """Concurrently fetches gas prices (regular, premium, diesel) from
-    Costco's AJAX API.
-
-    jump_log_filepath: if given, every unconfirmed price jump this run gets
-    appended to this file (see log_unconfirmed_jumps) for later analysis.
-    Left as None by default so ad-hoc/test calls don't write files unless
-    a caller explicitly opts in.
-    dataset_label: optional tag (e.g. "Local"/"CA"/"US") included in each
-    logged record, since the same store can appear in more than one dataset.
-    """
-
+def get_gas_prices_ajax(
+    locations: dict,
+    source_filepath: str | None = None,
+    last_known_prices: dict | None = None,
+    jump_log_filepath: str | None = None,
+    dataset_label: str | None = None,
+) -> dict:
+    """Concurrently fetches gas prices (regular, premium, diesel) from Costco's AJAX API."""
     fetched_prices = {}
     session = create_session()
     last_known_prices = last_known_prices or {}
 
     def fetch_price(target_state, target_city, target_info):
-        # Handle backwards compatibility if location file is in the old string URL format
         wh_id = target_info.get("warehouse_id") if isinstance(target_info, dict) else get_warehouse_id(target_info)
-
         ajax_url = f"https://www.costco.com/AjaxGetGasPricesService?warehouseid={wh_id}"
 
         def attempt_fetch():
             for attempt in range(MAX_FETCH_ATTEMPTS):
                 try:
-                    time.sleep(1 + attempt)  # Delay to respect rate limits
+                    time.sleep(1 + attempt)
                     resp = session.get(
                         _cache_busted_url(ajax_url),
                         headers={
@@ -805,7 +656,7 @@ def get_gas_prices_ajax(locations: dict, source_filepath: str | None = None,
                             'Cache-Control': 'no-cache, no-store',
                             'Pragma': 'no-cache',
                         },
-                        timeout=15
+                        timeout=15,
                     )
                     resp.raise_for_status()
 
@@ -815,14 +666,10 @@ def get_gas_prices_ajax(locations: dict, source_filepath: str | None = None,
 
                     inner_data = next(iter(raw_data.values()))
                     normalized = {k.lower(): v for k, v in inner_data.items()}
+                    prices_by_grade = {g: format_price(normalized.get(g)) for g in GRADES}
 
-                    reg = format_price(normalized.get('regular'))
-                    prem = format_price(normalized.get('premium'))
-                    diesel = format_price(normalized.get('diesel'))
-
-                    if reg is not None or prem is not None or diesel is not None:
-                        return {"regular": reg, "premium": prem, "diesel": diesel}
-
+                    if any(v is not None for v in prices_by_grade.values()):
+                        return prices_by_grade
                 except (requests.exceptions.RequestException, json.JSONDecodeError, ValueError, KeyError):
                     pass
             return None
@@ -833,14 +680,13 @@ def get_gas_prices_ajax(locations: dict, source_filepath: str | None = None,
 
         last = last_known_prices.get(target_state, {}).get(target_city)
         last_grade_prices = {
-            "regular": _grade_price(last, 0) if last else None,
-            "premium": _grade_price(last, 1) if last else None,
-            "diesel": _grade_price(last, 2) if last else None,
+            grade: _grade_price(last, idx) if last else None
+            for idx, grade in enumerate(GRADES)
         }
 
-        raw_result = dict(result)  # the fetch that first looked suspicious, before any recheck
+        raw_result = dict(result)
         flagged = False
-        if any(is_suspicious_jump(result.get(grade), last_grade_prices.get(grade)) for grade in GRADES):
+        if any(is_suspicious_jump(result.get(g), last_grade_prices.get(g)) for g in GRADES):
             result, flagged = confirm_or_revert_price(
                 target_state, target_city, result, last_grade_prices, attempt_fetch
             )
@@ -856,7 +702,7 @@ def get_gas_prices_ajax(locations: dict, source_filepath: str | None = None,
                 "final_diesel": result["diesel"],
             }
 
-        prices_list = [result["regular"], result["premium"], result["diesel"]]
+        prices_list = [result[g] for g in GRADES]
         return target_state, target_city, prices_list, flagged, jump_detail
 
     print("Fetching live gas prices...")
@@ -926,9 +772,7 @@ def get_gas_prices_ajax(locations: dict, source_filepath: str | None = None,
                 print(f"Removing {city}, {state} - Max retries hit or no gas available.")
                 remove_location_from_file(source_filepath, state, city)
 
-    # Clean up empty states
     fetched_prices = {k: v for k, v in fetched_prices.items() if v}
-
     return {run_timestamp: fetched_prices}
 
 
@@ -948,33 +792,48 @@ def fetch_directory_html(url: str) -> str | None:
 
 
 def extract_stores_from_html(html_content: str) -> dict:
-    """Robust extraction looking for specific URL patterns instead of hardcoded <ul> indices."""
+    """Extracts {store_name: full_url} from a Costco state warehouse directory page."""
     soup = BeautifulSoup(html_content, 'html.parser')
     store_dict = {}
-
-    links = soup.find_all('a', href=True)
-    for link in links:
+    for link in soup.find_all('a', href=True):
         url = str(link.get('href', ''))
         if '/warehouse-locations/' in url or '/w/-/' in url:
             name = link.get_text(strip=True)
             if not url.startswith('http'):
                 url = f"https://www.costco.com{url}"
             store_dict[name] = url
-
     return store_dict
 
 
+def fetch_state_codes() -> list[str]:
+    """Fetches Costco's main warehouse-by-state sitemap and returns sorted 2-letter state codes."""
+    raw_html = fetch_directory_html("https://www.costco.com/sitemaps/warehouses-by-state")
+    if not raw_html:
+        print("Failed to fetch the main state directory. Exiting.")
+        sys.exit(1)
+
+    soup = BeautifulSoup(raw_html, 'html.parser')
+    states = {
+        code
+        for link in soup.find_all('a', href=True)
+        if "/sitemaps/warehouses-by-state/" in link['href']
+        and len(code := str(link.get('href', '')).rstrip('/').split('/')[-1]) == 2
+        and code not in EXCLUDED_STATES
+    }
+    return sorted(states)
+
+
 def discover_new_stores(states_to_check: list, existing_stores: dict, output_filepath: str) -> dict:
-    """Cheap scan of state directories; only enriches stores not already in the master file."""
+    """Scans state directories and enriches only stores not already in existing_stores."""
     existing_urls = {
         info["url"] for cities in existing_stores.values() for info in cities.values()
+        if isinstance(info, dict) and "url" in info
     }
 
     new_stores_by_state = {}
     for state in states_to_check:
         print(f"\n--- Checking {state} for new stores ---")
-        url = f"https://www.costco.com/sitemaps/warehouses-by-state/{state}"
-        html = fetch_directory_html(url)
+        html = fetch_directory_html(f"https://www.costco.com/sitemaps/warehouses-by-state/{state}")
         if not html:
             continue
 
@@ -991,8 +850,7 @@ def discover_new_stores(states_to_check: list, existing_stores: dict, output_fil
         print("No new stores found.")
         return existing_stores
 
-    enriched_new = enrich_store_list(new_stores_by_state)  # confirms has_gas, gets coords
-
+    enriched_new = enrich_store_list(new_stores_by_state)
     for state, cities in enriched_new.items():
         existing_stores.setdefault(state, {}).update(cities)
 
@@ -1002,26 +860,22 @@ def discover_new_stores(states_to_check: list, existing_stores: dict, output_fil
     }
 
     with open(output_filepath, 'w', encoding='utf-8') as f:
-        json.dump(existing_stores, f, indent=4)
+        json.dump(sorted_stores, f, indent=4)
 
     total_added = sum(len(c) for c in enriched_new.values())
     print(f"\nAdded {total_added} new store(s) with gas to '{output_filepath}'.")
-    return existing_stores
+    return sorted_stores
 
 
-def build_and_save_master_db(states_to_update: list, output_filepath: str):
+def build_and_save_master_db(states_to_update: list, output_filepath: str) -> None:
     master_stores = {}
     for state in states_to_update:
         print(f"\n--- Processing {state} Directory ---")
-        url = f"https://www.costco.com/sitemaps/warehouses-by-state/{state}"
-        html = fetch_directory_html(url)
-
-        if html:
-            standard_stores = extract_stores_from_html(html)
-            if standard_stores:
-                enriched = enrich_store_list({state: standard_stores})
-                if state in enriched:
-                    master_stores[state] = enriched[state]
+        html = fetch_directory_html(f"https://www.costco.com/sitemaps/warehouses-by-state/{state}")
+        if html and (standard_stores := extract_stores_from_html(html)):
+            enriched = enrich_store_list({state: standard_stores})
+            if state in enriched:
+                master_stores[state] = enriched[state]
 
     new_total = sum(len(cities) for cities in master_stores.values())
 
@@ -1038,42 +892,35 @@ def build_and_save_master_db(states_to_update: list, output_filepath: str):
                 f"'{output_filepath}' - re-run the rebuild later."
             )
             return
+
     sorted_stores = {
         state: dict(sorted(cities.items()))
         for state, cities in sorted(master_stores.items())
     }
 
     with open(output_filepath, 'w', encoding='utf-8') as f:
-        json.dump(master_stores, f, indent=4)
+        json.dump(sorted_stores, f, indent=4)
     print(f"\nMaster database '{output_filepath}' updated successfully.")
 
 
 def refresh_store_details(stores: dict, filepath: str) -> int:
-    """Re-fetches each store's page and fills in/updates the optional detail
-    fields (phone, gas_hours, tz) on stores that already exist in `filepath`.
-
-    Additive only: never removes a store, and a store whose page fails to
-    fetch/parse keeps whatever it had before. Returns how many stores changed."""
+    """Re-fetches each store's page and updates optional detail fields (phone, gas_hours, tz) additively."""
     session = create_session()
-
-    def fetch(state, city, info):
-        url = info.get("url") if isinstance(info, dict) else info
-        try:
-            resp = session.get(url, headers={'User-Agent': random.choice(USER_AGENTS)}, timeout=10)
-            resp.raise_for_status()
-            return state, city, extract_store_metadata(resp.text)
-        except (requests.exceptions.RequestException, ValueError, KeyError):
-            return state, city, None
-
     jobs = [(s, c, i) for s, cities in stores.items() for c, i in cities.items() if isinstance(i, dict)]
     legacy = sum(1 for cities in stores.values() for i in cities.values() if not isinstance(i, dict))
     if legacy:
         print(f"Note: {legacy} entr{'y' if legacy == 1 else 'ies'} in '{filepath}' use the old plain-URL format "
               f"and can't be refreshed (no warehouse details stored).")
+
     changed = failed = 0
     with ThreadPoolExecutor(max_workers=10) as executor:
-        for future in as_completed([executor.submit(fetch, *j) for j in jobs]):
-            state, city, meta = future.result()
+        future_to_job = {
+            executor.submit(_fetch_store_page_metadata, session, info.get("url", "")): (state, city)
+            for state, city, info in jobs
+        }
+        for future in as_completed(future_to_job):
+            state, city = future_to_job[future]
+            meta = future.result()
             if not meta:
                 failed += 1
                 continue
@@ -1092,10 +939,7 @@ def refresh_store_details(stores: dict, filepath: str) -> int:
 
 
 def process_and_save(locations: dict, source_filepath: str, history_file: str, latest_file: str, label: str) -> bool:
-    """Fetches prices for one dataset (local/CA/US), validates the resulting
-    snapshot's completeness, and only saves it if it passes. Returns True if
-    saved, False if rejected - callers should treat False as a failed run
-    (e.g. exit non-zero) so CI doesn't push an incomplete update."""
+    """Fetches prices for one dataset, validates completeness, and saves if healthy."""
     prices = get_gas_prices_ajax(
         locations, source_filepath, load_latest_prices(latest_file),
         jump_log_filepath=UNCONFIRMED_JUMPS_LOG_FILE, dataset_label=label,
@@ -1115,11 +959,7 @@ def process_and_save(locations: dict, source_filepath: str, history_file: str, l
     return True
 
 
-def main():
-    nearby_stores = load_store_locations('local_stores.json')
-    ca_stores = load_store_locations('ca_stores.json')
-    us_stores = load_store_locations('us_stores.json')
-
+def main() -> None:
     if len(sys.argv) > 1:
         run_type = int(sys.argv[1])
         print(f"Automated run detected. Executing Option {run_type}")
@@ -1138,79 +978,37 @@ def main():
             print("Invalid input. Exiting.")
             sys.exit(1)
 
-    if run_type == 1 and nearby_stores:
-        if not process_and_save(nearby_stores, 'local_stores.json', LOCAL_HISTORY_FILE, LOCAL_LATEST_FILE, "Local"):
-            sys.exit(1)
-
-    elif run_type == 2 and ca_stores:
-        if not process_and_save(ca_stores, 'ca_stores.json', CA_HISTORY_FILE, CA_LATEST_FILE, "CA"):
-            sys.exit(1)
-
-    elif run_type == 3 and us_stores:
-        if not process_and_save(us_stores, 'us_stores.json', US_HISTORY_FILE, US_LATEST_FILE, "US"):
+    if run_type in DATASETS:
+        label, store_file, hist_file, latest_file = DATASETS[run_type]
+        stores = load_store_locations(store_file)
+        if stores and not process_and_save(stores, store_file, hist_file, latest_file, label):
             sys.exit(1)
 
     elif run_type == 4:
         ok = True
-        if nearby_stores:
-            ok &= process_and_save(nearby_stores, 'local_stores.json', LOCAL_HISTORY_FILE, LOCAL_LATEST_FILE, "Local")
-        if ca_stores:
-            ok &= process_and_save(ca_stores, 'ca_stores.json', CA_HISTORY_FILE, CA_LATEST_FILE, "CA")
-        if us_stores:
-            ok &= process_and_save(us_stores, 'us_stores.json', US_HISTORY_FILE, US_LATEST_FILE, "US")
+        for label, store_file, hist_file, latest_file in DATASETS.values():
+            if stores := load_store_locations(store_file):
+                ok &= process_and_save(stores, store_file, hist_file, latest_file, label)
         if not ok:
             sys.exit(1)
 
     elif run_type == 5:
-        target_url = "https://www.costco.com/sitemaps/warehouses-by-state"
-        raw_html = fetch_directory_html(target_url)
-        if not raw_html:
-            print("Failed to fetch the main state directory. Exiting.")
-            sys.exit(1)
-
-        soup = BeautifulSoup(raw_html, 'html.parser')
-        states_to_scrape = set()
-        for link in soup.find_all('a', href=True):
-            if "/sitemaps/warehouses-by-state/" in link['href']:
-                state_code = str(link.get('href', '')).rstrip('/').split('/')[-1]
-                if len(state_code) == 2 and state_code not in EXCLUDED_STATES:
-                    states_to_scrape.add(state_code)
-
+        states_to_scrape = fetch_state_codes()
         print(f"Found {len(states_to_scrape)} states to process.")
-        build_and_save_master_db(sorted(list(states_to_scrape)), "us_stores.json")
-        #us_stores = load_store_locations('us_stores.json') or {}
-        #if not process_and_save(us_stores, 'us_stores.json', US_HISTORY_FILE, US_LATEST_FILE, "US"):
-        #    sys.exit(1)
+        build_and_save_master_db(states_to_scrape, "us_stores.json")
 
     elif run_type == 6:
-        target_url = "https://www.costco.com/sitemaps/warehouses-by-state"
-        raw_html = fetch_directory_html(target_url)
-        if not raw_html:
-            print("Failed to fetch the main state directory. Exiting.")
-            sys.exit(1)
-        soup = BeautifulSoup(raw_html, 'html.parser')
-
-        states_to_scrape = set()
-        for link in soup.find_all('a', href=True):
-            if "/sitemaps/warehouses-by-state/" in link['href']:
-                state_code = str(link.get('href', '')).rstrip('/').split('/')[-1]
-                if len(state_code) == 2 and state_code not in EXCLUDED_STATES:
-                    states_to_scrape.add(state_code)
-
+        states_to_scrape = fetch_state_codes()
         us_stores = load_store_locations('us_stores.json') or {}
-        us_stores = discover_new_stores(list(states_to_scrape), us_stores, 'us_stores.json')
-        # Discovery only enriches stores that are new to us_stores.json, so also
-        # refresh gas hours / phone / timezone on the existing ones (additive only).
+        us_stores = discover_new_stores(states_to_scrape, us_stores, 'us_stores.json')
         refresh_store_details(us_stores, 'us_stores.json')
 
     elif run_type == 7:
         summarize_unconfirmed_jumps()
 
     elif run_type == 8:
-        for stores, path in ((nearby_stores, 'local_stores.json'),
-                             (ca_stores, 'ca_stores.json'),
-                             (us_stores, 'us_stores.json')):
-            if stores:
+        for _, path, _, _ in DATASETS.values():
+            if stores := load_store_locations(path):
                 refresh_store_details(stores, path)
             else:
                 print(f"Skipping '{path}': file is missing, empty, or not valid JSON.")

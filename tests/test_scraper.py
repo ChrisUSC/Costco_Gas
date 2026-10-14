@@ -18,6 +18,11 @@ from scraper import (
     load_latest_prices,
     log_unconfirmed_jumps,
     summarize_unconfirmed_jumps,
+    validate_snapshot,
+    find_trend_baseline,
+    fetch_state_codes,
+    discover_new_stores,
+    build_and_save_master_db,
 )
 
 
@@ -39,7 +44,7 @@ def test_get_warehouse_id():
     assert get_warehouse_id("warehouseid=789") == "789"
 
 
-# --- HTML PARSING TESTS ---
+# --- HTML PARSING & SITEMAP DISCOVERY TESTS ---
 
 def test_extract_store_metadata():
     mock_html = """
@@ -102,6 +107,93 @@ def test_extract_stores_from_html():
     assert "Austin" in stores
     assert stores["Seattle"] == "https://www.costco.com/warehouse-locations/seattle-wa-111.html"
     assert stores["Austin"] == "https://www.costco.com/w/-/st/austin/222"
+
+
+@patch('scraper.fetch_directory_html')
+def test_fetch_state_codes_excludes_pr_and_sorts(mock_fetch):
+    mock_fetch.return_value = """
+    <html><body>
+        <a href="/sitemaps/warehouses-by-state/WA">WA</a>
+        <a href="/sitemaps/warehouses-by-state/CA/">CA</a>
+        <a href="/sitemaps/warehouses-by-state/PR">PR</a>
+        <a href="/sitemaps/warehouses-by-state/invalid">Invalid</a>
+    </body></html>
+    """
+    assert fetch_state_codes() == ["CA", "WA"]
+
+
+@patch('scraper.enrich_store_list')
+@patch('scraper.fetch_directory_html')
+def test_discover_new_stores_writes_sorted_json(mock_fetch, mock_enrich, tmp_path):
+    mock_fetch.return_value = '<a href="/w/-/ca/albany/999">Albany</a><a href="/w/-/ca/turlock/782">Turlock</a>'
+    mock_enrich.return_value = {
+        "CA": {"Albany": {"url": "https://www.costco.com/w/-/ca/albany/999", "warehouse_id": "999"}}
+    }
+    existing = {
+        "TX": {"Austin": {"url": "https://www.costco.com/w/-/tx/austin/111", "warehouse_id": "111"}},
+        "CA": {"Turlock": {"url": "https://www.costco.com/w/-/ca/turlock/782", "warehouse_id": "782"}},
+    }
+    out_file = tmp_path / "stores.json"
+    result = discover_new_stores(["CA"], existing, str(out_file))
+
+    saved = json.loads(out_file.read_text())
+    assert list(saved.keys()) == ["CA", "TX"]
+    assert list(saved["CA"].keys()) == ["Albany", "Turlock"]
+    assert result == saved
+
+
+@patch('scraper.enrich_store_list')
+@patch('scraper.fetch_directory_html')
+def test_build_and_save_master_db_guards_against_large_drop(mock_fetch, mock_enrich, tmp_path):
+    out_file = tmp_path / "us_stores.json"
+    existing = {"CA": {f"City{i}": {"warehouse_id": str(i)} for i in range(10)}}
+    out_file.write_text(json.dumps(existing))
+
+    mock_fetch.return_value = '<a href="/w/-/ca/city0/0">City0</a>'
+    mock_enrich.return_value = {"CA": {"City0": {"warehouse_id": "0"}}}
+
+    build_and_save_master_db(["CA"], str(out_file))
+    # Should refuse to overwrite when 90% of stores disappear
+    assert len(json.loads(out_file.read_text())["CA"]) == 10
+
+
+# --- SNAPSHOT VALIDATION & TREND BASELINE TESTS ---
+
+def test_validate_snapshot_thresholds():
+    locations = {
+        f"S{i}": {f"C{j}": {} for j in range(4)}
+        for i in range(10)
+    }
+    # Full coverage -> valid
+    ok, _ = validate_snapshot(locations, locations)
+    assert ok is True
+
+    # Too few states (8/10 = 80% < 85%) -> invalid
+    sparse_states = {f"S{i}": locations[f"S{i}"] for i in range(8)}
+    ok, reason = validate_snapshot(sparse_states, locations)
+    assert ok is False and "states" in reason
+
+    # Enough states (9/10 = 90%), but too few stores (18/40 = 45% < 75%) -> invalid
+    sparse_stores = {f"S{i}": {"C0": {}, "C1": {}} for i in range(9)}
+    ok, reason = validate_snapshot(sparse_stores, locations)
+    assert ok is False and "stores" in reason
+
+
+def test_find_trend_baseline_prefers_72h_window_and_falls_back():
+    history = {
+        "2026-07-01 10:00": {"CA": {"LA": [4.10, 4.40, None]}},
+        "2026-07-03 18:00": {"CA": {"LA": [4.30, 4.60, None]}},
+        "2026-07-04 02:00": {"CA": {"LA": [4.35, 4.65, None]}},
+    }
+    # 72h before 2026-07-04 10:00 is 2026-07-01 10:00
+    prices, ts = find_trend_baseline(history, "2026-07-04 10:00")
+    assert ts == "2026-07-01 10:00"
+    assert prices["CA"]["LA"][0] == 4.10
+
+    # Short history (no snapshot near 72h back) falls back to latest prior run
+    short_history = {"2026-07-04 02:00": {"CA": {"LA": [4.35, 4.65, None]}}}
+    prices, ts = find_trend_baseline(short_history, "2026-07-04 10:00")
+    assert ts == "2026-07-04 02:00"
 
 
 # --- FILE I/O TESTS ---
