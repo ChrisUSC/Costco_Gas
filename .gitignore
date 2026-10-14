@@ -10,3 +10,8 @@
 !.dev.vars.example
 .env*
 !.env.example
+
+# Python bytecode and cache
+__pycache__/
+*.pyc
+.pytest_cache/
