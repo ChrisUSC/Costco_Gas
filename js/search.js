@@ -314,14 +314,22 @@ function setupInputAutocomplete(inputId, dropdownId, actionType) {
 }
 
 function flyToStore(store) {
+    if (typeof isMobileViewport === 'function' && isMobileViewport()) {
+        setMobileView('map');
+        map.flyTo([store.lat, store.lng], 14, { duration: 1.2 });
+        openMobileStoreCard(store);
+        return;
+    }
     map.flyTo([store.lat, store.lng], 14, { duration: 1.5 });
     map.once('moveend', () => store.leafletMarker && store.leafletMarker.openPopup());
-    if (window.innerWidth <= 768) {
-        document.getElementById('map').scrollIntoView({ behavior: 'smooth' });
-    }
 }
 
 function flyToGeoResult(result) {
+    if (typeof isMobileViewport === 'function' && isMobileViewport()) {
+        closeMobileStoreCard();
+        setMobileView('map');
+    }
+
     const [south, north, west, east] = result.boundingbox.map(parseFloat);
     map.flyToBounds([[south, west], [north, east]], { duration: 1.5, maxZoom: 13, padding: [40, 40] });
 
@@ -333,7 +341,4 @@ function flyToGeoResult(result) {
     }).addTo(map).bindPopup(`<b>${shortGeoName(result)}</b>`);
 
     map.once('moveend', () => switchTab('nearby'));
-    if (window.innerWidth <= 768) {
-        document.getElementById('map').scrollIntoView({ behavior: 'smooth' });
-    }
 }
