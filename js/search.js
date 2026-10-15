@@ -1,5 +1,13 @@
 // --- Autocomplete & Nominatim Geocoding ---
 
+import {
+    escapeHtml,
+    debounce,
+    getDistanceMiles,
+    showToast
+} from './utils.js';
+import { state } from './state.js';
+
 let autocompleteItems = [];
 let activeAutocompleteIndex = -1;
 let geocodeAbortController = null;
@@ -7,7 +15,18 @@ let activeInputId = 'searchInput';
 let activeDropdownId = 'autocompleteDropdown';
 let currentAutocompleteAction = 'search'; // 'search' | 'routeOrigin' | 'routeDest'
 
-const GEO_META_MAP = {
+let searchContext = {
+    getMap: () => null,
+    onSelectStore: null,
+    onSelectGeo: null,
+    onSearchInput: null
+};
+
+export function initSearch(context) {
+    searchContext = { ...searchContext, ...context };
+}
+
+export const GEO_META_MAP = {
     postcode: { icon: '📮', label: 'Zip Code' },
     city: { icon: '🏙️', label: 'City' },
     town: { icon: '🏙️', label: 'Town' },
@@ -25,12 +44,12 @@ const GEO_META_MAP = {
     yes: { icon: '🏠', label: 'Address' }
 };
 
-function getGeoMeta(result) {
+export function getGeoMeta(result) {
     const type = result.addresstype || result.type || 'place';
     return GEO_META_MAP[type] || { icon: '📍', label: 'Location' };
 }
 
-function shortGeoName(result) {
+export function shortGeoName(result) {
     const addr = result.address || {};
     let street = '';
     if (addr.house_number && addr.road) {
@@ -42,21 +61,22 @@ function shortGeoName(result) {
     }
 
     const city = addr.city || addr.town || addr.village || addr.hamlet || addr.county || '';
-    const state = addr['ISO3166-2-lvl4'] ? addr['ISO3166-2-lvl4'].split('-')[1] : (addr.state || '');
+    const stateVal = addr['ISO3166-2-lvl4'] ? addr['ISO3166-2-lvl4'].split('-')[1] : (addr.state || '');
 
     if (street) {
-        return [street, city, state].filter(Boolean).join(', ');
+        return [street, city, stateVal].filter(Boolean).join(', ');
     }
 
     const main = city || result.display_name.split(',')[0];
     if (addr.postcode && result.addresstype === 'postcode') {
-        return state ? `${addr.postcode} \u2014 ${main}, ${state}` : `${addr.postcode} \u2014 ${main}`;
+        return stateVal ? `${addr.postcode} \u2014 ${main}, ${stateVal}` : `${addr.postcode} \u2014 ${main}`;
     }
-    return state ? `${main}, ${state}` : main;
+    return stateVal ? `${main}, ${stateVal}` : main;
 }
 
-function buildNominatimUrl(query, limit = 5) {
+export function buildNominatimUrl(query, limit = 5) {
     let url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=${limit}&countrycodes=us&q=${encodeURIComponent(query)}`;
+    const map = searchContext.getMap();
     if (map) {
         const b = map.getBounds();
         url += `&viewbox=${b.getWest()},${b.getNorth()},${b.getEast()},${b.getSouth()}`;
@@ -64,14 +84,15 @@ function buildNominatimUrl(query, limit = 5) {
     return url;
 }
 
-function getStoreMatches(query) {
+export function getStoreMatches(query) {
     if (!query) return [];
-    const matches = globalStoreData.filter(s =>
+    const matches = state.stores.filter(s =>
         s.city.toLowerCase().includes(query) ||
         s.address.toLowerCase().includes(query) ||
         s.state.toLowerCase().includes(query)
     );
 
+    const map = searchContext.getMap();
     if (map) {
         const center = map.getCenter();
         matches.sort((a, b) =>
@@ -82,7 +103,7 @@ function getStoreMatches(query) {
     return matches.slice(0, 5);
 }
 
-async function getGeoMatches(query, { limit = 5, abortPrevious = true } = {}) {
+export async function getGeoMatches(query, { limit = 5, abortPrevious = true } = {}) {
     try {
         let signal;
         if (abortPrevious) {
@@ -101,7 +122,7 @@ async function getGeoMatches(query, { limit = 5, abortPrevious = true } = {}) {
     }
 }
 
-async function geocodeAddress(query) {
+export async function geocodeAddress(query) {
     const coordMatch = query.match(/^(-?\d+\.?\d*),\s*(-?\d+\.?\d*)$/);
     if (coordMatch) {
         return { lat: parseFloat(coordMatch[1]), lng: parseFloat(coordMatch[2]), label: 'Your location' };
@@ -112,7 +133,7 @@ async function geocodeAddress(query) {
     return { lat: parseFloat(best.lat), lng: parseFloat(best.lon), label: shortGeoName(best) };
 }
 
-const debouncedAutocomplete = debounce(async (query) => {
+export const debouncedAutocomplete = debounce(async (query) => {
     const storeMatches = getStoreMatches(query);
     renderAutocompleteDropdown(storeMatches, [], query, true);
 
@@ -123,7 +144,7 @@ const debouncedAutocomplete = debounce(async (query) => {
     }
 }, 400);
 
-function renderAutocompleteDropdown(storeMatches, geoMatches, query, isLoadingGeo) {
+export function renderAutocompleteDropdown(storeMatches, geoMatches, query, isLoadingGeo) {
     const dropdown = document.getElementById(activeDropdownId);
     if (!dropdown) return;
 
@@ -137,11 +158,11 @@ function renderAutocompleteDropdown(storeMatches, geoMatches, query, isLoadingGe
             const idx = autocompleteItems.length;
             autocompleteItems.push({ type: 'store', data: store });
             html += `
-                <div class="autocomplete-item" data-index="${idx}" onclick="selectAutocompleteItem(${idx})">
+                <div class="autocomplete-item" data-action="select-autocomplete" data-index="${idx}">
                     <span class="ac-icon">🛒</span>
                     <div class="ac-text">
-                        <div class="ac-title">${store.city}, ${store.state}</div>
-                        <div class="ac-subtitle">${store.address}</div>
+                        <div class="ac-title">${escapeHtml(store.city)}, ${escapeHtml(store.state)}</div>
+                        <div class="ac-subtitle">${escapeHtml(store.address)}</div>
                     </div>
                 </div>`;
         });
@@ -154,11 +175,11 @@ function renderAutocompleteDropdown(storeMatches, geoMatches, query, isLoadingGe
             autocompleteItems.push({ type: 'place', data: result });
             const meta = getGeoMeta(result);
             html += `
-                <div class="autocomplete-item" data-index="${idx}" onclick="selectAutocompleteItem(${idx})">
+                <div class="autocomplete-item" data-action="select-autocomplete" data-index="${idx}">
                     <span class="ac-icon">${meta.icon}</span>
                     <div class="ac-text">
-                        <div class="ac-title">${shortGeoName(result)}</div>
-                        <div class="ac-subtitle">${meta.label}</div>
+                        <div class="ac-title">${escapeHtml(shortGeoName(result))}</div>
+                        <div class="ac-subtitle">${escapeHtml(meta.label)}</div>
                     </div>
                 </div>`;
         });
@@ -180,7 +201,7 @@ function renderAutocompleteDropdown(storeMatches, geoMatches, query, isLoadingGe
     dropdown.classList.add('active');
 }
 
-function moveAutocompleteSelection(delta) {
+export function moveAutocompleteSelection(delta) {
     const items = document.querySelectorAll(`#${activeDropdownId} .autocomplete-item`);
     if (items.length === 0) return;
     activeAutocompleteIndex = (activeAutocompleteIndex + delta + items.length) % items.length;
@@ -188,11 +209,11 @@ function moveAutocompleteSelection(delta) {
     items[activeAutocompleteIndex].scrollIntoView({ block: 'nearest' });
 }
 
-function getAutocompleteLabel(item) {
+export function getAutocompleteLabel(item) {
     return item.type === 'store' ? `${item.data.city}, ${item.data.state}` : shortGeoName(item.data);
 }
 
-function extractLocation(item) {
+export function extractLocation(item) {
     return {
         lat: item.type === 'store' ? item.data.lat : parseFloat(item.data.lat),
         lng: item.type === 'store' ? item.data.lng : parseFloat(item.data.lon),
@@ -200,26 +221,31 @@ function extractLocation(item) {
     };
 }
 
-function selectAutocompleteItem(idx) {
+export function selectAutocompleteItem(idx) {
     const item = autocompleteItems[idx];
     if (!item) return;
 
     if (currentAutocompleteAction === 'search') {
-        if (item.type === 'store') flyToStore(item.data);
-        else flyToGeoResult(item.data);
+        if (item.type === 'store') {
+            searchContext.onSelectStore?.(item.data);
+        } else {
+            searchContext.onSelectGeo?.(item.data);
+        }
         document.getElementById('searchInput')?.blur();
     } else if (currentAutocompleteAction === 'routeOrigin') {
-        document.getElementById('routeOrigin').value = getAutocompleteLabel(item);
-        routeOriginLocation = extractLocation(item);
+        const input = document.getElementById('routeOrigin');
+        if (input) input.value = getAutocompleteLabel(item);
+        state.routeOriginLocation = extractLocation(item);
     } else if (currentAutocompleteAction === 'routeDest') {
-        document.getElementById('routeDestination').value = getAutocompleteLabel(item);
-        routeDestLocation = extractLocation(item);
+        const input = document.getElementById('routeDestination');
+        if (input) input.value = getAutocompleteLabel(item);
+        state.routeDestLocation = extractLocation(item);
     }
 
     closeAutocompleteDropdown();
 }
 
-function closeAutocompleteDropdown() {
+export function closeAutocompleteDropdown() {
     document.querySelectorAll('.autocomplete-dropdown').forEach(dropdown => {
         dropdown.classList.remove('active');
         dropdown.innerHTML = '';
@@ -228,7 +254,7 @@ function closeAutocompleteDropdown() {
     activeAutocompleteIndex = -1;
 }
 
-async function resolveBestMatchAndAct(query) {
+export async function resolveBestMatchAndAct(query) {
     if (!query) return;
 
     let best = null;
@@ -252,7 +278,7 @@ async function resolveBestMatchAndAct(query) {
     selectAutocompleteItem(0);
 }
 
-function setupInputAutocomplete(inputId, dropdownId, actionType) {
+export function setupInputAutocomplete(inputId, dropdownId, actionType) {
     const inputEl = document.getElementById(inputId);
     if (!inputEl) return;
 
@@ -261,13 +287,12 @@ function setupInputAutocomplete(inputId, dropdownId, actionType) {
         activeDropdownId = dropdownId;
         currentAutocompleteAction = actionType;
 
-        if (actionType === 'routeOrigin') routeOriginLocation = null;
-        if (actionType === 'routeDest') routeDestLocation = null;
+        if (actionType === 'routeOrigin') state.routeOriginLocation = null;
+        if (actionType === 'routeDest') state.routeDestLocation = null;
 
         const query = e.target.value.toLowerCase().trim();
         if (actionType === 'search') {
-            switchTab('search');
-            renderStoresList(query);
+            searchContext.onSearchInput?.(query);
         }
 
         if (query.length === 0) {
@@ -311,34 +336,4 @@ function setupInputAutocomplete(inputId, dropdownId, actionType) {
         const query = inputEl.value.toLowerCase().trim();
         if (query.length > 0) debouncedAutocomplete(query);
     });
-}
-
-function flyToStore(store) {
-    if (typeof isMobileViewport === 'function' && isMobileViewport()) {
-        setMobileView('map');
-        map.flyTo([store.lat, store.lng], 14, { duration: 1.2 });
-        openMobileStoreCard(store);
-        return;
-    }
-    map.flyTo([store.lat, store.lng], 14, { duration: 1.5 });
-    map.once('moveend', () => store.leafletMarker && store.leafletMarker.openPopup());
-}
-
-function flyToGeoResult(result) {
-    if (typeof isMobileViewport === 'function' && isMobileViewport()) {
-        closeMobileStoreCard();
-        setMobileView('map');
-    }
-
-    const [south, north, west, east] = result.boundingbox.map(parseFloat);
-    map.flyToBounds([[south, west], [north, east]], { duration: 1.5, maxZoom: 13, padding: [40, 40] });
-
-    userLocation = { lat: parseFloat(result.lat), lng: parseFloat(result.lon) };
-
-    if (searchLocationMarker) map.removeLayer(searchLocationMarker);
-    searchLocationMarker = L.circleMarker([userLocation.lat, userLocation.lng], {
-        radius: 8, fillColor: "#f59e0b", color: "#ffffff", weight: 3, opacity: 1, fillOpacity: 1
-    }).addTo(map).bindPopup(`<b>${shortGeoName(result)}</b>`);
-
-    map.once('moveend', () => switchTab('nearby'));
 }

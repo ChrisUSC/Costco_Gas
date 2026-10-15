@@ -1,13 +1,38 @@
 // --- Route Feature: OSRM Driving Route, Corridor Filtering & Saved Routes ---
 
-let routeLayer = null;
-let lastRouteState = null;
-let routeOriginLocation = null;
-let routeDestLocation = null;
-let editingRouteId = null;
-let editSnapshot = null;
+import {
+    getDistanceMiles,
+    minDistanceToRouteMiles,
+    getRouteBoundsPadded,
+    escapeHtml,
+    showToast,
+    requestBrowserLocation,
+    GRADE_INFO,
+    gradeVal,
+    hasGradeData
+} from './utils.js';
+import {
+    state,
+    saveFavoriteRoute,
+    updateFavoriteRoute,
+    removeFavoriteRoute
+} from './state.js';
+import { createStoreCard, renderSavedRoutesHtml } from './components.js';
+import { geocodeAddress, setupInputAutocomplete } from './search.js';
 
-async function fetchDrivingRoute(origin, destination) {
+let routesContext = {
+    getMap: () => null,
+    getRouteLayer: () => null,
+    renderMap: () => {},
+    switchTab: () => {},
+    setMobileView: () => {}
+};
+
+export function initRoutes(context) {
+    routesContext = { ...routesContext, ...context };
+}
+
+export async function fetchDrivingRoute(origin, destination) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 8000);
     try {
@@ -34,58 +59,28 @@ async function fetchDrivingRoute(origin, destination) {
     }
 }
 
-function renderSavedRoutesHtml({ fromFavorites = false } = {}) {
-    if (favoriteRoutes.length === 0) return '';
-
-    const loadFn = fromFavorites ? 'loadFavoriteRouteFromFavorites' : 'loadFavoriteRoute';
-    const editFn = fromFavorites ? 'editFavoriteRouteFromFavorites' : 'startEditRoute';
-    const headerLabel = fromFavorites ? `★ Saved Routes (${favoriteRoutes.length})` : '★ Saved Routes';
-
-    return `
-        <div class="leaderboard-header">${headerLabel}</div>
-        ${favoriteRoutes.map(r => {
-            const isEditing = !fromFavorites && r.id === editingRouteId;
-            return `
-                <div class="store-card ${isEditing ? 'route-editing' : ''}" onclick="${loadFn}(${r.id})">
-                    <h3><span>${escapeHtml(r.origin.label)} → ${escapeHtml(r.destination.label)}</span></h3>
-                    <div class="address">Within ${r.bufferMiles} mi of route${isEditing ? ' &middot; <strong>Editing…</strong>' : ''}</div>
-                    <div class="card-actions">
-                        <button class="btn-action btn-outline-blue" onclick="event.stopPropagation(); ${loadFn}(${r.id})">
-                            🛣️ Load
-                        </button>
-                        <button class="btn-action share-btn" title="Edit saved route" onclick="event.stopPropagation(); ${editFn}(${r.id})">
-                            ✎
-                        </button>
-                        <button class="btn-action share-btn" title="Remove saved route" onclick="event.stopPropagation(); removeFavoriteRoute(${r.id})">
-                            🗑
-                        </button>
-                    </div>
-                </div>
-            `;
-        }).join('')}
-    `;
-}
-
-function renderRoutePanel() {
+export function renderRoutePanel() {
     const container = document.getElementById("sidebarContent");
-    const originVal = lastRouteState ? escapeHtml(lastRouteState.originText) : '';
-    const destVal = lastRouteState ? escapeHtml(lastRouteState.destText) : '';
-    const buffer = lastRouteState ? lastRouteState.bufferMiles : 2;
+    if (!container) return;
+
+    const originVal = state.lastRouteState ? escapeHtml(state.lastRouteState.originText) : '';
+    const destVal = state.lastRouteState ? escapeHtml(state.lastRouteState.destText) : '';
+    const buffer = state.lastRouteState ? state.lastRouteState.bufferMiles : 2;
 
     let saveButtonHtml = '';
-    if (editingRouteId !== null) {
-        const updateBtn = lastRouteState
-            ? `<button class="btn-action save-route-btn" onclick="saveCurrentRouteAsFavorite()">💾 Update Route</button>`
+    if (state.editingRouteId !== null) {
+        const updateBtn = state.lastRouteState
+            ? `<button type="button" class="btn-action save-route-btn" data-action="route-save">💾 Update Route</button>`
             : '';
         saveButtonHtml = `
             ${updateBtn}
-            <button class="btn-action cancel-edit-btn" onclick="cancelEditRoute()">✕ Cancel Editing</button>
+            <button type="button" class="btn-action cancel-edit-btn" data-action="route-cancel-edit">✕ Cancel Editing</button>
         `;
-    } else if (lastRouteState) {
-        saveButtonHtml = `<button class="btn-action save-route-btn" onclick="saveCurrentRouteAsFavorite()">☆ Save This Route</button>`;
+    } else if (state.lastRouteState) {
+        saveButtonHtml = `<button type="button" class="btn-action save-route-btn" data-action="route-save">☆ Save This Route</button>`;
     }
 
-    const savedRoutesHtml = favoriteRoutes.length > 0
+    const savedRoutesHtml = state.favoriteRoutes.length > 0
         ? `<div style="margin-top:16px;">${renderSavedRoutesHtml({ fromFavorites: false })}</div>`
         : '';
 
@@ -94,7 +89,7 @@ function renderRoutePanel() {
             <label>From</label>
             <div class="route-input-row">
                 <input type="text" id="routeOrigin" class="route-input" placeholder="Address or city" autocomplete="off" value="${originVal}">
-                <button class="route-locate-btn" onclick="useMyLocationForRoute()" title="Use my location">📍</button>
+                <button type="button" class="route-locate-btn" data-action="route-locate" title="Use my location">📍</button>
                 <div id="routeOriginDropdown" class="autocomplete-dropdown"></div>
             </div>
 
@@ -107,7 +102,7 @@ function renderRoutePanel() {
             <label>Search within (miles of the route)</label>
             <input type="number" id="routeBuffer" class="route-input" style="width:100%; margin-bottom:12px;"
                    min="1" max="25" step="1" value="${buffer}">
-            <button class="btn-action" style="width:100%; justify-content:center;" onclick="findGasAlongRoute()">🛣️ Find Cheapest Along Route</button>
+            <button type="button" class="btn-action" style="width:100%; justify-content:center;" data-action="route-find">🛣️ Find Cheapest Along Route</button>
             ${saveButtonHtml}
         </div>
         ${savedRoutesHtml}
@@ -117,138 +112,135 @@ function renderRoutePanel() {
     setupInputAutocomplete('routeOrigin', 'routeOriginDropdown', 'routeOrigin');
     setupInputAutocomplete('routeDestination', 'routeDestDropdown', 'routeDest');
 
-    if (lastRouteState && lastRouteState.along) {
-        renderRouteResults(lastRouteState);
-        renderRouteOnMap(lastRouteState.route.coords, lastRouteState.origin, lastRouteState.destination);
-        renderMap(lastRouteState.along.length > 0 ? lastRouteState.along : globalStoreData);
+    if (state.lastRouteState && state.lastRouteState.along) {
+        renderRouteResults(state.lastRouteState);
+        renderRouteOnMap(state.lastRouteState.route.coords, state.lastRouteState.origin, state.lastRouteState.destination);
+        routesContext.renderMap(state.lastRouteState.along.length > 0 ? state.lastRouteState.along : state.stores);
     }
 }
 
-function saveCurrentRouteAsFavorite() {
-    if (!lastRouteState) return;
-    const { origin, destination, bufferMiles } = lastRouteState;
+export function saveCurrentRouteAsFavorite() {
+    if (!state.lastRouteState) return;
+    const { origin, destination, bufferMiles } = state.lastRouteState;
     const matchesRoute = r =>
         r.origin.label === origin.label &&
         r.destination.label === destination.label &&
         r.bufferMiles === bufferMiles;
 
-    if (editingRouteId !== null) {
-        const target = favoriteRoutes.find(r => r.id === editingRouteId);
+    if (state.editingRouteId !== null) {
+        const target = state.favoriteRoutes.find(r => r.id === state.editingRouteId);
         if (!target) {
-            editingRouteId = null;
+            state.editingRouteId = null;
         } else {
-            if (favoriteRoutes.some(r => r.id !== editingRouteId && matchesRoute(r))) {
+            if (state.favoriteRoutes.some(r => r.id !== state.editingRouteId && matchesRoute(r))) {
                 showToast('Another saved route already matches these values');
                 return;
             }
-            target.origin = origin;
-            target.destination = destination;
-            target.bufferMiles = bufferMiles;
-            localStorage.setItem('favoriteRoutes', JSON.stringify(favoriteRoutes));
-            editingRouteId = null;
+            updateFavoriteRoute(state.editingRouteId, { origin, destination, bufferMiles });
+            state.editingRouteId = null;
             showToast('✓ Route updated');
             renderRoutePanel();
             return;
         }
     }
 
-    if (favoriteRoutes.some(matchesRoute)) {
+    if (state.favoriteRoutes.some(matchesRoute)) {
         showToast('This route is already saved');
         return;
     }
 
-    favoriteRoutes.push({ id: Date.now(), origin, destination, bufferMiles });
-    localStorage.setItem('favoriteRoutes', JSON.stringify(favoriteRoutes));
+    saveFavoriteRoute({ id: Date.now(), origin, destination, bufferMiles });
     showToast('★ Route saved');
     renderRoutePanel();
 }
 
-function removeFavoriteRoute(id) {
-    favoriteRoutes = favoriteRoutes.filter(r => r.id !== id);
-    localStorage.setItem('favoriteRoutes', JSON.stringify(favoriteRoutes));
-
-    if (editingRouteId === id) {
+export function removeFavoriteRouteHandler(id) {
+    removeFavoriteRoute(id);
+    if (state.editingRouteId === id) {
         cancelEditRoute();
     } else {
-        renderCurrentTab();
+        renderRoutePanel();
     }
 }
 
-async function loadFavoriteRouteFromFavorites(id) {
-    switchTab('route');
-    await loadFavoriteRoute(id);
+export function populateRouteInputsFromSaved(route) {
+    state.routeOriginLocation = { ...route.origin };
+    state.routeDestLocation = { ...route.destination };
+    const originEl = document.getElementById('routeOrigin');
+    const destEl = document.getElementById('routeDestination');
+    const bufferEl = document.getElementById('routeBuffer');
+
+    if (originEl) originEl.value = route.origin.label;
+    if (destEl) destEl.value = route.destination.label;
+    if (bufferEl) bufferEl.value = route.bufferMiles;
 }
 
-async function editFavoriteRouteFromFavorites(id) {
-    switchTab('route');
-    await startEditRoute(id);
-}
-
-function populateRouteInputsFromSaved(route) {
-    routeOriginLocation = { ...route.origin };
-    routeDestLocation = { ...route.destination };
-    document.getElementById('routeOrigin').value = route.origin.label;
-    document.getElementById('routeDestination').value = route.destination.label;
-    document.getElementById('routeBuffer').value = route.bufferMiles;
-}
-
-async function loadFavoriteRoute(id) {
-    const route = favoriteRoutes.find(r => r.id === id);
+export async function loadFavoriteRoute(id) {
+    const route = state.favoriteRoutes.find(r => r.id === id);
     if (!route) return;
 
-    editingRouteId = null;
-    editSnapshot = null;
+    state.editingRouteId = null;
+    state.editSnapshot = null;
     populateRouteInputsFromSaved(route);
 
     await findGasAlongRoute();
     renderRoutePanel();
 }
 
-async function startEditRoute(id) {
-    const route = favoriteRoutes.find(r => r.id === id);
+export async function startEditRoute(id) {
+    const route = state.favoriteRoutes.find(r => r.id === id);
     if (!route) return;
 
-    if (editingRouteId === null) {
-        editSnapshot = { lastRouteState, routeOriginLocation, routeDestLocation };
+    if (state.editingRouteId === null) {
+        state.editSnapshot = {
+            lastRouteState: state.lastRouteState,
+            routeOriginLocation: state.routeOriginLocation,
+            routeDestLocation: state.routeDestLocation
+        };
     }
 
-    editingRouteId = id;
+    state.editingRouteId = id;
     populateRouteInputsFromSaved(route);
 
     await findGasAlongRoute();
     renderRoutePanel();
 }
 
-function cancelEditRoute() {
-    editingRouteId = null;
+export function cancelEditRoute() {
+    state.editingRouteId = null;
 
-    if (editSnapshot) {
-        lastRouteState = editSnapshot.lastRouteState;
-        routeOriginLocation = editSnapshot.routeOriginLocation;
-        routeDestLocation = editSnapshot.routeDestLocation;
-        editSnapshot = null;
+    if (state.editSnapshot) {
+        state.lastRouteState = state.editSnapshot.lastRouteState;
+        state.routeOriginLocation = state.editSnapshot.routeOriginLocation;
+        state.routeDestLocation = state.editSnapshot.routeDestLocation;
+        state.editSnapshot = null;
     }
 
-    if (routeLayer) routeLayer.clearLayers();
-    if (lastRouteState && lastRouteState.along) {
-        renderRouteOnMap(lastRouteState.route.coords, lastRouteState.origin, lastRouteState.destination);
-        renderMap(lastRouteState.along.length > 0 ? lastRouteState.along : globalStoreData);
+    clearRouteVisuals();
+    if (state.lastRouteState && state.lastRouteState.along) {
+        renderRouteOnMap(state.lastRouteState.route.coords, state.lastRouteState.origin, state.lastRouteState.destination);
+        routesContext.renderMap(state.lastRouteState.along.length > 0 ? state.lastRouteState.along : state.stores);
     } else {
-        renderMap(globalStoreData);
+        routesContext.renderMap(state.stores);
     }
 
     renderRoutePanel();
 }
 
-function renderRouteResults(state) {
+export function clearRouteVisuals() {
+    const routeLayer = routesContext.getRouteLayer();
+    if (routeLayer) routeLayer.clearLayers();
+}
+
+export function renderRouteResults(routeState) {
     const el = document.getElementById('routeResultsContainer');
     if (!el) return;
-    const gradeLabel = GRADE_INFO[gasPref].label;
-    const { along, route, bufferMiles } = state;
+    const gradeLabel = GRADE_INFO[state.gasPref].label;
+    const { along, route, bufferMiles } = routeState;
 
     const sorted = along
-        .filter(s => hasGradeData(s, gasPref))
-        .sort((a, b) => gradeVal(a, gasPref) - gradeVal(b, gasPref));
+        .filter(s => hasGradeData(s, state.gasPref))
+        .sort((a, b) => gradeVal(a, state.gasPref) - gradeVal(b, state.gasPref));
 
     let html = '';
     if (route.isApproximate) {
@@ -256,7 +248,7 @@ function renderRouteResults(state) {
     }
     html += `
         <div class="route-summary">${Math.round(route.distanceMiles)} mi route &middot; ${sorted.length} station${sorted.length === 1 ? '' : 's'} found</div>
-        <button type="button" class="btn-action btn-outline-blue view-route-map-btn" onclick="setMobileView('map')">
+        <button type="button" class="btn-action btn-outline-blue view-route-map-btn" data-action="view-route-map">
             🗺️ View Route on Map
         </button>
     `;
@@ -268,11 +260,19 @@ function renderRouteResults(state) {
     }
 
     el.innerHTML += `<div class="leaderboard-header">Cheapest ${gradeLabel} Along the Way</div>`;
-    sorted.forEach((store, index) => el.appendChild(createStoreCard(store, gasPref, index, true, ' off route')));
+    sorted.forEach((store, index) => el.appendChild(createStoreCard(store, {
+        highlight: state.gasPref,
+        index,
+        showDistance: true,
+        distanceSuffix: ' off route'
+    })));
 }
 
-function renderRouteOnMap(routeCoords, origin, destination) {
-    if (!routeLayer) return;
+export function renderRouteOnMap(routeCoords, origin, destination) {
+    const routeLayer = routesContext.getRouteLayer();
+    const map = routesContext.getMap();
+    if (!routeLayer || !map) return;
+
     routeLayer.clearLayers();
     L.polyline(routeCoords, { color: '#005DAA', weight: 5, opacity: 0.7 }).addTo(routeLayer);
     L.circleMarker([origin.lat, origin.lng], { radius: 8, fillColor: '#059669', color: '#fff', weight: 3, opacity: 1, fillOpacity: 1 })
@@ -283,12 +283,12 @@ function renderRouteOnMap(routeCoords, origin, destination) {
     map.fitBounds(L.latLngBounds(routeCoords), { padding: [40, 40] });
 }
 
-function useMyLocationForRoute() {
+export function useMyLocationForRoute() {
     requestBrowserLocation((position) => {
         const originInput = document.getElementById('routeOrigin');
         if (originInput) {
             originInput.value = 'Your location';
-            routeOriginLocation = {
+            state.routeOriginLocation = {
                 lat: position.coords.latitude,
                 lng: position.coords.longitude,
                 label: 'Your location'
@@ -297,12 +297,18 @@ function useMyLocationForRoute() {
     });
 }
 
-async function findGasAlongRoute() {
-    const originText = document.getElementById('routeOrigin').value.trim();
-    const destText = document.getElementById('routeDestination').value.trim();
-    const bufferInput = document.getElementById('routeBuffer').value;
-    const bufferMiles = parseFloat(bufferInput);
+export async function findGasAlongRoute() {
+    const originEl = document.getElementById('routeOrigin');
+    const destEl = document.getElementById('routeDestination');
+    const bufferEl = document.getElementById('routeBuffer');
     const resultsEl = document.getElementById('routeResultsContainer');
+
+    if (!originEl || !destEl || !bufferEl || !resultsEl) return;
+
+    const originText = originEl.value.trim();
+    const destText = destEl.value.trim();
+    const bufferInput = bufferEl.value;
+    const bufferMiles = parseFloat(bufferInput);
 
     if (!originText || !destText) {
         resultsEl.innerHTML = `<p class="route-error">Enter both a starting point and a destination.</p>`;
@@ -317,12 +323,12 @@ async function findGasAlongRoute() {
     resultsEl.innerHTML = `<p class="empty-msg" style="margin-top:20px;">Calculating route…</p>`;
 
     try {
-        const origin = (routeOriginLocation && routeOriginLocation.label.toLowerCase() === originText.toLowerCase())
-            ? routeOriginLocation
+        const origin = (state.routeOriginLocation && state.routeOriginLocation.label.toLowerCase() === originText.toLowerCase())
+            ? state.routeOriginLocation
             : await geocodeAddress(originText);
 
-        const destination = (routeDestLocation && routeDestLocation.label.toLowerCase() === destText.toLowerCase())
-            ? routeDestLocation
+        const destination = (state.routeDestLocation && state.routeDestLocation.label.toLowerCase() === destText.toLowerCase())
+            ? state.routeDestLocation
             : await geocodeAddress(destText);
 
         if (!origin) throw new Error(`Couldn't find "${originText}". Try a more specific address or city.`);
@@ -331,14 +337,14 @@ async function findGasAlongRoute() {
         const route = await fetchDrivingRoute(origin, destination);
         const bounds = getRouteBoundsPadded(route.coords, bufferMiles);
 
-        const along = globalStoreData
+        const along = state.stores
             .filter(s => s.lat && s.lng &&
                 s.lat >= bounds.minLat && s.lat <= bounds.maxLat &&
                 s.lng >= bounds.minLng && s.lng <= bounds.maxLng)
             .map(s => ({ ...s, distance: minDistanceToRouteMiles(s.lat, s.lng, route.coords) }))
             .filter(s => s.distance <= bufferMiles);
 
-        lastRouteState = { originText, destText, bufferMiles, origin, destination, route, along };
+        state.lastRouteState = { originText, destText, bufferMiles, origin, destination, route, along };
         renderRoutePanel();
     } catch (err) {
         console.error('Route search failed:', err);

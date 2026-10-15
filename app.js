@@ -1,45 +1,90 @@
-// --- Main Application State, Map, Sidebar Views & Initialization ---
+// --- Main Application Entry Point, Map Lifecycle, Sidebar Views & Initialization ---
+
+import {
+    CARTO_API_KEY,
+    GRADE_INFO,
+    GRADE_KEYS,
+    filterStoresForCurrentGrade,
+    formatPriceDisplay,
+    extractGradePrices,
+    getValidPrice,
+    getRelativeTimeLabel,
+    formatLastUpdatedLabel,
+    getDistanceMiles,
+    getTrendArrow,
+    gradeVal,
+    gradePrevVal,
+    gradeStr,
+    hasGradeData,
+    shouldFilterStoresByGrade,
+    gasStatusHtml,
+    gasHoursDetailsHtml,
+    escapeHtml,
+    debounce,
+    showToast,
+    requestBrowserLocation
+} from './js/utils.js';
+import {
+    state,
+    isFavoriteStore,
+    toggleFavoriteStore,
+    findStore,
+    setGasPref as saveGasPref,
+    setDarkMode as saveDarkMode,
+    setNearbyRadius as saveNearbyRadius,
+    setNearbySort as saveNearbySort
+} from './js/state.js';
+import {
+    createStoreCard,
+    renderSavedRoutesHtml,
+    renderMobileStoreCardContent
+} from './js/components.js';
+import {
+    openHistoryModal,
+    closeHistoryModal,
+    setHistoryRange,
+    refreshChartTheme
+} from './js/charts.js';
+import {
+    initSearch,
+    setupInputAutocomplete,
+    closeAutocompleteDropdown,
+    selectAutocompleteItem
+} from './js/search.js';
+import {
+    initRoutes,
+    renderRoutePanel,
+    saveCurrentRouteAsFavorite,
+    removeFavoriteRouteHandler,
+    loadFavoriteRoute,
+    startEditRoute,
+    cancelEditRoute,
+    useMyLocationForRoute,
+    findGasAlongRoute,
+    clearRouteVisuals
+} from './js/routes.js';
 
 let map;
 let mapTileLayer;
 let markersLayer;
-let globalStoreData = [];
-let trendBaselineLabel = 'the last update';
-let latestTimestampGlobal = null;
-
-let currentStateContext = 'CA';
-let userLocation = null;
+let routeLayer;
 let userLocationMarker = null;
 let searchLocationMarker = null;
-let currentTab = 'nearby';
-
-// Mobile View & Bottom Sheet State
-let mobileViewMode = 'map'; // 'map' | 'list'
-let activeMobileStore = null;
-
-// User Preferences State
-let isDarkMode = localStorage.getItem('theme') === 'dark';
-let gasPref = localStorage.getItem('gasPref') || 'regular';
-let nearbyRadiusMiles = parseFloat(localStorage.getItem('nearbyRadius')) || 50;
-let nearbySortMode = localStorage.getItem('nearbySort') || 'price'; // 'price' | 'distance'
-
-let favoriteStoreKeys = new Set(loadJsonPref('favoriteStores', []));
-let favoriteRoutes = loadJsonPref('favoriteRoutes', []);
 
 function isMobileViewport() {
     return window.innerWidth <= 768;
 }
 
 function setMobileView(mode) {
-    mobileViewMode = mode === 'list' ? 'list' : 'map';
+    state.mobileViewMode = mode === 'list' ? 'list' : 'map';
     const container = document.getElementById('appContainer');
     if (container) {
-        container.classList.toggle('mobile-view-list', mobileViewMode === 'list');
+        container.classList.toggle('mobile-view-list', state.mobileViewMode === 'list');
     }
-    document.getElementById('btnMobileMap')?.classList.toggle('active', mobileViewMode === 'map');
-    document.getElementById('btnMobileList')?.classList.toggle('active', mobileViewMode === 'list');
+    document.getElementById('btnMobileMap')?.classList.toggle('active', state.mobileViewMode === 'map');
+    document.getElementById('btnMobileList')?.classList.toggle('active', state.mobileViewMode === 'list');
 
-    if (mobileViewMode === 'list') {
+    if (state.mobileViewMode === 'list') {
         closeMobileStoreCard();
     }
     if (map) {
@@ -47,61 +92,10 @@ function setMobileView(mode) {
     }
 }
 
-function renderMobileStoreCardContent(store) {
-    const contentEl = document.getElementById('mobileStoreSheetContent');
-    if (!contentEl || !store) return;
-
-    const safeCity = store.city.replace(/'/g, "\\'");
-    const isFav = isFavoriteStore(store.state, store.city);
-    const priceTagsHtml = getVisibleStoreGrades(store).map(g => {
-        const cls = gasPref === g ? 'highlight' : '';
-        const trend = getTrendArrow(gradeVal(store, g), gradePrevVal(store, g));
-        return `
-            <div class="price-tag ${cls}">
-                <span>${GRADE_INFO[g].label}</span>
-                <span class="val">${gradeStr(store, g) || 'N/A'} ${trend}</span>
-            </div>`;
-    }).join('');
-
-    const phoneHtml = store.phone
-        ? `<div class="popup-phone"><a href="tel:${store.phone.replace(/[^0-9+]/g, '')}">📞 ${escapeHtml(store.phone)}</a></div>`
-        : '';
-
-    contentEl.innerHTML = `
-        <div class="mobile-sheet-header">
-            <h3 class="mobile-sheet-title">${escapeHtml(store.city)}, ${escapeHtml(store.state)}</h3>
-            <button type="button" class="mobile-sheet-close" onclick="closeMobileStoreCard()" aria-label="Close store details">×</button>
-        </div>
-        <div class="mobile-sheet-address">${escapeHtml(store.address)}</div>
-        <div class="mobile-sheet-meta">
-            ${gasStatusHtml(store)}
-            ${phoneHtml}
-        </div>
-        ${gasHoursDetailsHtml(store)}
-        <div class="mobile-sheet-prices">${priceTagsHtml}</div>
-        <div class="mobile-sheet-actions">
-            <button type="button" class="btn-action btn-history" onclick="openHistoryModal('${store.state}', '${safeCity}')">
-                📈 History
-            </button>
-            <a href="${store.url}" target="_blank" rel="noopener noreferrer" class="btn-action btn-outline-blue btn-store-link">
-                Store Page ↗
-            </a>
-            <button type="button" class="btn-action favorite-btn ${isFav ? 'active' : ''}" title="${isFav ? 'Remove from favorites' : 'Add to favorites'}"
-                onclick="toggleFavoriteStore('${store.state}', '${safeCity}')">
-                ${isFav ? '★' : '☆'}
-            </button>
-            <button type="button" class="btn-action share-btn" title="Share this station"
-                onclick="shareStore('${store.state}', '${safeCity}', '${safeCity}, ${store.state}')">
-                🔗
-            </button>
-        </div>
-    `;
-}
-
 function openMobileStoreCard(store) {
     if (!store) return;
-    activeMobileStore = store;
-    if (mobileViewMode !== 'map') {
+    state.activeMobileStore = store;
+    if (state.mobileViewMode !== 'map') {
         setMobileView('map');
     }
     renderMobileStoreCardContent(store);
@@ -117,7 +111,7 @@ function openMobileStoreCard(store) {
 }
 
 function closeMobileStoreCard() {
-    activeMobileStore = null;
+    state.activeMobileStore = null;
     const sheet = document.getElementById('mobileStoreSheet');
     const container = document.getElementById('appContainer');
     if (sheet) {
@@ -131,56 +125,41 @@ function closeMobileStoreCard() {
 
 function refreshLastUpdatedLabel() {
     const el = document.getElementById('lastUpdated');
-    if (!el || !latestTimestampGlobal) return;
-    const { text, title } = formatLastUpdatedLabel(latestTimestampGlobal);
+    if (!el || !state.latestTimestamp) return;
+    const { text, title } = formatLastUpdatedLabel(state.latestTimestamp);
     el.innerText = text;
     el.title = title;
 }
 
 // --- Shareable Store Links & Favorites ---
 
-function getShareUrl(state, city) {
+function getShareUrl(stateCode, city) {
     const url = new URL(window.location.href);
     url.search = '';
-    url.searchParams.set('store', `${state}_${city}`);
+    url.searchParams.set('store', `${stateCode}_${city}`);
     return url.toString();
 }
 
-function favoriteKey(state, city) {
-    return `${state}_${city}`;
-}
+function toggleFavoriteStoreAndRefresh(stateCode, city) {
+    const isNowFav = toggleFavoriteStore(stateCode, city);
+    showToast(isNowFav ? '★ Added to favorites' : 'Removed from favorites');
 
-function isFavoriteStore(state, city) {
-    return favoriteStoreKeys.has(favoriteKey(state, city));
-}
-
-function toggleFavoriteStore(state, city) {
-    const key = favoriteKey(state, city);
-    if (favoriteStoreKeys.has(key)) {
-        favoriteStoreKeys.delete(key);
-        showToast('Removed from favorites');
-    } else {
-        favoriteStoreKeys.add(key);
-        showToast('★ Added to favorites');
-    }
-    localStorage.setItem('favoriteStores', JSON.stringify([...favoriteStoreKeys]));
-
-    if (globalStoreData.length > 0) {
+    if (state.stores.length > 0) {
         renderMap(
-            currentTab === 'route' && lastRouteState?.along?.length > 0
-                ? lastRouteState.along
-                : globalStoreData
+            state.currentTab === 'route' && state.lastRouteState?.along?.length > 0
+                ? state.lastRouteState.along
+                : state.stores
         );
     }
     refreshCurrentDisplay();
 
-    if (activeMobileStore && activeMobileStore.state === state && activeMobileStore.city === city) {
-        renderMobileStoreCardContent(activeMobileStore);
+    if (state.activeMobileStore && state.activeMobileStore.state === stateCode && state.activeMobileStore.city === city) {
+        renderMobileStoreCardContent(state.activeMobileStore);
     }
 }
 
-async function shareStore(state, city, label) {
-    const url = getShareUrl(state, city);
+async function shareStore(stateCode, city, label) {
+    const url = getShareUrl(stateCode, city);
 
     if (navigator.share) {
         try {
@@ -206,10 +185,10 @@ function openSharedStoreIfPresent() {
 
     const sepIndex = storeKey.indexOf('_');
     if (sepIndex === -1) return false;
-    const state = storeKey.slice(0, sepIndex);
+    const stateCode = storeKey.slice(0, sepIndex);
     const city = storeKey.slice(sepIndex + 1);
 
-    const store = globalStoreData.find(s => s.state === state && s.city === city);
+    const store = findStore(stateCode, city);
     if (!store || !store.lat || !store.lng) {
         console.warn(`Shared store "${storeKey}" not found.`);
         return false;
@@ -225,42 +204,41 @@ function openSharedStoreIfPresent() {
 // --- Preferences ---
 
 function initPreferences() {
-    if (isDarkMode) {
+    if (state.isDarkMode) {
         document.body.classList.add('dark-mode');
-        document.getElementById('themeToggle').innerText = '☀️';
+        const themeBtn = document.getElementById('themeToggle');
+        if (themeBtn) themeBtn.innerText = '☀️';
     }
     GRADE_KEYS.forEach(g => document.getElementById(`btn-${g}`)?.classList.remove('active'));
-    document.getElementById(`btn-${gasPref}`)?.classList.add('active');
+    document.getElementById(`btn-${state.gasPref}`)?.classList.add('active');
 }
 
 function toggleTheme() {
-    isDarkMode = document.body.classList.toggle('dark-mode');
-    localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
-    document.getElementById('themeToggle').innerText = isDarkMode ? '☀️' : '🌙';
+    const newTheme = !state.isDarkMode;
+    saveDarkMode(newTheme);
+    document.body.classList.toggle('dark-mode', newTheme);
+    const themeBtn = document.getElementById('themeToggle');
+    if (themeBtn) themeBtn.innerText = newTheme ? '☀️' : '🌙';
     setMapTiles();
-
-    if (document.getElementById('chartModal').classList.contains('active') && currentModalState && currentModalCity) {
-        renderPriceChart(currentModalState, currentModalCity);
-    }
+    refreshChartTheme();
 }
 
 function setGasPref(pref) {
-    gasPref = pref;
-    localStorage.setItem('gasPref', pref);
+    saveGasPref(pref);
 
     GRADE_KEYS.forEach(g => document.getElementById(`btn-${g}`)?.classList.remove('active'));
     document.getElementById(`btn-${pref}`)?.classList.add('active');
 
-    if (globalStoreData.length > 0) {
-        renderMap(globalStoreData);
+    if (state.stores.length > 0) {
+        renderMap(state.stores);
     }
     refreshCurrentDisplay();
 
-    if (activeMobileStore) {
-        if (shouldFilterStoresByGrade(gasPref) && !hasGradeData(activeMobileStore, gasPref)) {
+    if (state.activeMobileStore) {
+        if (shouldFilterStoresByGrade(state.gasPref) && !hasGradeData(state.activeMobileStore, state.gasPref)) {
             closeMobileStoreCard();
         } else {
-            renderMobileStoreCardContent(activeMobileStore);
+            renderMobileStoreCardContent(state.activeMobileStore);
         }
     }
 }
@@ -268,8 +246,8 @@ function setGasPref(pref) {
 // --- Map Logic ---
 
 function setMapTiles() {
-    if (mapTileLayer) map.removeLayer(mapTileLayer);
-    const style = isDarkMode ? 'dark_all' : 'rastertiles/voyager';
+    if (mapTileLayer && map) map.removeLayer(mapTileLayer);
+    const style = state.isDarkMode ? 'dark_all' : 'rastertiles/voyager';
     mapTileLayer = L.tileLayer(
         `https://{s}.basemaps.cartocdn.com/${style}/{z}/{x}/{y}{r}.png?key=${CARTO_API_KEY}`,
         {
@@ -277,11 +255,14 @@ function setMapTiles() {
             subdomains: 'abcd',
             maxZoom: 20
         }
-    ).addTo(map);
+    );
+    if (map) mapTileLayer.addTo(map);
 }
 
 function checkZoomLevel() {
-    document.getElementById('map').classList.toggle('map-show-prices', map.getZoom() >= 9);
+    if (!map) return;
+    const mapEl = document.getElementById('map');
+    if (mapEl) mapEl.classList.toggle('map-show-prices', map.getZoom() >= 9);
 }
 
 function setupMobileSheetGestures() {
@@ -316,35 +297,30 @@ function initMap() {
 
     map.on('zoomend', checkZoomLevel);
     map.on('click', () => {
-        if (activeMobileStore) closeMobileStoreCard();
+        if (state.activeMobileStore) closeMobileStoreCard();
     });
 
     setupInputAutocomplete('searchInput', 'autocompleteDropdown', 'search');
     setupMobileSheetGestures();
 
     window.addEventListener('resize', debounce(() => {
-        if (!isMobileViewport() && activeMobileStore) {
+        if (!isMobileViewport() && state.activeMobileStore) {
             closeMobileStoreCard();
         } else if (isMobileViewport()) {
             map.closePopup();
         }
         map.invalidateSize();
     }, 150));
-
-    document.addEventListener('click', (e) => {
-        if (!e.target.closest('.route-input') && !e.target.closest('#searchInput') && !e.target.closest('.autocomplete-dropdown')) {
-            closeAutocompleteDropdown();
-        }
-    });
 }
 
 function renderMap(dataArray) {
+    if (!markersLayer) return;
     markersLayer.clearLayers();
-    filterStoresForCurrentGrade(dataArray).forEach(store => {
+    filterStoresForCurrentGrade(dataArray, state.gasPref).forEach(store => {
         if (!store.lat || !store.lng) return;
 
-        const displayPrice = gradeStr(store, gasPref);
-        const priceColor = GRADE_INFO[gasPref].color;
+        const displayPrice = gradeStr(store, state.gasPref);
+        const priceColor = GRADE_INFO[state.gasPref].color;
         const isFav = isFavoriteStore(store.state, store.city);
         const favBadge = isFav ? `<div class="pin-favorite-badge">★</div>` : '';
 
@@ -358,7 +334,7 @@ function renderMap(dataArray) {
                         <circle cx="12" cy="9" r="3.5" fill="#ffffff"/>
                     </svg>
                     <div class="pin-price-badge" style="color: ${priceColor}; border-color: ${priceColor};">
-                        ${displayPrice || 'N/A'}
+                        ${escapeHtml(displayPrice) || 'N/A'}
                     </div>
                 </div>
             `,
@@ -368,28 +344,27 @@ function renderMap(dataArray) {
         });
 
         const marker = L.marker([store.lat, store.lng], { icon: dynamicPin });
-        const safeCity = store.city.replace(/'/g, "\\'");
 
         marker.bindPopup(() => {
             const currentIsFav = isFavoriteStore(store.state, store.city);
             const priceBoxesHtml = getVisibleStoreGrades(store).map(g => {
-                const cls = gasPref === g ? 'highlight' : '';
-                const trend = getTrendArrow(gradeVal(store, g), gradePrevVal(store, g));
-                return `<div class="popup-price-box ${cls}"><span>${GRADE_INFO[g].label}</span><strong>${gradeStr(store, g) || 'N/A'} ${trend}</strong></div>`;
+                const cls = state.gasPref === g ? 'highlight' : '';
+                const trend = getTrendArrow(gradeVal(store, g), gradePrevVal(store, g), state.trendBaselineLabel);
+                return `<div class="popup-price-box ${cls}"><span>${GRADE_INFO[g].label}</span><strong>${escapeHtml(gradeStr(store, g)) || 'N/A'} ${trend}</strong></div>`;
             }).join('');
 
             return `
-                <div class="popup-store-name">${store.city}, ${store.state}</div>
-                <div class="popup-address">${store.address}</div>
+                <div class="popup-store-name">${escapeHtml(store.city)}, ${escapeHtml(store.state)}</div>
+                <div class="popup-address">${escapeHtml(store.address)}</div>
                 ${gasStatusHtml(store)}
                 ${gasHoursDetailsHtml(store)}
-                ${store.phone ? `<div class="popup-phone"><a href="tel:${store.phone.replace(/[^0-9+]/g, '')}">${escapeHtml(store.phone)}</a></div>` : ''}
+                ${store.phone ? `<div class="popup-phone"><a href="tel:${escapeHtml(store.phone.replace(/[^0-9+]/g, ''))}">${escapeHtml(store.phone)}</a></div>` : ''}
                 <div class="popup-prices-grid">${priceBoxesHtml}</div>
-                <button class="popup-btn" onclick="openHistoryModal('${store.state}', '${safeCity}')">📈 Price History</button>
+                <button type="button" class="popup-btn" data-action="history" data-state="${escapeHtml(store.state)}" data-city="${escapeHtml(store.city)}">📈 Price History</button>
                 <div class="popup-actions-row">
-                    <a href="${store.url}" target="_blank" rel="noopener noreferrer" class="popup-btn popup-btn-outline" style="flex:1;">Store Page ↗</a>
-                    <button class="popup-btn popup-btn-outline popup-btn-icon ${currentIsFav ? 'active' : ''}" title="${currentIsFav ? 'Remove Favorite' : 'Add to Favorites'}" onclick="toggleFavoriteStore('${store.state}', '${safeCity}')">${currentIsFav ? '★' : '☆'}</button>
-                    <button class="popup-btn popup-btn-outline popup-btn-icon" title="Share This Station" onclick="shareStore('${store.state}', '${safeCity}', '${safeCity}, ${store.state}')">🔗</button>
+                    <a href="${escapeHtml(store.url)}" target="_blank" rel="noopener noreferrer" class="popup-btn popup-btn-outline" style="flex:1;">Store Page ↗</a>
+                    <button type="button" class="popup-btn popup-btn-outline popup-btn-icon ${currentIsFav ? 'active' : ''}" data-action="toggle-favorite" data-state="${escapeHtml(store.state)}" data-city="${escapeHtml(store.city)}" title="${currentIsFav ? 'Remove Favorite' : 'Add to Favorites'}">${currentIsFav ? '★' : '☆'}</button>
+                    <button type="button" class="popup-btn popup-btn-outline popup-btn-icon" data-action="share" data-state="${escapeHtml(store.state)}" data-city="${escapeHtml(store.city)}" title="Share This Station">🔗</button>
                 </div>
             `;
         });
@@ -409,6 +384,36 @@ function renderMap(dataArray) {
     });
 }
 
+function flyToStore(store) {
+    if (isMobileViewport()) {
+        setMobileView('map');
+        map.flyTo([store.lat, store.lng], 14, { duration: 1.2 });
+        openMobileStoreCard(store);
+        return;
+    }
+    map.flyTo([store.lat, store.lng], 14, { duration: 1.5 });
+    map.once('moveend', () => store.leafletMarker && store.leafletMarker.openPopup());
+}
+
+function flyToGeoResult(result) {
+    if (isMobileViewport()) {
+        closeMobileStoreCard();
+        setMobileView('map');
+    }
+
+    const [south, north, west, east] = result.boundingbox.map(parseFloat);
+    map.flyToBounds([[south, west], [north, east]], { duration: 1.5, maxZoom: 13, padding: [40, 40] });
+
+    state.userLocation = { lat: parseFloat(result.lat), lng: parseFloat(result.lon) };
+
+    if (searchLocationMarker) map.removeLayer(searchLocationMarker);
+    searchLocationMarker = L.circleMarker([state.userLocation.lat, state.userLocation.lng], {
+        radius: 8, fillColor: "#f59e0b", color: "#ffffff", weight: 3, opacity: 1, fillOpacity: 1
+    }).addTo(map).bindPopup(`<b>${escapeHtml(result.display_name.split(',')[0])}</b>`);
+
+    map.once('moveend', () => switchTab('nearby'));
+}
+
 // --- Geolocation & Data Loading ---
 
 async function detectUserState() {
@@ -416,7 +421,7 @@ async function detectUserState() {
         const res = await fetch('https://ipapi.co/region_code/');
         if (res.ok) {
             const code = await res.text();
-            if (code && code.length === 2) currentStateContext = code.toUpperCase();
+            if (code && code.trim().length === 2) state.currentStateContext = code.trim().toUpperCase();
         }
     } catch (e) {}
 }
@@ -440,10 +445,10 @@ async function tryAutoLocateOnLoad() {
 }
 
 function updateClosestStoreState(loc) {
-    if (!loc || globalStoreData.length === 0) return;
-    let closestStore = globalStoreData.find(s => s.lat && s.lng) || globalStoreData[0];
+    if (!loc || state.stores.length === 0) return;
+    let closestStore = state.stores.find(s => s.lat && s.lng) || state.stores[0];
     let minDistance = Infinity;
-    globalStoreData.forEach(s => {
+    state.stores.forEach(s => {
         if (!s.lat || !s.lng) return;
         const distance = (s.lat - loc.lat) ** 2 + (s.lng - loc.lng) ** 2;
         if (distance < minDistance) {
@@ -451,11 +456,11 @@ function updateClosestStoreState(loc) {
             closestStore = s;
         }
     });
-    currentStateContext = closestStore.state;
+    state.currentStateContext = closestStore.state;
 }
 
 function placeUserLocationMarker(loc, { openPopup = false } = {}) {
-    if (userLocationMarker) map.removeLayer(userLocationMarker);
+    if (userLocationMarker && map) map.removeLayer(userLocationMarker);
     userLocationMarker = L.circleMarker([loc.lat, loc.lng], {
         radius: 8, fillColor: "#3b82f6", color: "#ffffff", weight: 3, opacity: 1, fillOpacity: 1
     }).addTo(map).bindPopup("<b>You are here!</b>");
@@ -493,10 +498,11 @@ async function loadData() {
             timestampedPrices = latestData[latestTimestamp] || {};
         }
 
-        trendBaselineLabel = getRelativeTimeLabel(previousTimestamp);
-        latestTimestampGlobal = latestTimestamp;
+        state.trendBaselineLabel = getRelativeTimeLabel(previousTimestamp);
+        state.latestTimestamp = latestTimestamp;
         refreshLastUpdatedLabel();
 
+        const loadedStores = [];
         for (const stateCode in storeData) {
             if (!timestampedPrices[stateCode]) continue;
             for (const [cityName, info] of Object.entries(storeData[stateCode])) {
@@ -509,7 +515,7 @@ async function loadData() {
                     ? extractGradePrices(prevData).map(getValidPrice)
                     : [undefined, undefined, undefined];
 
-                globalStoreData.push({
+                loadedStores.push({
                     state: stateCode, city: cityName, address: info.address,
                     lat: info.lat, lng: info.lng, url: info.url,
                     gasHours: info.gas_hours || null, tz: info.tz || null, phone: info.phone || null,
@@ -521,11 +527,12 @@ async function loadData() {
                 });
             }
         }
+        state.stores = loadedStores;
 
-        renderMap(globalStoreData);
+        renderMap(state.stores);
 
         if (autoLocation) {
-            userLocation = autoLocation;
+            state.userLocation = autoLocation;
             updateClosestStoreState(autoLocation);
             placeUserLocationMarker(autoLocation);
         }
@@ -536,76 +543,34 @@ async function loadData() {
             if (autoLocation) {
                 map.setView([autoLocation.lat, autoLocation.lng], 10);
                 checkZoomLevel();
-            } else if (globalStoreData.length > 0) {
-                const bounds = L.latLngBounds(globalStoreData.map(s => [s.lat, s.lng]).filter(c => c[0] && c[1]));
+            } else if (state.stores.length > 0) {
+                const bounds = L.latLngBounds(state.stores.map(s => [s.lat, s.lng]).filter(c => c[0] && c[1]));
                 map.fitBounds(bounds, { padding: [30, 30] });
                 checkZoomLevel();
             }
         }
     } catch (error) {
         console.error('Error fetching data:', error);
-        document.getElementById("sidebarContent").innerHTML = `<p class="empty-msg" style="color:var(--costco-red);">Error Loading Data.</p>`;
+        const container = document.getElementById("sidebarContent");
+        if (container) {
+            container.innerHTML = `<p class="empty-msg" style="color:var(--costco-red);">Error Loading Data.</p>`;
+        }
     }
 }
 
 // --- Sidebar Views & Store Cards ---
 
-function createStoreCard(store, highlight = null, index = null, showDistance = false, distanceSuffix = '') {
-    const div = document.createElement('div');
-    div.className = 'store-card';
-
-    let badgeHtml = '';
-    if (showDistance && store.distance !== undefined) {
-        badgeHtml = `<span class="distance-badge">${store.distance.toFixed(1)} mi${distanceSuffix}</span>`;
-    } else if (index !== null) {
-        badgeHtml = `<span class="medal">${getMedal(index)}</span>`;
-    }
-
-    const safeCity = store.city.replace(/'/g, "\\'");
-    const isFav = isFavoriteStore(store.state, store.city);
-    const priceTagsHtml = getVisibleStoreGrades(store).map(g => {
-        const cls = highlight === g ? 'highlight' : '';
-        const trend = getTrendArrow(gradeVal(store, g), gradePrevVal(store, g));
-        return `
-            <div class="price-tag ${cls}">
-                <span>${GRADE_INFO[g].label}</span><span class="val">${gradeStr(store, g) || 'N/A'} ${trend}</span>
-            </div>`;
-    }).join('');
-
-    div.innerHTML = `
-        <h3><span>${store.city}, ${store.state}</span> ${badgeHtml}</h3>
-        <div class="address">${store.address}</div>
-        ${gasStatusHtml(store)}
-        <div class="prices">${priceTagsHtml}</div>
-        <div class="card-actions">
-            <button class="btn-action btn-outline-blue" onclick="event.stopPropagation(); openHistoryModal('${store.state}', '${safeCity}')">
-                📈 History
-            </button>
-            <button class="btn-action favorite-btn ${isFav ? 'active' : ''}" title="${isFav ? 'Remove from favorites' : 'Add to favorites'}"
-                onclick="event.stopPropagation(); toggleFavoriteStore('${store.state}', '${safeCity}')">
-                ${isFav ? '★' : '☆'}
-            </button>
-            <button class="btn-action share-btn" title="Share this station"
-                onclick="event.stopPropagation(); shareStore('${store.state}', '${safeCity}', '${safeCity}, ${store.state}')">
-                🔗
-            </button>
-        </div>
-    `;
-
-    div.onclick = () => flyToStore(store);
-    return div;
-}
-
 function renderStoresList(searchTerm) {
     const container = document.getElementById("sidebarContent");
+    if (!container) return;
     container.innerHTML = "";
 
-    let filtered = globalStoreData.filter(s =>
+    let filtered = state.stores.filter(s =>
         s.city.toLowerCase().includes(searchTerm) ||
         s.address.toLowerCase().includes(searchTerm) ||
         s.state.toLowerCase().includes(searchTerm)
     );
-    filtered = filterStoresForCurrentGrade(filtered);
+    filtered = filterStoresForCurrentGrade(filtered, state.gasPref);
 
     if (map && filtered.length > 0) {
         const center = map.getCenter();
@@ -620,39 +585,40 @@ function renderStoresList(searchTerm) {
         return;
     }
 
-    filtered.forEach(store => container.appendChild(createStoreCard(store, gasPref)));
+    filtered.forEach(store => container.appendChild(createStoreCard(store, { highlight: state.gasPref })));
 }
 
 function getStoreCount(stateCode) {
-    return globalStoreData.filter(s => s.state === stateCode).length;
+    return state.stores.filter(s => s.state === stateCode).length;
 }
 
 function renderLowestPrices(stateOverride = null) {
     const container = document.getElementById("sidebarContent");
+    if (!container) return;
     container.innerHTML = "";
 
-    const availableStates = [...new Set(globalStoreData.map(s => s.state))].sort();
+    const availableStates = [...new Set(state.stores.map(s => s.state))].sort();
     if (availableStates.length === 0) return;
 
     if (stateOverride && availableStates.includes(stateOverride)) {
-        currentStateContext = stateOverride;
-    } else if (!availableStates.includes(currentStateContext)) {
-        currentStateContext = availableStates[0];
+        state.currentStateContext = stateOverride;
+    } else if (!availableStates.includes(state.currentStateContext)) {
+        state.currentStateContext = availableStates[0];
     }
 
     container.innerHTML = `
         <div class="state-selector-box">
             <label>State Leaderboard:</label>
-            <select onchange="renderLowestPrices(this.value)">
-                ${availableStates.map(s => `<option value="${s}" ${s === currentStateContext ? 'selected' : ''}>${s} - ${getStoreCount(s)} stores</option>`).join('')}
+            <select id="stateLeaderboardSelect" class="state-select">
+                ${availableStates.map(s => `<option value="${s}" ${s === state.currentStateContext ? 'selected' : ''}>${s} - ${getStoreCount(s)} stores</option>`).join('')}
             </select>
         </div>
     `;
 
-    const gradeLabel = GRADE_INFO[gasPref].label;
-    const sortedData = globalStoreData
-        .filter(s => s.state === currentStateContext && hasGradeData(s, gasPref))
-        .sort((a, b) => gradeVal(a, gasPref) - gradeVal(b, gasPref))
+    const gradeLabel = GRADE_INFO[state.gasPref].label;
+    const sortedData = state.stores
+        .filter(s => s.state === state.currentStateContext && hasGradeData(s, state.gasPref))
+        .sort((a, b) => gradeVal(a, state.gasPref) - gradeVal(b, state.gasPref))
         .slice(0, 10);
 
     container.innerHTML += `<div class="leaderboard-header">Top 10 Cheapest ${gradeLabel}</div>`;
@@ -660,25 +626,24 @@ function renderLowestPrices(stateOverride = null) {
         container.innerHTML += `<p class="empty-msg" style="font-size:13px;">No pricing data found for this state.</p>`;
         return;
     }
-    sortedData.forEach((store, index) => container.appendChild(createStoreCard(store, gasPref, index)));
+    sortedData.forEach((store, index) => container.appendChild(createStoreCard(store, { highlight: state.gasPref, index })));
 }
 
 function setNearbyRadius(val) {
-    nearbyRadiusMiles = parseFloat(val);
-    localStorage.setItem('nearbyRadius', nearbyRadiusMiles);
+    saveNearbyRadius(val);
     renderNearbyPrices();
 }
 
 function setNearbySort(val) {
-    nearbySortMode = val;
-    localStorage.setItem('nearbySort', nearbySortMode);
+    saveNearbySort(val);
     renderNearbyPrices();
 }
 
 function renderNearbyPrices() {
     const container = document.getElementById("sidebarContent");
+    if (!container) return;
 
-    if (!userLocation) {
+    if (!state.userLocation) {
         container.innerHTML = `
             <div class="empty-state">
                 <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--costco-blue)" stroke-width="2" style="margin-bottom:15px;">
@@ -686,76 +651,81 @@ function renderNearbyPrices() {
                 </svg>
                 <h3 style="margin-bottom: 5px;">Find Local Gas</h3>
                 <p style="color:var(--text-muted); font-size:14px; padding: 0 10px;">We need your location to find the cheapest Costco gas near you.</p>
-                <button class="btn-action" onclick="triggerFindMe()" style="margin:15px auto 0;">📍 Detect Location</button>
+                <button type="button" class="btn-action" data-action="find-me" style="margin:15px auto 0;">📍 Detect Location</button>
             </div>
         `;
         return;
     }
 
-    const gradeLabel = GRADE_INFO[gasPref].label;
+    const gradeLabel = GRADE_INFO[state.gasPref].label;
     const controlsHtml = `
         <div class="nearby-controls">
             <div class="nearby-control-group">
                 <label>Radius</label>
-                <select onchange="setNearbyRadius(this.value)">
-                    ${[5, 10, 25, 50, 100].map(m => `<option value="${m}" ${m === nearbyRadiusMiles ? 'selected' : ''}>${m} mi</option>`).join('')}
+                <select id="nearbyRadiusSelect">
+                    ${[5, 10, 25, 50, 100].map(m => `<option value="${m}" ${m === state.nearbyRadiusMiles ? 'selected' : ''}>${m} mi</option>`).join('')}
                 </select>
             </div>
             <div class="nearby-control-group">
                 <label>Sort by</label>
-                <select onchange="setNearbySort(this.value)">
-                    <option value="price" ${nearbySortMode === 'price' ? 'selected' : ''}>Price</option>
-                    <option value="distance" ${nearbySortMode === 'distance' ? 'selected' : ''}>Distance</option>
+                <select id="nearbySortSelect">
+                    <option value="price" ${state.nearbySortMode === 'price' ? 'selected' : ''}>Price</option>
+                    <option value="distance" ${state.nearbySortMode === 'distance' ? 'selected' : ''}>Distance</option>
                 </select>
             </div>
         </div>
     `;
 
-    const nearbyStores = globalStoreData
+    const nearbyStores = state.stores
         .filter(s => s.lat && s.lng)
-        .map(s => ({ ...s, distance: getDistanceMiles(userLocation.lat, userLocation.lng, s.lat, s.lng) }))
-        .filter(s => s.distance <= nearbyRadiusMiles);
+        .map(s => ({ ...s, distance: getDistanceMiles(state.userLocation.lat, state.userLocation.lng, s.lat, s.lng) }))
+        .filter(s => s.distance <= state.nearbyRadiusMiles);
 
     if (nearbyStores.length === 0) {
-        container.innerHTML = controlsHtml + `<p class="empty-msg">No Costco locations found within ${nearbyRadiusMiles} miles.</p>`;
+        container.innerHTML = controlsHtml + `<p class="empty-msg">No Costco locations found within ${state.nearbyRadiusMiles} miles.</p>`;
         return;
     }
 
     const sortedData = nearbyStores
-        .filter(s => hasGradeData(s, gasPref))
+        .filter(s => hasGradeData(s, state.gasPref))
         .sort((a, b) => {
-            const valA = gradeVal(a, gasPref);
-            const valB = gradeVal(b, gasPref);
-            if (nearbySortMode === 'distance') {
+            const valA = gradeVal(a, state.gasPref);
+            const valB = gradeVal(b, state.gasPref);
+            if (state.nearbySortMode === 'distance') {
                 return a.distance !== b.distance ? a.distance - b.distance : valA - valB;
             }
             return valA !== valB ? valA - valB : a.distance - b.distance;
         })
         .slice(0, 10);
 
-    const headerLabel = nearbySortMode === 'distance'
-        ? `Closest Stations &middot; ${gradeLabel} (Within ${nearbyRadiusMiles} Miles)`
-        : `Cheapest ${gradeLabel} (Within ${nearbyRadiusMiles} Miles)`;
+    const headerLabel = state.nearbySortMode === 'distance'
+        ? `Closest Stations &middot; ${gradeLabel} (Within ${state.nearbyRadiusMiles} Miles)`
+        : `Cheapest ${gradeLabel} (Within ${state.nearbyRadiusMiles} Miles)`;
 
     container.innerHTML = controlsHtml + `<div class="leaderboard-header">${headerLabel}</div>`;
 
     if (sortedData.length === 0) {
-        container.innerHTML += `<p class="empty-msg" style="margin-top:20px;">No stations within ${nearbyRadiusMiles} miles have a ${gradeLabel.toLowerCase()} price right now.</p>`;
+        container.innerHTML += `<p class="empty-msg" style="margin-top:20px;">No stations within ${state.nearbyRadiusMiles} miles have a ${gradeLabel.toLowerCase()} price right now.</p>`;
         return;
     }
 
-    sortedData.forEach((store, index) => container.appendChild(createStoreCard(store, gasPref, index, true)));
+    sortedData.forEach((store, index) => container.appendChild(createStoreCard(store, {
+        highlight: state.gasPref,
+        index,
+        showDistance: true
+    })));
 }
 
 function renderFavoriteStores() {
     const container = document.getElementById("sidebarContent");
+    if (!container) return;
     container.innerHTML = "";
 
-    const favorites = globalStoreData
+    const favorites = state.stores
         .filter(s => isFavoriteStore(s.state, s.city))
         .sort((a, b) => a.city.localeCompare(b.city));
 
-    if (favorites.length === 0 && favoriteRoutes.length === 0) {
+    if (favorites.length === 0 && state.favoriteRoutes.length === 0) {
         container.innerHTML = `
             <div class="empty-state">
                 <div style="font-size:40px; margin-bottom:10px;">☆</div>
@@ -771,10 +741,10 @@ function renderFavoriteStores() {
         header.className = 'leaderboard-header';
         header.textContent = `★ Favorite Stores (${favorites.length})`;
         container.appendChild(header);
-        favorites.forEach(store => container.appendChild(createStoreCard(store, gasPref)));
+        favorites.forEach(store => container.appendChild(createStoreCard(store, { highlight: state.gasPref })));
     }
 
-    if (favoriteRoutes.length > 0) {
+    if (state.favoriteRoutes.length > 0) {
         const routesWrap = document.createElement('div');
         routesWrap.style.marginTop = favorites.length > 0 ? '16px' : '0';
         routesWrap.innerHTML = renderSavedRoutesHtml({ fromFavorites: true });
@@ -785,7 +755,7 @@ function renderFavoriteStores() {
 // --- Tab Navigation ---
 
 const TAB_RENDERERS = {
-    search: () => renderStoresList(document.getElementById('searchInput').value.toLowerCase()),
+    search: () => renderStoresList(document.getElementById('searchInput')?.value.toLowerCase() || ''),
     lowest: () => renderLowestPrices(),
     nearby: () => renderNearbyPrices(),
     route: () => renderRoutePanel(),
@@ -793,27 +763,25 @@ const TAB_RENDERERS = {
 };
 
 function renderCurrentTab() {
-    TAB_RENDERERS[currentTab]?.();
+    TAB_RENDERERS[state.currentTab]?.();
 }
 
 function refreshCurrentDisplay() {
-    switchTab(currentTab);
+    switchTab(state.currentTab);
 }
 
 function switchTab(tabName) {
-    currentTab = tabName;
+    state.currentTab = tabName;
 
     Object.keys(TAB_RENDERERS).forEach(t => {
         document.getElementById(`tab-${t}`)?.classList.toggle('active', t === tabName);
     });
 
     if (tabName !== 'route') {
-        if (routeLayer) {
-            routeLayer.clearLayers();
-            if (globalStoreData.length > 0) renderMap(globalStoreData);
-        }
-        editingRouteId = null;
-        editSnapshot = null;
+        clearRouteVisuals();
+        if (state.stores.length > 0) renderMap(state.stores);
+        state.editingRouteId = null;
+        state.editSnapshot = null;
     }
 
     renderCurrentTab();
@@ -821,19 +789,182 @@ function switchTab(tabName) {
 
 function triggerFindMe() {
     requestBrowserLocation((position) => {
-        userLocation = {
+        state.userLocation = {
             lat: position.coords.latitude,
             lng: position.coords.longitude
         };
         closeMobileStoreCard();
-        placeUserLocationMarker(userLocation, { openPopup: true });
-        map.flyTo([userLocation.lat, userLocation.lng], 10, { duration: 2 });
-        updateClosestStoreState(userLocation);
+        placeUserLocationMarker(state.userLocation, { openPopup: true });
+        map.flyTo([state.userLocation.lat, state.userLocation.lng], 10, { duration: 2 });
+        updateClosestStoreState(state.userLocation);
         switchTab('nearby');
     });
 }
 
+// --- Unified Event Delegation ---
+
+function setupEventListeners() {
+    document.addEventListener('click', (e) => {
+        // Autocomplete close on outside click
+        if (!e.target.closest('.route-input') && !e.target.closest('#searchInput') && !e.target.closest('.autocomplete-dropdown')) {
+            closeAutocompleteDropdown();
+        }
+
+        // Close modal when clicking backdrop
+        if (e.target.id === 'chartModal') {
+            closeHistoryModal();
+            return;
+        }
+
+        // Tab switching
+        const tabEl = e.target.closest('[data-tab]');
+        if (tabEl) {
+            const tabName = tabEl.dataset.tab;
+            if (tabName) switchTab(tabName);
+            return;
+        }
+
+        // Gas preference toggle
+        const gasEl = e.target.closest('[data-gas-pref]');
+        if (gasEl) {
+            const grade = gasEl.dataset.gasPref;
+            if (grade) setGasPref(grade);
+            return;
+        }
+
+        // Mobile view toggle (Map vs List)
+        const viewEl = e.target.closest('[data-mobile-view]');
+        if (viewEl) {
+            const mode = viewEl.dataset.mobileView;
+            if (mode) setMobileView(mode);
+            return;
+        }
+
+        // Delegated action buttons
+        const actionEl = e.target.closest('[data-action]');
+        if (!actionEl) return;
+
+        const action = actionEl.dataset.action;
+        const stateCode = actionEl.dataset.state;
+        const city = actionEl.dataset.city;
+
+        switch (action) {
+            case 'find-me':
+                triggerFindMe();
+                break;
+            case 'toggle-theme':
+                toggleTheme();
+                break;
+            case 'close-modal':
+                closeHistoryModal();
+                break;
+            case 'close-mobile-sheet':
+                closeMobileStoreCard();
+                break;
+            case 'history':
+                if (stateCode && city) openHistoryModal(stateCode, city);
+                break;
+            case 'toggle-favorite':
+                if (stateCode && city) toggleFavoriteStoreAndRefresh(stateCode, city);
+                break;
+            case 'share':
+                if (stateCode && city) shareStore(stateCode, city, `${city}, ${stateCode}`);
+                break;
+            case 'fly-to-store':
+                if (stateCode && city) {
+                    const store = findStore(stateCode, city);
+                    if (store) flyToStore(store);
+                }
+                break;
+            case 'set-history-range':
+                if (actionEl.dataset.days !== undefined) {
+                    setHistoryRange(actionEl.dataset.days);
+                }
+                break;
+            case 'select-autocomplete':
+                if (actionEl.dataset.index !== undefined) {
+                    selectAutocompleteItem(parseInt(actionEl.dataset.index, 10));
+                }
+                break;
+            case 'route-locate':
+                useMyLocationForRoute();
+                break;
+            case 'route-find':
+                findGasAlongRoute();
+                break;
+            case 'route-save':
+                saveCurrentRouteAsFavorite();
+                break;
+            case 'route-cancel-edit':
+                cancelEditRoute();
+                break;
+            case 'load-favorite-route': {
+                const routeId = parseInt(actionEl.dataset.routeId, 10);
+                if (routeId) {
+                    if (state.currentTab !== 'route') switchTab('route');
+                    loadFavoriteRoute(routeId);
+                }
+                break;
+            }
+            case 'edit-favorite-route': {
+                const routeId = parseInt(actionEl.dataset.routeId, 10);
+                if (routeId) {
+                    if (state.currentTab !== 'route') switchTab('route');
+                    startEditRoute(routeId);
+                }
+                break;
+            }
+            case 'delete-favorite-route': {
+                const routeId = parseInt(actionEl.dataset.routeId, 10);
+                if (routeId) {
+                    removeFavoriteRouteHandler(routeId);
+                    refreshCurrentDisplay();
+                }
+                break;
+            }
+            case 'view-route-map':
+                setMobileView('map');
+                break;
+        }
+    });
+
+    const sidebar = document.getElementById('sidebarContent');
+    if (sidebar) {
+        sidebar.addEventListener('change', (e) => {
+            if (e.target.id === 'stateLeaderboardSelect') {
+                renderLowestPrices(e.target.value);
+            } else if (e.target.id === 'nearbyRadiusSelect') {
+                setNearbyRadius(e.target.value);
+            } else if (e.target.id === 'nearbySortSelect') {
+                setNearbySort(e.target.value);
+            }
+        });
+    }
+}
+
+// --- Initialization ---
+
 initPreferences();
 initMap();
+
+initSearch({
+    getMap: () => map,
+    onSelectStore: (store) => flyToStore(store),
+    onSelectGeo: (result) => flyToGeoResult(result),
+    onSearchInput: (query) => {
+        switchTab('search');
+        renderStoresList(query);
+    }
+});
+
+initRoutes({
+    getMap: () => map,
+    getRouteLayer: () => routeLayer,
+    renderMap: (data) => renderMap(data),
+    switchTab: (tab) => switchTab(tab),
+    setMobileView: (mode) => setMobileView(mode)
+});
+
+setupEventListeners();
 loadData();
 setInterval(refreshLastUpdatedLabel, 60000);
