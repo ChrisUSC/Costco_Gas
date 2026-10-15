@@ -48,9 +48,11 @@ The scraper runs on a schedule via GitHub Actions, commits the updated JSON file
 ```
 ├── index.html              # App shell
 ├── styles.css              # Styling, light/dark theme via CSS variables
-├── app.js                  # Core app state, preferences, Leaflet map, sidebar tabs & startup
+├── app.js                  # Main application entry point, map lifecycle & event delegation
 ├── js/
-│   ├── utils.js            # Constants, grade helpers, distance/route math, gas hours & timestamps
+│   ├── utils.js            # Pure utilities, constants, distance/route math, gas hours & timestamps
+│   ├── state.js            # Centralized application state & localStorage persistence
+│   ├── components.js       # Reusable DOM components (store cards, mobile sheet, saved routes)
 │   ├── search.js           # Autocomplete & map-biased Nominatim geocoding
 │   ├── charts.js           # Lazy-loaded history fetcher & Chart.js price history modal
 │   └── routes.js           # OSRM driving route lookup, corridor filtering & saved routes

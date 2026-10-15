@@ -1,15 +1,22 @@
 // --- Lazy-Loaded Price History & Chart.js Modal ---
 
+import {
+    parseScraperTimestamp,
+    extractGradePrices,
+    getValidPrice,
+    GRADE_KEYS,
+    GRADE_INFO
+} from './utils.js';
+import { state, setHistoryRangeDays } from './state.js';
+
 let globalHistory = {};
 let priceChartInstance = null;
 let historyLoaded = false;
 let historyLoadPromise = null;
-let historyRangeDays = parseInt(localStorage.getItem('historyRangeDays'), 10);
-if (isNaN(historyRangeDays)) historyRangeDays = 30;
 let currentModalState = null;
 let currentModalCity = null;
 
-const HISTORY_RANGE_OPTIONS = [
+export const HISTORY_RANGE_OPTIONS = [
     { label: '7D', days: 7 },
     { label: '30D', days: 30 },
     { label: '90D', days: 90 },
@@ -17,12 +24,13 @@ const HISTORY_RANGE_OPTIONS = [
     { label: 'All', days: 0 }
 ];
 
-function ensureHistoryLoaded() {
+export function ensureHistoryLoaded() {
     if (historyLoaded) return Promise.resolve();
     if (historyLoadPromise) return historyLoadPromise;
 
+    const cacheBuster = state.latestTimestamp ? encodeURIComponent(state.latestTimestamp) : Date.now();
     historyLoadPromise = (async () => {
-        const res = await fetch(`us_history.json?t=${Date.now()}`);
+        const res = await fetch(`us_history.json?v=${cacheBuster}`);
         if (!res.ok) throw new Error(`Failed to fetch price history (${res.status})`);
         const priceData = await res.json();
 
@@ -63,9 +71,10 @@ function showChartMessage(msg, isError = false) {
     chartContainer.innerHTML = `<p class="empty-msg" style="color:${color};">${msg}</p>`;
 }
 
-function renderRangeControls() {
+export function renderRangeControls() {
     let controls = document.getElementById('historyRangeControls');
     const chartContainer = document.querySelector('.chart-container');
+    if (!chartContainer) return;
 
     if (!controls) {
         controls = document.createElement('div');
@@ -75,26 +84,29 @@ function renderRangeControls() {
     }
 
     controls.innerHTML = HISTORY_RANGE_OPTIONS.map(opt => {
-        const activeClass = historyRangeDays === opt.days ? 'active' : '';
-        return `<button type="button" class="history-range-btn ${activeClass}" onclick="setHistoryRange(${opt.days})">${opt.label}</button>`;
+        const activeClass = state.historyRangeDays === opt.days ? 'active' : '';
+        return `<button type="button" class="history-range-btn ${activeClass}" data-action="set-history-range" data-days="${opt.days}">${opt.label}</button>`;
     }).join('');
 }
 
-function setHistoryRange(days) {
-    historyRangeDays = days;
-    localStorage.setItem('historyRangeDays', days);
+export function setHistoryRange(days) {
+    const numDays = parseInt(days, 10);
+    setHistoryRangeDays(isNaN(numDays) ? 30 : numDays);
     renderRangeControls();
     if (currentModalState && currentModalCity) {
         renderPriceChart(currentModalState, currentModalCity);
     }
 }
 
-async function openHistoryModal(state, city) {
-    currentModalState = state;
+export async function openHistoryModal(stateCode, city) {
+    currentModalState = stateCode;
     currentModalCity = city;
 
-    document.getElementById('chartModal').classList.add('active');
-    document.getElementById('chartTitle').innerText = `Price History: ${city}, ${state}`;
+    const modal = document.getElementById('chartModal');
+    const title = document.getElementById('chartTitle');
+    if (modal) modal.classList.add('active');
+    if (title) title.innerText = `Price History: ${city}, ${stateCode}`;
+
     renderRangeControls();
 
     if (!historyLoaded) {
@@ -108,16 +120,16 @@ async function openHistoryModal(state, city) {
         }
     }
 
-    renderPriceChart(state, city);
+    renderPriceChart(stateCode, city);
 }
 
-function renderPriceChart(state, city) {
-    const key = `${state}_${city}`;
+export function renderPriceChart(stateCode, city) {
+    const key = `${stateCode}_${city}`;
     const chartContainer = document.querySelector('.chart-container');
     const history = globalHistory[key];
 
     if (!history || history.length === 0) {
-        showChartMessage(`No price history available for ${city}, ${state}.`);
+        showChartMessage(`No price history available for ${city}, ${stateCode}.`);
         return;
     }
 
@@ -134,14 +146,14 @@ function renderPriceChart(state, city) {
         }
     }
 
-    if (historyRangeDays > 0) {
+    if (state.historyRangeDays > 0) {
         const cutoff = new Date();
-        cutoff.setDate(cutoff.getDate() - historyRangeDays);
+        cutoff.setDate(cutoff.getDate() - state.historyRangeDays);
         dedupedHistory = dedupedHistory.filter(h => h.rawDate >= cutoff);
     }
 
     if (dedupedHistory.length === 0) {
-        showChartMessage(`No price history available for ${city}, ${state} in this range.`);
+        showChartMessage(`No price history available for ${city}, ${stateCode} in this range.`);
         return;
     }
 
@@ -163,8 +175,8 @@ function renderPriceChart(state, city) {
         })
         .filter(ds => ds.grade !== 'diesel' || ds.data.some(v => v !== null));
 
-    const textColor = isDarkMode ? '#f8fafc' : '#1e293b';
-    const gridColor = isDarkMode ? '#334155' : '#e2e8f0';
+    const textColor = state.isDarkMode ? '#f8fafc' : '#1e293b';
+    const gridColor = state.isDarkMode ? '#334155' : '#e2e8f0';
 
     const ctx = document.getElementById('priceChart').getContext('2d');
     if (priceChartInstance) priceChartInstance.destroy();
@@ -202,7 +214,19 @@ function renderPriceChart(state, city) {
     });
 }
 
-function closeHistoryModal(event) {
-    if (event && event.target !== document.getElementById('chartModal')) return;
-    document.getElementById('chartModal').classList.remove('active');
+export function isChartModalOpen() {
+    return document.getElementById('chartModal')?.classList.contains('active') || false;
+}
+
+export function refreshChartTheme() {
+    if (isChartModalOpen() && currentModalState && currentModalCity) {
+        renderPriceChart(currentModalState, currentModalCity);
+    }
+}
+
+export function closeHistoryModal(event) {
+    if (event && event.target !== document.getElementById('chartModal') && !event.target.closest('.modal-close')) {
+        return;
+    }
+    document.getElementById('chartModal')?.classList.remove('active');
 }

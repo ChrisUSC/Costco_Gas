@@ -1,16 +1,16 @@
 // --- Shared Constants, Grade Helpers, Geometry, Gas Hours & UI Utilities ---
 
-const SCRAPER_TIMEZONE = 'America/Los_Angeles';
-const CARTO_API_KEY = 'cb1_2q9b_1_6d41dfc2a130168400103206';
+export const SCRAPER_TIMEZONE = 'America/Los_Angeles';
+export const CARTO_API_KEY = 'cb1_2q9b_1_6d41dfc2a130168400103206';
 
-const GRADE_INFO = {
+export const GRADE_INFO = {
     regular: { label: 'Regular', color: '#059669', valKey: 'regVal', prevKey: 'prevRegVal', strKey: 'regularStr', histKey: 'reg' },
     premium: { label: 'Premium', color: '#E31837', valKey: 'premVal', prevKey: 'prevPremVal', strKey: 'premiumStr', histKey: 'prem' },
     diesel:  { label: 'Diesel',  color: '#7c3aed', valKey: 'dieselVal', prevKey: 'prevDieselVal', strKey: 'dieselStr', histKey: 'diesel' }
 };
-const GRADE_KEYS = Object.keys(GRADE_INFO);
+export const GRADE_KEYS = Object.keys(GRADE_INFO);
 
-function loadJsonPref(key, fallback) {
+export function loadJsonPref(key, fallback) {
     try {
         const raw = localStorage.getItem(key);
         return raw ? JSON.parse(raw) : fallback;
@@ -19,50 +19,50 @@ function loadJsonPref(key, fallback) {
     }
 }
 
-function gradeVal(store, grade) {
+export function gradeVal(store, grade) {
     return store[GRADE_INFO[grade].valKey];
 }
 
-function gradePrevVal(store, grade) {
+export function gradePrevVal(store, grade) {
     return store[GRADE_INFO[grade].prevKey];
 }
 
-function gradeStr(store, grade) {
+export function gradeStr(store, grade) {
     return store[GRADE_INFO[grade].strKey];
 }
 
-function hasGradeData(store, grade) {
+export function hasGradeData(store, grade) {
     const v = gradeVal(store, grade);
     return v !== undefined && v !== Infinity && !isNaN(v);
 }
 
 // Only filter out stores missing the active grade when viewing Diesel
 // (since only a minority of Costco warehouses sell diesel).
-function shouldFilterStoresByGrade(grade) {
+export function shouldFilterStoresByGrade(grade) {
     return grade === 'diesel';
 }
 
-function filterStoresForCurrentGrade(dataArray) {
+export function filterStoresForCurrentGrade(dataArray, gasPref) {
     if (!shouldFilterStoresByGrade(gasPref)) return dataArray;
     return dataArray.filter(store => hasGradeData(store, gasPref));
 }
 
-function getVisibleStoreGrades(store) {
+export function getVisibleStoreGrades(store) {
     return GRADE_KEYS.filter(g => g !== 'diesel' || hasGradeData(store, 'diesel'));
 }
 
-const getValidPrice = (val) => {
+export const getValidPrice = (val) => {
     if (val === null || val === undefined || val === "N/A") return Infinity;
     if (typeof val === 'string') return parseFloat(val.replace('$', '').trim());
     return parseFloat(val);
 };
 
-const formatPriceDisplay = (val) => {
+export const formatPriceDisplay = (val) => {
     if (val === null || val === undefined || val === Infinity || isNaN(val)) return "N/A";
     return `$${val.toFixed(2)}`;
 };
 
-function extractGradePrices(pData) {
+export function extractGradePrices(pData) {
     if (!pData) return [undefined, undefined, undefined];
     if (Array.isArray(pData)) {
         return [pData[0], pData[1], pData[2]];
@@ -76,7 +76,7 @@ function extractGradePrices(pData) {
 
 // --- Distance & Route Geometry Helpers ---
 
-function getDistanceMiles(lat1, lon1, lat2, lon2) {
+export function getDistanceMiles(lat1, lon1, lat2, lon2) {
     const R = 3958.8;
     const dLat = (lat2 - lat1) * Math.PI / 180;
     const dLon = (lon2 - lon1) * Math.PI / 180;
@@ -85,7 +85,7 @@ function getDistanceMiles(lat1, lon1, lat2, lon2) {
     return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
 }
 
-function distanceToSegmentMiles(lat, lng, lat1, lng1, lat2, lng2) {
+export function distanceToSegmentMiles(lat, lng, lat1, lng1, lat2, lng2) {
     const toRad = d => d * Math.PI / 180;
     const cosMid = Math.cos(toRad((lat1 + lat2) / 2)) || 0.000001;
     const x = (lng - lng1) * cosMid;
@@ -97,7 +97,7 @@ function distanceToSegmentMiles(lat, lng, lat1, lng1, lat2, lng2) {
     return getDistanceMiles(lat, lng, lat1 + t * dy, lng1 + (t * dx) / cosMid);
 }
 
-function minDistanceToRouteMiles(lat, lng, routeCoords) {
+export function minDistanceToRouteMiles(lat, lng, routeCoords) {
     if (routeCoords.length === 1) {
         return getDistanceMiles(lat, lng, routeCoords[0][0], routeCoords[0][1]);
     }
@@ -111,7 +111,7 @@ function minDistanceToRouteMiles(lat, lng, routeCoords) {
     return min;
 }
 
-function getRouteBoundsPadded(routeCoords, bufferMiles) {
+export function getRouteBoundsPadded(routeCoords, bufferMiles) {
     let minLat = Infinity, maxLat = -Infinity, minLng = Infinity, maxLng = -Infinity;
     for (const [lat, lng] of routeCoords) {
         if (lat < minLat) minLat = lat;
@@ -127,24 +127,24 @@ function getRouteBoundsPadded(routeCoords, bufferMiles) {
 
 // --- Gas Station Hours ---
 
-const GAS_DAYS_SUN_FIRST = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
-const GAS_DAYS_MON_FIRST = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
-const GAS_DAY_LABELS = { mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu', fri: 'Fri', sat: 'Sat', sun: 'Sun' };
-const GAS_CLOSING_SOON_MINUTES = 60;
+export const GAS_DAYS_SUN_FIRST = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+export const GAS_DAYS_MON_FIRST = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+export const GAS_DAY_LABELS = { mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu', fri: 'Fri', sat: 'Sat', sun: 'Sun' };
+export const GAS_CLOSING_SOON_MINUTES = 60;
 
-function gasTimeToMinutes(t) {
+export function gasTimeToMinutes(t) {
     const [h, m] = t.split(':').map(Number);
     return h * 60 + m;
 }
 
-function formatGasTime(t) {
+export function formatGasTime(t) {
     const [h, m] = t.split(':').map(Number);
     const suffix = h >= 12 ? 'PM' : 'AM';
     const h12 = h % 12 === 0 ? 12 : h % 12;
     return m ? `${h12}:${String(m).padStart(2, '0')} ${suffix}` : `${h12} ${suffix}`;
 }
 
-function getStoreLocalNow(tz, now = new Date()) {
+export function getStoreLocalNow(tz, now = new Date()) {
     if (!tz) return null;
     try {
         const parts = new Intl.DateTimeFormat('en-US', {
@@ -160,7 +160,7 @@ function getStoreLocalNow(tz, now = new Date()) {
     }
 }
 
-function getGasStatus(store, now = new Date()) {
+export function getGasStatus(store, now = new Date()) {
     const hours = store.gasHours;
     const local = getStoreLocalNow(store.tz, now);
     if (!hours || !local) return null;
@@ -202,7 +202,7 @@ function getGasStatus(store, now = new Date()) {
     return { isOpen: false, closingSoon: false, text: 'Closed' };
 }
 
-function groupGasHours(hours) {
+export function groupGasHours(hours) {
     const fmt = h => h ? `${formatGasTime(h[0])} – ${formatGasTime(h[1])}` : 'Closed';
     const rows = [];
     for (const day of GAS_DAYS_MON_FIRST) {
@@ -217,24 +217,24 @@ function groupGasHours(hours) {
     }));
 }
 
-function gasStatusHtml(store) {
+export function gasStatusHtml(store) {
     const status = getGasStatus(store);
     if (!status) return '';
     const cls = status.isOpen ? (status.closingSoon ? 'closing-soon' : 'open') : 'closed';
-    return `<div class="gas-status ${cls}">● ${status.text}</div>`;
+    return `<div class="gas-status ${cls}">● ${escapeHtml(status.text)}</div>`;
 }
 
-function gasHoursDetailsHtml(store) {
+export function gasHoursDetailsHtml(store) {
     if (!store.gasHours) return '';
     const rows = groupGasHours(store.gasHours)
-        .map(r => `<div class="gas-hours-row"><span>${r.label}</span><span>${r.text}</span></div>`)
+        .map(r => `<div class="gas-hours-row"><span>${escapeHtml(r.label)}</span><span>${escapeHtml(r.text)}</span></div>`)
         .join('');
     return `<details class="gas-hours"><summary>Gas hours</summary>${rows}</details>`;
 }
 
 // --- Timestamps & Formatting ---
 
-function getTimeZoneOffsetMinutes(timeZone, utcGuess) {
+export function getTimeZoneOffsetMinutes(timeZone, utcGuess) {
     const dtf = new Intl.DateTimeFormat('en-US', {
         timeZone, hour12: false,
         year: 'numeric', month: '2-digit', day: '2-digit',
@@ -247,7 +247,7 @@ function getTimeZoneOffsetMinutes(timeZone, utcGuess) {
     return (asIfUTC - utcGuess.getTime()) / 60000;
 }
 
-function parseScraperTimestamp(timestampStr) {
+export function parseScraperTimestamp(timestampStr) {
     if (!timestampStr) return null;
     const str = String(timestampStr).trim();
 
@@ -269,7 +269,7 @@ function parseScraperTimestamp(timestampStr) {
     return new Date(guessUTC - offsetMinutes * 60000);
 }
 
-function getRelativeTimeLabel(timestampStr) {
+export function getRelativeTimeLabel(timestampStr) {
     const d = parseScraperTimestamp(timestampStr);
     if (!d) return 'the last update';
 
@@ -279,7 +279,7 @@ function getRelativeTimeLabel(timestampStr) {
     return `${Math.round(hours / 24)}d ago`;
 }
 
-function formatLastUpdatedLabel(timestampStr) {
+export function formatLastUpdatedLabel(timestampStr) {
     const d = parseScraperTimestamp(timestampStr);
     if (!d) return { text: 'Last Updated: unknown', title: '' };
 
@@ -298,36 +298,41 @@ function formatLastUpdatedLabel(timestampStr) {
     return { text, title };
 }
 
-function getTrendArrow(current, previous) {
+export function getTrendArrow(current, previous, baselineLabel = 'the last update') {
     if (current === undefined || current === Infinity || isNaN(current)) return '';
     if (previous === undefined || previous === null || previous === Infinity || isNaN(previous)) return '';
 
     const diff = current - previous;
     if (isNaN(diff)) return '';
 
+    const labelEscaped = escapeHtml(baselineLabel);
     if (Math.abs(diff) < 0.005) {
-        return `<span class="trend-flat" title="No change since ${trendBaselineLabel}">–</span>`;
+        return `<span class="trend-flat" title="No change since ${labelEscaped}">–</span>`;
     }
     if (diff > 0) {
-        return `<span class="trend-up" title="Up $${diff.toFixed(2)} since ${trendBaselineLabel}">▲</span>`;
+        return `<span class="trend-up" title="Up $${diff.toFixed(2)} since ${labelEscaped}">▲</span>`;
     }
-    return `<span class="trend-down" title="Down $${Math.abs(diff).toFixed(2)} since ${trendBaselineLabel}">▼</span>`;
+    return `<span class="trend-down" title="Down $${Math.abs(diff).toFixed(2)} since ${labelEscaped}">▼</span>`;
 }
 
-function getMedal(index) {
+export function getMedal(index) {
     if (index === 0) return '🥇';
     if (index === 1) return '🥈';
     if (index === 2) return '🥉';
     return `<span style="font-size:13px; color:var(--text-muted); margin-right:4px;">#${index + 1}</span>`;
 }
 
-function escapeHtml(str) {
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
+export function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
 }
 
-function debounce(fn, delay) {
+export function debounce(fn, delay) {
     let timer;
     return (...args) => {
         clearTimeout(timer);
@@ -335,7 +340,7 @@ function debounce(fn, delay) {
     };
 }
 
-function showToast(message) {
+export function showToast(message) {
     const existing = document.querySelector('.app-toast');
     if (existing) existing.remove();
 
@@ -351,13 +356,17 @@ function showToast(message) {
     }, 2200);
 }
 
-function requestBrowserLocation(onSuccess) {
+export function requestBrowserLocation(onSuccess, onError) {
     if (!navigator.geolocation) {
-        alert("Geolocation is not supported by your browser.");
+        if (onError) onError(new Error("Geolocation is not supported by your browser."));
+        else alert("Geolocation is not supported by your browser.");
         return;
     }
     navigator.geolocation.getCurrentPosition(
         onSuccess,
-        () => alert("Unable to retrieve your location. Check browser permissions.")
+        (err) => {
+            if (onError) onError(err);
+            else alert("Unable to retrieve your location. Check browser permissions.");
+        }
     );
 }
