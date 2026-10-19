@@ -23,6 +23,8 @@ from scraper import (
     fetch_state_codes,
     discover_new_stores,
     build_and_save_master_db,
+    sort_stores_dict,
+    refresh_store_details,
 )
 
 
@@ -140,6 +142,66 @@ def test_discover_new_stores_writes_sorted_json(mock_fetch, mock_enrich, tmp_pat
     assert list(saved.keys()) == ["CA", "TX"]
     assert list(saved["CA"].keys()) == ["Albany", "Turlock"]
     assert result == saved
+
+
+@patch('scraper.enrich_store_list')
+@patch('scraper.fetch_directory_html')
+def test_discover_new_stores_no_gas_does_not_modify_file(mock_fetch, mock_enrich, tmp_path):
+    mock_fetch.return_value = '<a href="/w/-/ca/nogas/999">NoGas</a>'
+    mock_enrich.return_value = {"CA": {}}
+    existing = {
+        "CA": {"Turlock": {"url": "https://www.costco.com/w/-/ca/turlock/782", "warehouse_id": "782"}}
+    }
+    out_file = tmp_path / "stores.json"
+    out_file.write_text(json.dumps(existing, indent=4))
+    mtime_before = out_file.stat().st_mtime_ns
+
+    result = discover_new_stores(["CA"], existing, str(out_file))
+    assert result == existing
+    assert out_file.stat().st_mtime_ns == mtime_before
+
+
+def test_sort_stores_dict():
+    raw = {
+        "WA": {"Seattle": {}, "Bellevue": {}},
+        "CA": {"San Francisco": {}, "Alhambra": {}},
+    }
+    sorted_dict = sort_stores_dict(raw)
+    assert list(sorted_dict.keys()) == ["CA", "WA"]
+    assert list(sorted_dict["CA"].keys()) == ["Alhambra", "San Francisco"]
+    assert list(sorted_dict["WA"].keys()) == ["Bellevue", "Seattle"]
+
+
+def test_remove_location_from_file_preserves_sort(tmp_path):
+    stores_file = tmp_path / "stores.json"
+    initial = {
+        "TX": {"Dallas": {}, "Austin": {}, "Houston": {}},
+        "CA": {"San Diego": {}, "Bakersfield": {}, "Alhambra": {}}
+    }
+    stores_file.write_text(json.dumps(initial))
+    remove_location_from_file(str(stores_file), "TX", "Dallas")
+
+    saved = json.loads(stores_file.read_text())
+    assert list(saved.keys()) == ["CA", "TX"]
+    assert list(saved["CA"].keys()) == ["Alhambra", "Bakersfield", "San Diego"]
+    assert list(saved["TX"].keys()) == ["Austin", "Houston"]
+
+
+@patch('scraper._fetch_store_page_metadata')
+@patch('scraper.create_session')
+def test_refresh_store_details_writes_sorted_json(mock_session, mock_fetch_meta, tmp_path):
+    mock_fetch_meta.return_value = {"phone": "123-456-7890"}
+    stores = {
+        "TX": {"Houston": {"url": "http://u1"}, "Austin": {"url": "http://u2"}},
+        "CA": {"Fresno": {"url": "http://u3"}, "Bakersfield": {"url": "http://u4"}}
+    }
+    out_file = tmp_path / "stores.json"
+    refresh_store_details(stores, str(out_file))
+
+    saved = json.loads(out_file.read_text())
+    assert list(saved.keys()) == ["CA", "TX"]
+    assert list(saved["CA"].keys()) == ["Bakersfield", "Fresno"]
+    assert list(saved["TX"].keys()) == ["Austin", "Houston"]
 
 
 @patch('scraper.enrich_store_list')

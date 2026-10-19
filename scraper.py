@@ -239,6 +239,14 @@ def write_pretty_top_level(data: dict, file_path: str) -> None:
         fp.write("}\n")
 
 
+def sort_stores_dict(stores: dict) -> dict:
+    """Sorts stores dictionary by state code and city name alphabetically."""
+    return {
+        state: dict(sorted(cities.items()))
+        for state, cities in sorted(stores.items())
+    }
+
+
 def load_store_locations(file_path: str) -> dict | None:
     try:
         with open(file_path, 'r', encoding='utf-8') as json_file:
@@ -261,8 +269,9 @@ def remove_location_from_file(filepath: str | None, state: str, city: str) -> No
             if not data[state]:
                 del data[state]
 
+        out_data = sort_stores_dict(data) if not filepath.endswith("local_stores.json") else data
         with open(filepath, 'w', encoding='utf-8') as f:
-            json.dump(data, f, indent=4)
+            json.dump(out_data, f, indent=4)
     except Exception as e:
         print(f"Failed to remove {city} from {filepath}: {e}")
 
@@ -851,18 +860,19 @@ def discover_new_stores(states_to_check: list, existing_stores: dict, output_fil
         return existing_stores
 
     enriched_new = enrich_store_list(new_stores_by_state)
+    total_added = sum(len(c) for c in enriched_new.values())
+    if total_added == 0:
+        print("No new stores with gas found.")
+        return existing_stores
+
     for state, cities in enriched_new.items():
         existing_stores.setdefault(state, {}).update(cities)
 
-    sorted_stores = {
-        state: dict(sorted(cities.items()))
-        for state, cities in sorted(existing_stores.items())
-    }
+    sorted_stores = sort_stores_dict(existing_stores)
 
     with open(output_filepath, 'w', encoding='utf-8') as f:
         json.dump(sorted_stores, f, indent=4)
 
-    total_added = sum(len(c) for c in enriched_new.values())
     print(f"\nAdded {total_added} new store(s) with gas to '{output_filepath}'.")
     return sorted_stores
 
@@ -893,10 +903,7 @@ def build_and_save_master_db(states_to_update: list, output_filepath: str) -> No
             )
             return
 
-    sorted_stores = {
-        state: dict(sorted(cities.items()))
-        for state, cities in sorted(master_stores.items())
-    }
+    sorted_stores = sort_stores_dict(master_stores)
 
     with open(output_filepath, 'w', encoding='utf-8') as f:
         json.dump(sorted_stores, f, indent=4)
@@ -933,8 +940,9 @@ def refresh_store_details(stores: dict, filepath: str) -> int:
     print(f"Refreshed details for {len(jobs) - failed}/{len(jobs)} stores in '{filepath}' "
           f"({changed} field(s) changed, {failed} fetch/parse failure(s)).")
     if changed:
+        out_stores = sort_stores_dict(stores) if not filepath.endswith("local_stores.json") else stores
         with open(filepath, 'w', encoding='utf-8') as f:
-            json.dump(stores, f, indent=4)
+            json.dump(out_stores, f, indent=4)
     return changed
 
 
