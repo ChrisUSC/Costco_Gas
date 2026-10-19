@@ -19112,6 +19112,45 @@
             },
             "tz": "America/Chicago"
         },
+        "The Colony": {
+            "url": "https://www.costco.com/w/-/tx/the-colony/1794",
+            "warehouse_id": "1794",
+            "lat": 33.077657,
+            "lng": -96.852762,
+            "address": "6060 GRANDSCAPE BLVD, THE COLONY, TX 75056-6771",
+            "phone": "(469) 252-9834",
+            "gas_hours": {
+                "mon": [
+                    "06:00",
+                    "22:00"
+                ],
+                "tue": [
+                    "06:00",
+                    "22:00"
+                ],
+                "wed": [
+                    "06:00",
+                    "22:00"
+                ],
+                "thu": [
+                    "06:00",
+                    "22:00"
+                ],
+                "fri": [
+                    "06:00",
+                    "22:00"
+                ],
+                "sat": [
+                    "06:00",
+                    "20:30"
+                ],
+                "sun": [
+                    "06:00",
+                    "19:30"
+                ]
+            },
+            "tz": "America/Chicago"
+        },
         "The Woodlands": {
             "url": "https://www.costco.com/w/-/tx/conroe/1189",
             "warehouse_id": "1189",
