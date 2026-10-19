@@ -12,6 +12,7 @@ import {
     formatLastUpdatedLabel,
     getDistanceMiles,
     getTrendArrow,
+    getVisibleStoreGrades,
     gradeVal,
     gradePrevVal,
     gradeStr,
