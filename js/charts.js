@@ -146,10 +146,63 @@ export function renderPriceChart(stateCode, city) {
         }
     }
 
+    const now = state.latestTimestamp ? (parseScraperTimestamp(state.latestTimestamp) || new Date()) : new Date();
+
     if (state.historyRangeDays > 0) {
-        const cutoff = new Date();
-        cutoff.setDate(cutoff.getDate() - state.historyRangeDays);
-        dedupedHistory = dedupedHistory.filter(h => h.rawDate >= cutoff);
+        const cutoff = new Date(now.getTime() - state.historyRangeDays * 86400 * 1000);
+
+        // Find the most recent price before or at cutoff to anchor the left edge of the range
+        let baselineBeforeCutoff = null;
+        for (let i = 0; i < dedupedHistory.length; i++) {
+            if (dedupedHistory[i].rawDate <= cutoff) {
+                baselineBeforeCutoff = dedupedHistory[i];
+            } else {
+                break;
+            }
+        }
+
+        const inRange = dedupedHistory.filter(h => h.rawDate > cutoff && h.rawDate <= now);
+
+        if (baselineBeforeCutoff) {
+            dedupedHistory = [
+                {
+                    rawDate: cutoff,
+                    dayStr: cutoff.toLocaleDateString(),
+                    reg: baselineBeforeCutoff.reg,
+                    prem: baselineBeforeCutoff.prem,
+                    diesel: baselineBeforeCutoff.diesel
+                },
+                ...inRange
+            ];
+        } else if (inRange.length > 0) {
+            dedupedHistory = inRange;
+        } else {
+            // All recorded history was before cutoff; anchor at cutoff with latest known price
+            const last = dedupedHistory[dedupedHistory.length - 1];
+            dedupedHistory = [
+                {
+                    rawDate: cutoff,
+                    dayStr: cutoff.toLocaleDateString(),
+                    reg: last.reg,
+                    prem: last.prem,
+                    diesel: last.diesel
+                }
+            ];
+        }
+    }
+
+    // Always anchor the right edge to 'now' so the line extends across un-changed days to today
+    if (dedupedHistory.length > 0) {
+        const lastPoint = dedupedHistory[dedupedHistory.length - 1];
+        if (lastPoint.rawDate.getTime() < now.getTime()) {
+            dedupedHistory.push({
+                rawDate: now,
+                dayStr: now.toLocaleDateString(),
+                reg: lastPoint.reg,
+                prem: lastPoint.prem,
+                diesel: lastPoint.diesel
+            });
+        }
     }
 
     if (dedupedHistory.length === 0) {
@@ -168,8 +221,9 @@ export function renderPriceChart(stateCode, city) {
                 data,
                 borderColor: info.color,
                 backgroundColor: info.color,
-                tension: 0.1,
-                pointRadius: 4,
+                stepped: 'before',
+                pointRadius: 3,
+                pointHoverRadius: 6,
                 spanGaps: true
             };
         })

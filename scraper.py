@@ -152,6 +152,37 @@ def validate_snapshot(fetched_prices: dict, locations: dict) -> tuple[bool, str]
     return True, f"{actual_states}/{expected_states} states, {actual_stores}/{expected_stores} stores"
 
 
+def compute_price_deltas(new_prices: dict, last_known_prices: dict) -> dict:
+    """Returns a dictionary containing only states and cities whose prices
+    differ from last_known_prices."""
+    deltas = {}
+    for state, cities in sorted(new_prices.items()):
+        state_deltas = {}
+        for city, price in sorted(cities.items()):
+            prev = last_known_prices.get(state, {}).get(city)
+            if prev != price:
+                state_deltas[city] = price
+        if state_deltas:
+            deltas[state] = state_deltas
+    return deltas
+
+
+def reconstruct_store_prices_at(history: dict, cutoff_ts: str) -> dict:
+    """Reconstructs the active prices across all stores as of cutoff_ts.
+    Works seamlessly with both delta-only history and legacy full snapshots."""
+    active = {}
+    valid_ts = sorted([t for t in history.keys() if t <= cutoff_ts], reverse=True)
+    for ts in valid_ts:
+        snap = history[ts]
+        for state, cities in snap.items():
+            if state not in active:
+                active[state] = {}
+            for city, price in cities.items():
+                if city not in active[state]:
+                    active[state][city] = price
+    return {s: dict(sorted(c.items())) for s, c in sorted(active.items())}
+
+
 def find_trend_baseline(history: dict, current_timestamp_str: str) -> tuple[dict, str | None]:
     """Finds the historical snapshot closest to TREND_LOOKBACK_HOURS before current_timestamp_str,
     falling back to the most recent prior snapshot if history is too short."""
@@ -177,15 +208,20 @@ def find_trend_baseline(history: dict, current_timestamp_str: str) -> tuple[dict
         if best_diff is None or diff < best_diff:
             best_ts, best_diff = ts_str, diff
 
+    chosen_ts = None
     if best_ts is not None and best_diff <= TREND_LOOKBACK_TOLERANCE_HOURS * 3600:
-        return history[best_ts], best_ts
-    if latest_ts is not None:
-        return history[latest_ts], latest_ts
+        chosen_ts = best_ts
+    elif latest_ts is not None:
+        chosen_ts = latest_ts
+
+    if chosen_ts is not None:
+        return reconstruct_store_prices_at(history, chosen_ts), chosen_ts
     return {}, None
 
 
-def save_data(data: dict, history_path: str, latest_path: str) -> None:
-    """Appends the new snapshot to history_path and writes the compact latest snapshot to latest_path."""
+def save_data(data: dict, history_path: str, latest_path: str, delta_mode: bool = False) -> None:
+    """Appends snapshot to history_path (delta changes if delta_mode=True, full snapshot if False)
+    and writes the compact latest snapshot to latest_path."""
     timestamp_str = next(iter(data.keys()), None)
     if not timestamp_str:
         return
@@ -212,8 +248,20 @@ def save_data(data: dict, history_path: str, latest_path: str) -> None:
 
     previous_prices, previous_timestamp = find_trend_baseline(save_prices, timestamp_str)
 
-    save_prices[timestamp_str] = sorted_states_data
-    write_pretty_top_level(save_prices, history_path)
+    if delta_mode and save_prices:
+        current_active = reconstruct_store_prices_at(save_prices, timestamp_str)
+        delta_prices = compute_price_deltas(sorted_states_data, current_active)
+        if delta_prices:
+            save_prices[timestamp_str] = delta_prices
+            write_pretty_top_level(save_prices, history_path)
+            total_chgs = sum(len(c) for c in delta_prices.values())
+            print(f"Appended {total_chgs} store price changes -> {history_path}")
+        else:
+            print(f"No price changes detected. {history_path} left untouched.")
+    else:
+        save_prices[timestamp_str] = sorted_states_data
+        write_pretty_top_level(save_prices, history_path)
+        print(f"Saved initial snapshot -> {history_path}")
 
     latest_payload = {
         "timestamp": timestamp_str,
@@ -224,7 +272,7 @@ def save_data(data: dict, history_path: str, latest_path: str) -> None:
     with open(latest_path, 'w', encoding='utf-8') as f:
         json.dump(latest_payload, f, separators=(',', ':'))
 
-    print(f"Saved latest snapshot -> {latest_path} | appended history -> {history_path}")
+    print(f"Saved latest snapshot -> {latest_path}")
 
 
 def write_pretty_top_level(data: dict, file_path: str) -> None:
@@ -644,6 +692,7 @@ def get_gas_prices_ajax(
     last_known_prices: dict | None = None,
     jump_log_filepath: str | None = None,
     dataset_label: str | None = None,
+    verify_all_changes: bool = False,
 ) -> dict:
     """Concurrently fetches gas prices (regular, premium, diesel) from Costco's AJAX API."""
     fetched_prices = {}
@@ -695,7 +744,15 @@ def get_gas_prices_ajax(
 
         raw_result = dict(result)
         flagged = False
-        if any(is_suspicious_jump(result.get(g), last_grade_prices.get(g)) for g in GRADES):
+        should_check = any(is_suspicious_jump(result.get(g), last_grade_prices.get(g)) for g in GRADES)
+        if not should_check and verify_all_changes and last_grade_prices:
+            for g in GRADES:
+                if last_grade_prices.get(g) is not None and result.get(g) is not None:
+                    if not _prices_match(result.get(g), last_grade_prices.get(g)):
+                        should_check = True
+                        break
+
+        if should_check:
             result, flagged = confirm_or_revert_price(
                 target_state, target_city, result, last_grade_prices, attempt_fetch
             )
