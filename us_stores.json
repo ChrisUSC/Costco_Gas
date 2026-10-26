@@ -11820,6 +11820,45 @@
             },
             "tz": "America/Detroit"
         },
+        "Haggerty": {
+            "url": "https://www.costco.com/w/-/mi/livonia/391",
+            "warehouse_id": "391",
+            "lat": 42.43310848,
+            "lng": -83.43024024,
+            "address": "20000 HAGGERTY RD, LIVONIA, MI 48152-1011",
+            "phone": "(734) 464-6399",
+            "gas_hours": {
+                "mon": [
+                    "06:00",
+                    "22:00"
+                ],
+                "tue": [
+                    "06:00",
+                    "22:00"
+                ],
+                "wed": [
+                    "06:00",
+                    "22:00"
+                ],
+                "thu": [
+                    "06:00",
+                    "22:00"
+                ],
+                "fri": [
+                    "06:00",
+                    "22:00"
+                ],
+                "sat": [
+                    "06:00",
+                    "20:30"
+                ],
+                "sun": [
+                    "06:00",
+                    "19:30"
+                ]
+            },
+            "tz": "America/Detroit"
+        },
         "Kalamazoo": {
             "url": "https://www.costco.com/w/-/mi/kalamazoo/1191",
             "warehouse_id": "1191",
