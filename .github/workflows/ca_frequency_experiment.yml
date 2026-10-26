@@ -2,8 +2,8 @@ name: CA Gas Price Frequency Tracker
 
 on:
   schedule:
-    # Runs every hour:
-    - cron: '0 * * * *'
+    # Runs hourly at minute 23 to avoid :00 peak congestion and dropped jobs:
+    - cron: '23 * * * *'
   workflow_dispatch:
 
 permissions:
@@ -23,6 +23,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
