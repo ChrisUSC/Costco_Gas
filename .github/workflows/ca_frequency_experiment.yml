@@ -2,8 +2,9 @@ name: CA Gas Price Frequency Tracker
 
 on:
   schedule:
-    # Runs hourly at minute 23 to avoid :00 peak congestion and dropped jobs:
-    - cron: '23 * * * *'
+    # Runs roughly twice an hour (at :13 and :43) to provide redundancy against
+    # GitHub Actions schedule queue delays/drops, ensuring at least ~1 run per hour:
+    - cron: '13,43 * * * *'
   workflow_dispatch:
 
 permissions:
@@ -46,6 +47,7 @@ jobs:
         run: python ca_frequency_runner.py
 
       - name: Run price change velocity analysis
+        continue-on-error: true
         run: |
           if [ -f ca_freq_history.json ]; then
             python analyze_price_frequency.py ca_freq_history.json

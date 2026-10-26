@@ -45,14 +45,15 @@ def analyze(history: dict, filename: str) -> None:
         t2 = datetime.strptime(timestamps[i], "%Y-%m-%d %H:%M")
         intervals_hours.append((t2 - t1).total_seconds() / 3600.0)
 
-    avg_interval = sum(intervals_hours) / len(intervals_hours)
+    avg_interval = sum(intervals_hours) / len(intervals_hours) if intervals_hours else 0.0
     sorted_intervals = sorted(intervals_hours)
-    median_interval = sorted_intervals[len(sorted_intervals) // 2]
+    median_interval = sorted_intervals[len(sorted_intervals) // 2] if sorted_intervals else 0.0
 
     # Track stores and changes
     all_stores = set()
     store_change_timestamps = defaultdict(list)
     store_observations = defaultdict(int)
+    store_price_sequence = defaultdict(list)
 
     # Hourly distribution of changes (PT)
     hourly_changes = defaultdict(int)
@@ -74,10 +75,28 @@ def analyze(history: dict, filename: str) -> None:
     # Store-date intraday changes: store -> date_str -> count
     store_date_changes = defaultdict(lambda: defaultdict(int))
 
+    # Initialize running state from baseline snapshot
+    running_prices = {}
+    first_snap = history[timestamps[0]]
+    for state, cities in first_snap.items():
+        running_prices[state] = {}
+        for city, price in cities.items():
+            store_key = f"{state} - {city}"
+            all_stores.add(store_key)
+            running_prices[state][city] = price
+            store_price_sequence[store_key].append(price)
+
+    # Detect if this history is delta-only (change-only entries)
+    baseline_store_count = len(all_stores)
+    is_delta_history = False
+    for ts in timestamps[1:]:
+        snap_count = sum(len(c) for c in history[ts].values())
+        if baseline_store_count > 10 and snap_count < baseline_store_count * 0.7:
+            is_delta_history = True
+            break
+
     for i in range(1, len(timestamps)):
-        t_prev = timestamps[i - 1]
         t_curr = timestamps[i]
-        d_prev = history[t_prev]
         d_curr = history[t_curr]
 
         dt_curr = datetime.strptime(t_curr, "%Y-%m-%d %H:%M")
@@ -92,14 +111,14 @@ def analyze(history: dict, filename: str) -> None:
         run_changes = 0
 
         for state, cities in d_curr.items():
-            if state not in d_prev:
-                continue
+            if state not in running_prices:
+                running_prices[state] = {}
             for city, p_curr in cities.items():
                 store_key = f"{state} - {city}"
                 all_stores.add(store_key)
 
-                if city in d_prev[state]:
-                    p_prev = d_prev[state][city]
+                p_prev = running_prices[state].get(city)
+                if p_prev is not None:
                     run_comparable += 1
                     store_observations[store_key] += 1
                     hourly_comparisons[hour] += 1
@@ -110,6 +129,13 @@ def analyze(history: dict, filename: str) -> None:
                         dow_changes[dow] += 1
                         store_change_timestamps[store_key].append(t_curr)
                         store_date_changes[store_key][date_str] += 1
+
+                        # Flapping test: store moved A -> B -> A
+                        store_price_sequence[store_key].append(p_curr)
+                        if len(store_price_sequence[store_key]) >= 3:
+                            total_flappable_changes += 1
+                            if store_price_sequence[store_key][-1] == store_price_sequence[store_key][-3]:
+                                flapping_count += 1
 
                         # Grade breakdown
                         r0 = p_prev[0] if len(p_prev) > 0 else None
@@ -126,26 +152,15 @@ def analyze(history: dict, filename: str) -> None:
                         d1 = p_curr[2] if len(p_curr) > 2 else None
                         if d0 != d1 and d0 is not None and d1 is not None:
                             diesel_moves += 1
+                else:
+                    store_price_sequence[store_key].append(p_curr)
 
-        if run_comparable > 0:
+                running_prices[state][city] = p_curr
+
+        effective_comparable = len(all_stores) if is_delta_history else run_comparable
+        if effective_comparable > 0:
             stores_changed_per_run.append(run_changes)
-            pct_changed_per_run.append((run_changes / run_comparable) * 100.0)
-
-    # Check price flapping (A -> B -> A within consecutive snapshots)
-    for i in range(len(timestamps) - 2):
-        t0, t1, t2 = timestamps[i], timestamps[i + 1], timestamps[i + 2]
-        d0, d1, d2 = history[t0], history[t1], history[t2]
-        for state, cities in d1.items():
-            if state not in d0 or state not in d2:
-                continue
-            for city, p1 in cities.items():
-                if city in d0[state] and city in d2[state]:
-                    p0 = d0[state][city]
-                    p2 = d2[state][city]
-                    if p0 != p1:
-                        total_flappable_changes += 1
-                        if p0 == p2:
-                            flapping_count += 1
+            pct_changed_per_run.append((run_changes / effective_comparable) * 100.0)
 
     # Intraday changes breakdown
     single_change_days = 0
@@ -165,8 +180,8 @@ def analyze(history: dict, filename: str) -> None:
         monthly_rates.append(changes / (total_days / 30.0))
 
     sorted_monthly = sorted(monthly_rates)
-    avg_monthly = sum(monthly_rates) / len(monthly_rates) if monthly_rates else 0
-    med_monthly = sorted_monthly[len(sorted_monthly) // 2] if sorted_monthly else 0
+    avg_monthly = sum(monthly_rates) / len(monthly_rates) if monthly_rates else 0.0
+    med_monthly = sorted_monthly[len(sorted_monthly) // 2] if sorted_monthly else 0.0
 
     # Calculate delta storage savings
     compact_orig = len(json.dumps(history, separators=(',', ':')))
@@ -193,10 +208,11 @@ def analyze(history: dict, filename: str) -> None:
     print(sep)
     print(f" GAS PRICE SCRAPING FREQUENCY & VELOCITY ANALYSIS: {os.path.basename(filename)}")
     print(sep)
-    print(f"• Total Snapshots:     {len(timestamps):,} snapshots")
+    print(f"• Total Snapshots:     {len(timestamps):,} snapshots" + (" (delta change events)" if is_delta_history else ""))
     print(f"• Date Range:          {timestamps[0]}  to  {timestamps[-1]} ({total_days:.1f} days)")
     print(f"• Unique Stores:       {len(all_stores):,} warehouses tracked")
-    print(f"• Scrape Interval:     Mean: {avg_interval:.1f}h  |  Median: {median_interval:.1f}h")
+    interval_label = "Change Event Interval" if is_delta_history else "Scrape Interval"
+    print(f"• {interval_label}: Mean: {avg_interval:.1f}h  |  Median: {median_interval:.1f}h" + (" (runs with no changes not stored in delta history)" if is_delta_history else ""))
     print()
     print("─── 1. ARE WE CHECKING OFTEN ENOUGH OR TOO OFTEN? ───")
     if pct_changed_per_run:
@@ -205,15 +221,21 @@ def analyze(history: dict, filename: str) -> None:
         print(f"• Stores changing price per scrape:  {avg_stores:.1f} stores ({avg_pct:.1f}% of all stores)")
         print(f"• Min / Max stores changed in a run: {min(stores_changed_per_run)} ({min(pct_changed_per_run):.1f}%) / {max(stores_changed_per_run)} ({max(pct_changed_per_run):.1f}%)")
     print(f"• Individual store change frequency: {avg_monthly:.1f} times/month (median: {med_monthly:.1f}/mo, ~{med_monthly/4.33:.1f}/week)")
-    print(f"• Intraday price changes (>1 change/day): {multiple_change_days:,} out of {total_change_days:,} active store-days ({multiple_change_days/total_change_days*100:.1f}%)")
-    print(f"• Flapping rate (A -> B -> A jitter): {flapping_count:,} of {total_flappable_changes:,} ({flapping_count/total_flappable_changes*100:.1f}%) -> {100 - flapping_count/total_flappable_changes*100:.1f}% are permanent price moves")
+    intraday_pct = (multiple_change_days / total_change_days * 100.0) if total_change_days > 0 else 0.0
+    print(f"• Intraday price changes (>1 change/day): {multiple_change_days:,} out of {total_change_days:,} active store-days ({intraday_pct:.1f}%)")
+    if total_flappable_changes > 0:
+        flap_pct = (flapping_count / total_flappable_changes) * 100.0
+        perm_pct = 100.0 - flap_pct
+        print(f"• Flapping rate (A -> B -> A jitter): {flapping_count:,} of {total_flappable_changes:,} ({flap_pct:.1f}%) -> {perm_pct:.1f}% are permanent price moves")
+    else:
+        print(f"• Flapping rate (A -> B -> A jitter): 0 of 0 (insufficient history; requires ≥2 changes per store to detect oscillation)")
     print()
     print("─── 2. WHEN DO PRICES CHANGE? (HOURLY PT DISTRIBUTION) ───")
     sorted_hours = sorted(hourly_runs.keys())
     for h in sorted_hours:
         runs = hourly_runs[h]
         chgs = hourly_changes[h]
-        comps = hourly_comparisons[h]
+        comps = (len(all_stores) * runs) if is_delta_history else hourly_comparisons[h]
         pct = (chgs / comps * 100.0) if comps else 0
         bar = "█" * int(pct / 2.5)
         print(f"  Hour {h:02d}:00 PT | {runs:3d} runs | {chgs/runs:5.1f} changes/run | {pct:5.1f}% stores changed {bar}")
