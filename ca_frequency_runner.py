@@ -79,7 +79,6 @@ def run_ca_tracker(
     prev_prices, prev_timestamp = find_trend_baseline(history, timestamp)
 
     # Delta storage: only save when prices change
-    has_changes = False
     if history:
         current_active = reconstruct_store_prices_at(history, timestamp)
         deltas = compute_price_deltas(fetched, current_active)
@@ -88,7 +87,6 @@ def run_ca_tracker(
             write_pretty_top_level(history, history_path)
             num_changes = sum(len(cities) for cities in deltas.values())
             print(f"✨ Found {num_changes} store price change(s). Appended to {history_path}")
-            has_changes = True
         else:
             print(f"ℹ️ No price changes detected since previous check. {history_path} left untouched.")
     else:
@@ -96,22 +94,18 @@ def run_ca_tracker(
         history[timestamp] = fetched
         write_pretty_top_level(history, history_path)
         print(f"🌱 Seeded initial CA frequency baseline in {history_path}")
-        has_changes = True
 
-    # Write latest snapshot only if prices changed or file is missing
-    if has_changes or not os.path.exists(latest_path):
-        latest_payload = {
-            "timestamp": timestamp,
-            "prices": fetched,
-            "previous": prev_prices,
-            "previous_timestamp": prev_timestamp,
-        }
-        with open(latest_path, "w", encoding="utf-8") as f:
-            json.dump(latest_payload, f, separators=(',', ':'))
+    # Write latest snapshot
+    latest_payload = {
+        "timestamp": timestamp,
+        "prices": fetched,
+        "previous": prev_prices,
+        "previous_timestamp": prev_timestamp,
+    }
+    with open(latest_path, "w", encoding="utf-8") as f:
+        json.dump(latest_payload, f, separators=(',', ':'))
 
-        print(f"✅ Saved latest CA snapshot -> {latest_path}")
-    else:
-        print(f"ℹ️ {latest_path} left untouched (no price changes).")
+    print(f"✅ Saved latest CA snapshot -> {latest_path}")
     return True
 
 
