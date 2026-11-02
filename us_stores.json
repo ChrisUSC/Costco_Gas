@@ -1373,6 +1373,45 @@
             },
             "tz": "America/Los_Angeles"
         },
+        "Camarillo": {
+            "url": "https://www.costco.com/w/-/ca/camarillo/1680",
+            "warehouse_id": "1680",
+            "lat": 34.218002,
+            "lng": -119.080793,
+            "address": "431 W. VENTURA BLVD, CAMARILLO, CA 93010-9122",
+            "phone": "(805) 465-2881",
+            "gas_hours": {
+                "mon": [
+                    "05:30",
+                    "22:00"
+                ],
+                "tue": [
+                    "05:30",
+                    "22:00"
+                ],
+                "wed": [
+                    "05:30",
+                    "22:00"
+                ],
+                "thu": [
+                    "05:30",
+                    "22:00"
+                ],
+                "fri": [
+                    "05:30",
+                    "22:00"
+                ],
+                "sat": [
+                    "06:00",
+                    "20:30"
+                ],
+                "sun": [
+                    "06:00",
+                    "19:30"
+                ]
+            },
+            "tz": "America/Los_Angeles"
+        },
         "Carlsbad": {
             "url": "https://www.costco.com/w/-/ca/carlsbad/462",
             "warehouse_id": "462",
@@ -7075,6 +7114,45 @@
             },
             "tz": "America/New_York"
         },
+        "E Orlando": {
+            "url": "https://www.costco.com/w/-/fl/winter-park/185",
+            "warehouse_id": "185",
+            "lat": 28.59878957,
+            "lng": -81.30008827,
+            "address": "3333 UNIVERSITY BLVD, WINTER PARK, FL 32792-7428",
+            "phone": "(407) 681-2119",
+            "gas_hours": {
+                "mon": [
+                    "06:00",
+                    "22:00"
+                ],
+                "tue": [
+                    "06:00",
+                    "22:00"
+                ],
+                "wed": [
+                    "06:00",
+                    "22:00"
+                ],
+                "thu": [
+                    "06:00",
+                    "22:00"
+                ],
+                "fri": [
+                    "06:00",
+                    "22:00"
+                ],
+                "sat": [
+                    "06:00",
+                    "20:30"
+                ],
+                "sun": [
+                    "06:00",
+                    "19:30"
+                ]
+            },
+            "tz": "America/New_York"
+        },
         "Estero": {
             "url": "https://www.costco.com/w/-/fl/fort-myers/621",
             "warehouse_id": "621",
@@ -10521,6 +10599,45 @@
         }
     },
     "KS": {
+        "Lawrence KS": {
+            "url": "https://www.costco.com/w/-/ks/lawrence/1836",
+            "warehouse_id": "1836",
+            "lat": 38.974122,
+            "lng": -95.330429,
+            "address": "6200 MERCATO DRIVE, LAWRENCE, KS 66049-5232",
+            "phone": "(785) 312-8639",
+            "gas_hours": {
+                "mon": [
+                    "06:00",
+                    "22:00"
+                ],
+                "tue": [
+                    "06:00",
+                    "22:00"
+                ],
+                "wed": [
+                    "06:00",
+                    "22:00"
+                ],
+                "thu": [
+                    "06:00",
+                    "22:00"
+                ],
+                "fri": [
+                    "06:00",
+                    "22:00"
+                ],
+                "sat": [
+                    "06:00",
+                    "20:30"
+                ],
+                "sun": [
+                    "06:00",
+                    "19:30"
+                ]
+            },
+            "tz": "America/Chicago"
+        },
         "Lenexa": {
             "url": "https://www.costco.com/w/-/ks/lenexa/349",
             "warehouse_id": "349",
@@ -15191,6 +15308,45 @@
                 ],
                 "sun": [
                     "06:00",
+                    "19:30"
+                ]
+            },
+            "tz": "America/New_York"
+        },
+        "Amherst": {
+            "url": "https://www.costco.com/w/-/ny/amherst/1685",
+            "warehouse_id": "1685",
+            "lat": 42.99803261181384,
+            "lng": -78.81184163677882,
+            "address": "4230 RIDGE LEA ROAD, AMHERST, NY 14226-2761",
+            "phone": "(716) 961-6100",
+            "gas_hours": {
+                "mon": [
+                    "06:00",
+                    "22:00"
+                ],
+                "tue": [
+                    "06:00",
+                    "22:00"
+                ],
+                "wed": [
+                    "06:00",
+                    "22:00"
+                ],
+                "thu": [
+                    "06:00",
+                    "22:00"
+                ],
+                "fri": [
+                    "06:00",
+                    "22:00"
+                ],
+                "sat": [
+                    "06:00",
+                    "20:30"
+                ],
+                "sun": [
+                    "06:30",
                     "19:30"
                 ]
             },
