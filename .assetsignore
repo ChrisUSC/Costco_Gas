@@ -21,13 +21,15 @@ README.md
 .venv
 .pytest_cache
 
-# Dynamic price data snapshots (served via Cloudflare Worker from R2)
+# Dynamic price data snapshots (served via Cloudflare Worker/Pages from R2)
 *_latest.json
 *_history.json
 ca_freq_*.json
 ca_stores.json
 local_stores.json
 state_list.json
+
+
 
 
 # Tests & bytecode
