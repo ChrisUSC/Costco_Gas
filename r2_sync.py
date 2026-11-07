@@ -2,13 +2,14 @@
 """
 Sync utility between local JSON files and Cloudflare R2 object storage.
 Used by GitHub Actions to download historical baselines before scraping
-and upload updated snapshots after scraping.
+and upload updated snapshots after scraping, with automated daily backup snapshots.
 """
 
 from __future__ import annotations
 
 import os
 import sys
+from datetime import datetime, timezone
 from typing import Sequence
 
 import boto3
@@ -107,6 +108,8 @@ def upload_files(files: Sequence[str]):
     print(f"⬆️ Uploading updated snapshots to R2 bucket '{bucket}'...")
 
     uploaded_count = 0
+    today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
     for filename in files:
         if not os.path.exists(filename):
             print(f"  - Skipping {filename} (file does not exist locally)")
@@ -116,6 +119,7 @@ def upload_files(files: Sequence[str]):
             "public, max-age=300" if "latest" in filename else "public, max-age=3600"
         )
         try:
+            # 1. Upload current live object
             client.upload_file(
                 filename,
                 bucket,
@@ -128,6 +132,22 @@ def upload_files(files: Sequence[str]):
             size = os.path.getsize(filename)
             print(f"  ✓ Uploaded {filename} ({size:,} bytes) [Cache-Control: {cache_control}]")
             uploaded_count += 1
+
+            # 2. For history files, also upload a dated backup snapshot once per day
+            if "history" in filename:
+                base_name = os.path.splitext(filename)[0]
+                backup_key = f"backups/{base_name}_{today_str}.json"
+                client.upload_file(
+                    filename,
+                    bucket,
+                    backup_key,
+                    ExtraArgs={
+                        "ContentType": "application/json",
+                        "CacheControl": "public, max-age=86400",
+                    },
+                )
+                print(f"  🔒 Saved daily backup snapshot -> {backup_key}")
+
         except Exception as e:
             print(f"  ❌ Error uploading {filename}: {e}")
             sys.exit(1)
@@ -135,9 +155,56 @@ def upload_files(files: Sequence[str]):
     print(f"🎉 Successfully uploaded {uploaded_count} file(s) to R2.")
 
 
+def list_backups():
+    client = get_s3_client()
+    bucket = os.environ["R2_BUCKET_NAME"]
+    print(f"Listing backup snapshots in R2 bucket '{bucket}' (prefix: backups/)...")
+    try:
+        resp = client.list_objects_v2(Bucket=bucket, Prefix="backups/")
+        contents = resp.get("Contents", [])
+        if not contents:
+            print("No backup snapshots found yet.")
+            return
+
+        print(f"Found {len(contents)} backup snapshot(s):")
+        for obj in contents:
+            size_kb = obj["Size"] / 1024
+            last_mod = obj["LastModified"].strftime("%Y-%m-%d %H:%M UTC")
+            print(f"  - {obj['Key']} ({size_kb:,.1f} KB, modified: {last_mod})")
+    except ClientError as e:
+        print(f"❌ Error listing backups: {e}")
+        sys.exit(1)
+
+
+def restore_backup(backup_key: str, target_file: str | None = None):
+    client = get_s3_client()
+    bucket = os.environ["R2_BUCKET_NAME"]
+
+    if not target_file:
+        # Infer target file, e.g. backups/us_history_2026-11-07.json -> us_history.json
+        base = os.path.basename(backup_key)
+        # strip _YYYY-MM-DD
+        import re
+        cleaned = re.sub(r'_\d{4}-\d{2}-\d{2}\.json$', '.json', base)
+        target_file = cleaned
+
+    print(f"Restoring '{backup_key}' from R2 to local file '{target_file}'...")
+    try:
+        client.download_file(bucket, backup_key, target_file)
+        print(f"✅ Successfully restored {backup_key} -> {target_file} ({os.path.getsize(target_file):,} bytes)")
+    except ClientError as e:
+        print(f"❌ Error restoring backup: {e}")
+        sys.exit(1)
+
+
 def main():
     if len(sys.argv) < 2:
-        print("Usage: python r2_sync.py [download|upload|test] [file1 file2 ...]")
+        print("Usage:")
+        print("  python r2_sync.py download [file1 file2 ...]")
+        print("  python r2_sync.py upload [file1 file2 ...]")
+        print("  python r2_sync.py list-backups")
+        print("  python r2_sync.py restore <backup_key> [target_file]")
+        print("  python r2_sync.py test")
         sys.exit(1)
 
     action = sys.argv[1].lower()
@@ -147,10 +214,19 @@ def main():
         download_files(custom_files)
     elif action == "upload":
         upload_files(custom_files)
+    elif action == "list-backups":
+        list_backups()
+    elif action == "restore":
+        if len(sys.argv) < 3:
+            print("Usage: python r2_sync.py restore <backup_key> [target_file]")
+            sys.exit(1)
+        target = sys.argv[3] if len(sys.argv) > 3 else None
+        restore_backup(sys.argv[2], target)
     elif action == "test":
         test_connection()
     else:
-        print(f"Unknown action: {action}. Choose from: download, upload, test")
+        print(f"Unknown action: {action}.")
+        print("Valid actions: download, upload, list-backups, restore, test")
         sys.exit(1)
 
 
