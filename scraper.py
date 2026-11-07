@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 import os
 import random
@@ -187,7 +189,7 @@ def find_trend_baseline(history: dict, current_timestamp_str: str) -> tuple[dict
 
     With delta-only history, entries are sparse, so we reconstruct the state "as of" the
     target time instead of picking the nearest entry. If history is shorter than the lookback,
-    falls back to the oldest state we have."""
+    falls back to the most recent prior snapshot (same as before the delta change)."""
     try:
         current_dt = datetime.strptime(current_timestamp_str, "%Y-%m-%d %H:%M")
     except ValueError:
@@ -201,8 +203,8 @@ def find_trend_baseline(history: dict, current_timestamp_str: str) -> tuple[dict
     if any(t <= target_str for t in prior):
         return reconstruct_store_prices_at(history, target_str), target_str
 
-    oldest = min(prior)
-    return reconstruct_store_prices_at(history, oldest), oldest
+    latest_prior = max(prior)
+    return reconstruct_store_prices_at(history, latest_prior), latest_prior
 
 
 def save_data(data: dict, history_path: str, latest_path: str, delta_mode: bool = False) -> None:
