@@ -83,17 +83,38 @@ function expandToDaily(points, start, end) {
     const d = new Date(start.getFullYear(), start.getMonth(), start.getDate());
     const endDay = new Date(end.getFullYear(), end.getMonth(), end.getDate());
 
+    // Advance through points that occurred before `start` to establish the baseline price
+    // as of the start date without flagging those earlier changes on day 0.
+    while (idx < points.length && points[idx].rawDate < d) {
+        last = points[idx++];
+    }
+
     for (; d <= endDay; d.setDate(d.getDate() + 1)) {
         const nextDay = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1);
+        const changed = { reg: false, prem: false, diesel: false };
+
         while (idx < points.length && points[idx].rawDate < nextDay) {
-            last = points[idx++];
+            const current = points[idx++];
+            if (last) {
+                if (current.reg !== last.reg) changed.reg = true;
+                if (current.prem !== last.prem) changed.prem = true;
+                if (current.diesel !== last.diesel) changed.diesel = true;
+            } else {
+                // First appearance in dataset
+                if (current.reg != null) changed.reg = true;
+                if (current.prem != null) changed.prem = true;
+                if (current.diesel != null) changed.diesel = true;
+            }
+            last = current;
         }
+
         if (last) {
             out.push({
                 rawDate: new Date(d),
                 reg: last.reg,
                 prem: last.prem,
-                diesel: last.diesel
+                diesel: last.diesel,
+                changed
             });
         }
     }
@@ -200,9 +221,9 @@ export function renderPriceChart(stateCode, city) {
         .map(g => {
             const info = GRADE_INFO[g];
             const data = dedupedHistory.map(h => h[info.histKey] === Infinity ? null : h[info.histKey]);
-            // Filled dot = this grade's price changed that day (or first point).
-            // Hollow dot = carried forward from an earlier day (short ranges only).
-            const changed = data.map((v, i) => i === 0 || v !== data[i - 1]);
+            // Solid dot where this grade's price actually changed on that day.
+            // Hollow ring (matching background surface) where price held steady.
+            const changed = dedupedHistory.map(h => Boolean(h.changed?.[info.histKey]));
             return {
                 grade: g,
                 label: info.label,
@@ -210,7 +231,8 @@ export function renderPriceChart(stateCode, city) {
                 changed,
                 borderColor: info.color,
                 backgroundColor: info.color,
-                // 'before' = flat at the old price, then jump ON the day the new price appears
+                // 'before' in Chart.js holds the previous value horizontally across the day,
+                // then steps vertically upon reaching the date coordinate.
                 stepped: 'before',
                 pointBackgroundColor: changed.map(c => (c ? info.color : surfaceColor)),
                 pointBorderColor: info.color,

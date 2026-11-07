@@ -257,10 +257,17 @@ def save_data(data: dict, history_path: str, latest_path: str, delta_mode: bool 
         "previous": previous_prices,
         "previous_timestamp": previous_timestamp,
     }
-    with open(latest_path, 'w', encoding='utf-8') as f:
-        json.dump(latest_payload, f, separators=(',', ':'))
+    atomic_write_json(latest_path, latest_payload, separators=(',', ':'))
 
     print(f"Saved latest snapshot -> {latest_path}")
+
+
+def atomic_write_json(file_path: str, data: dict, indent: int | None = None, separators: tuple[str, str] | None = None) -> None:
+    """Safely writes JSON data to a temporary file and atomically replaces the destination."""
+    tmp_path = f"{file_path}.tmp"
+    with open(tmp_path, 'w', encoding='utf-8') as f:
+        json.dump(data, f, indent=indent, separators=separators)
+    os.replace(tmp_path, file_path)
 
 
 def write_pretty_top_level(data: dict, file_path: str) -> None:
@@ -309,8 +316,7 @@ def remove_location_from_file(filepath: str | None, state: str, city: str) -> No
                 del data[state]
 
         out_data = sort_stores_dict(data) if not filepath.endswith("local_stores.json") else data
-        with open(filepath, 'w', encoding='utf-8') as f:
-            json.dump(out_data, f, indent=4)
+        atomic_write_json(filepath, out_data, indent=4)
     except Exception as e:
         print(f"Failed to remove {city} from {filepath}: {e}")
 
@@ -967,9 +973,7 @@ def discover_new_stores(states_to_check: list, existing_stores: dict, output_fil
         existing_stores.setdefault(state, {}).update(cities)
 
     sorted_stores = sort_stores_dict(existing_stores)
-
-    with open(output_filepath, 'w', encoding='utf-8') as f:
-        json.dump(sorted_stores, f, indent=4)
+    atomic_write_json(output_filepath, sorted_stores, indent=4)
 
     print(f"\nAdded {total_added} new store(s) with gas to '{output_filepath}'.")
     return sorted_stores
@@ -1002,9 +1006,7 @@ def build_and_save_master_db(states_to_update: list, output_filepath: str) -> No
             return
 
     sorted_stores = sort_stores_dict(master_stores)
-
-    with open(output_filepath, 'w', encoding='utf-8') as f:
-        json.dump(sorted_stores, f, indent=4)
+    atomic_write_json(output_filepath, sorted_stores, indent=4)
     print(f"\nMaster database '{output_filepath}' updated successfully.")
 
 
@@ -1039,8 +1041,7 @@ def refresh_store_details(stores: dict, filepath: str) -> int:
           f"({changed} field(s) changed, {failed} fetch/parse failure(s)).")
     if changed:
         out_stores = sort_stores_dict(stores) if not filepath.endswith("local_stores.json") else stores
-        with open(filepath, 'w', encoding='utf-8') as f:
-            json.dump(out_stores, f, indent=4)
+        atomic_write_json(filepath, out_stores, indent=4)
     return changed
 
 
