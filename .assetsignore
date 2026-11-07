@@ -21,16 +21,14 @@ README.md
 .venv
 .pytest_cache
 
-# Scraper-only intermediate/subset/experiment data - the frontend only ever fetches
-# us_latest.json, us_stores.json, and us_history.json.
-ca_latest.json
-ca_history.json
-ca_stores.json
+# Dynamic price data snapshots (served via Cloudflare Worker from R2)
+*_latest.json
+*_history.json
 ca_freq_*.json
-local_latest.json
-local_history.json
+ca_stores.json
 local_stores.json
 state_list.json
+
 
 # Tests & bytecode
 tests/

@@ -24,24 +24,29 @@ A self-hosted, live-updating map of Costco gas prices across the US, built on sc
 ## How it works
 
 ```
-scraper.py (GitHub Actions, scheduled)
-    │
-    ├─ discovers stores & gas hours from costco.com's warehouse sitemap
-    ├─ fetches live prices from Costco's gas-price AJAX endpoint
-    ├─ confirms suspicious price jumps via cache-busted quorum rechecks
-    ├─ validates snapshot coverage, then writes:
-    │
-    ▼
-*_stores.json   *_latest.json   *_history.json
-    │                 │               │
-    └─────────────────┴───────────────┘
-                       │
-                       ▼
-        index.html + js/*.js + app.js
-         (static site, Cloudflare Workers)
+[Cloudflare Worker Cron] (Hourly trigger via GitHub API)
+        │
+        ▼
+scraper.py (GitHub Actions runner)
+        │
+        ├─ downloads previous snapshot baseline from Cloudflare R2 (r2_sync.py)
+        ├─ fetches live prices from Costco's gas-price AJAX endpoint
+        ├─ confirms suspicious price jumps via cache-busted quorum rechecks
+        ├─ validates snapshot coverage & computes deltas
+        │
+        ▼
+Cloudflare R2 Bucket (Object Storage)
+  ├── us_latest.json / us_history.json
+  ├── ca_latest.json / ca_history.json
+  └── local_latest.json / local_history.json
+        │
+        ▼
+worker.js (Cloudflare Workers + Static Assets)
+  ├── Dynamic JSON requests  ──► Streamed directly from R2 Bucket (with edge caching)
+  └── Static site assets     ──► Served via Cloudflare CDN (index.html, styles.css, app.js, us_stores.json)
 ```
 
-The scraper runs on a schedule via GitHub Actions, commits the updated JSON files, and pushes to `main`. Cloudflare serves them as static assets — there's no API server and no database.
+The scraper runs hourly triggered by a Cloudflare Worker via GitHub Actions, computes price deltas, and updates the JSON files in Cloudflare R2. Cloudflare Worker sits in front of the site, streaming dynamic snapshots from R2 and serving the static website files from edge assets — with no Git commits and no manual server maintenance.
 
 ## Project structure
 
@@ -49,6 +54,8 @@ The scraper runs on a schedule via GitHub Actions, commits the updated JSON file
 ├── index.html              # App shell
 ├── styles.css              # Styling, light/dark theme via CSS variables
 ├── app.js                  # Main application entry point, map lifecycle & event delegation
+├── worker.js               # Cloudflare Worker edge proxy: streams dynamic data from R2, falls back to assets
+├── r2_sync.py              # Cloudflare R2 S3-compatible sync utility (download baselines / upload snapshots)
 ├── js/
 │   ├── utils.js            # Pure utilities, constants, distance/route math, gas hours & timestamps
 │   ├── state.js            # Centralized application state & localStorage persistence
@@ -58,24 +65,28 @@ The scraper runs on a schedule via GitHub Actions, commits the updated JSON file
 │   └── routes.js           # OSRM driving route lookup, corridor filtering & saved routes
 │
 ├── scraper.py              # Store discovery, metadata enrichment & AJAX price scraper
-├── requirements.txt        # Python dependencies
-├── wrangler.jsonc          # Cloudflare Workers Static Assets config
+├── requirements.txt        # Python dependencies (includes boto3 for R2 sync)
+├── wrangler.jsonc          # Cloudflare Workers Static Assets & R2 bucket binding config
 │
 ├── us_stores.json          # Master store list: address, lat/lng, warehouse ID, hours, phone, tz
 ├── ca_stores.json          # Subset: California stores only
 ├── local_stores.json       # Subset: nearby stores for fast local runs
 │
-├── us_latest.json          # Newest price snapshot + ~72h trend baseline — fetched on page load
-├── us_history.json         # Full timestamped price log — lazy-loaded when opening a chart
-├── ca_latest.json / ca_history.json       # Same pair, CA subset
-├── local_latest.json / local_history.json # Same pair, local subset
+├── .github/workflows/
+│   ├── fetch_prices.yml            # Main scraping workflow (syncs with R2, runs scraper)
+│   ├── ca_frequency_experiment.yml # High-frequency CA tracker workflow
+│   ├── seed_r2.yml                 # Utility workflow to test R2 connection & seed bucket data
+│   ├── discover.yml                # Weekly automated Costco station discovery PR generator
+│   └── testing.yml                 # Automated test suite (pytest)
 │
 ├── state_list.json         # Costco's state → warehouse-sitemap URL mapping
 └── tests/
     ├── test_scraper.py     # Unit tests for price parsing, metadata, quorum rechecks & file I/O
     ├── test_store_hours.py # Unit tests for JSON-LD / HTML gas hours extraction & detail refresh
-    └── test_trend_data.py  # Unit tests for trend baseline lookback & latest snapshot generation
+    ├── test_trend_data.py  # Unit tests for trend baseline lookback & latest snapshot generation
+    └── test_delta_storage.py # Unit tests for delta compaction, history reconstruction & runner logic
 ```
+
 
 ## Data format
 
