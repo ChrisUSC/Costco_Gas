@@ -221,7 +221,7 @@ export function renderPriceChart(stateCode, city) {
                 data,
                 borderColor: info.color,
                 backgroundColor: info.color,
-                stepped: 'before',
+                stepped: 'after',
                 pointRadius: 3,
                 pointHoverRadius: 6,
                 spanGaps: true

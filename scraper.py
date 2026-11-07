@@ -37,7 +37,6 @@ US_HISTORY_FILE, US_LATEST_FILE = 'us_history.json', 'us_latest.json'
 
 # Compare current prices against a snapshot ~72h back so trend arrows reflect meaningful moves.
 TREND_LOOKBACK_HOURS = 72
-TREND_LOOKBACK_TOLERANCE_HOURS = 12
 
 # Price-jump sanity check and multi-sample quorum settings.
 PRICE_JUMP_ABS_THRESHOLD = 0.30   # dollars
@@ -184,39 +183,26 @@ def reconstruct_store_prices_at(history: dict, cutoff_ts: str) -> dict:
 
 
 def find_trend_baseline(history: dict, current_timestamp_str: str) -> tuple[dict, str | None]:
-    """Finds the historical snapshot closest to TREND_LOOKBACK_HOURS before current_timestamp_str,
-    falling back to the most recent prior snapshot if history is too short."""
+    """Returns the store prices in effect TREND_LOOKBACK_HOURS before current_timestamp_str.
+
+    With delta-only history, entries are sparse, so we reconstruct the state "as of" the
+    target time instead of picking the nearest entry. If history is shorter than the lookback,
+    falls back to the oldest state we have."""
     try:
         current_dt = datetime.strptime(current_timestamp_str, "%Y-%m-%d %H:%M")
     except ValueError:
         return {}, None
 
-    target_dt = current_dt - timedelta(hours=TREND_LOOKBACK_HOURS)
-    best_ts, best_diff = None, None
-    latest_ts = None
+    prior = [t for t in history if t < current_timestamp_str]
+    if not prior:
+        return {}, None
 
-    for ts_str in history:
-        try:
-            ts_dt = datetime.strptime(ts_str, "%Y-%m-%d %H:%M")
-        except ValueError:
-            continue
+    target_str = (current_dt - timedelta(hours=TREND_LOOKBACK_HOURS)).strftime("%Y-%m-%d %H:%M")
+    if any(t <= target_str for t in prior):
+        return reconstruct_store_prices_at(history, target_str), target_str
 
-        if ts_str != current_timestamp_str and (latest_ts is None or ts_str > latest_ts):
-            latest_ts = ts_str
-
-        diff = abs((ts_dt - target_dt).total_seconds())
-        if best_diff is None or diff < best_diff:
-            best_ts, best_diff = ts_str, diff
-
-    chosen_ts = None
-    if best_ts is not None and best_diff <= TREND_LOOKBACK_TOLERANCE_HOURS * 3600:
-        chosen_ts = best_ts
-    elif latest_ts is not None:
-        chosen_ts = latest_ts
-
-    if chosen_ts is not None:
-        return reconstruct_store_prices_at(history, chosen_ts), chosen_ts
-    return {}, None
+    oldest = min(prior)
+    return reconstruct_store_prices_at(history, oldest), oldest
 
 
 def save_data(data: dict, history_path: str, latest_path: str, delta_mode: bool = False) -> None:
@@ -276,8 +262,10 @@ def save_data(data: dict, history_path: str, latest_path: str, delta_mode: bool 
 
 
 def write_pretty_top_level(data: dict, file_path: str) -> None:
-    """Writes JSON with one line per top-level key and compact nested content."""
-    with open(file_path, "w", encoding='utf-8') as fp:
+    """Writes JSON with one line per top-level key and compact nested content.
+    Writes to a temp file and swaps it in, so a crash mid-write can't truncate the real file."""
+    tmp_path = f"{file_path}.tmp"
+    with open(tmp_path, "w", encoding='utf-8') as fp:
         fp.write("{\n")
         items = list(data.items())
         for i, (key, value) in enumerate(items):
@@ -285,6 +273,7 @@ def write_pretty_top_level(data: dict, file_path: str) -> None:
             comma = "," if i < len(items) - 1 else ""
             fp.write(f'  {json.dumps(key)}: {compact_value}{comma}\n')
         fp.write("}\n")
+    os.replace(tmp_path, file_path)
 
 
 def sort_stores_dict(stores: dict) -> dict:
@@ -1019,7 +1008,7 @@ def process_and_save(locations: dict, source_filepath: str, history_file: str, l
         return False
 
     print(f"✅ {label} snapshot looks healthy: {reason}")
-    save_data(prices, history_file, latest_file)
+    save_data(prices, history_file, latest_file, delta_mode=True)
     print_lowest_prices(prices)
     return True
 
