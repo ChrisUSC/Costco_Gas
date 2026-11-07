@@ -21,3 +21,10 @@ __pycache__/
 *.tmp
 unconfirmed_jumps_log.jsonl
 
+# Dynamic price data snapshots (stored in Cloudflare R2)
+*_latest.json
+*_history.json
+ca_freq_*.json
+*.r2tmp
+
+
