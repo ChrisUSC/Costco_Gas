@@ -265,9 +265,50 @@ def test_verify_all_changes_triggers_confirmation(monkeypatch):
     last_known = {"CA": {"Fresno": [4.49, 4.89, None]}}
 
     # With verify_all_changes=True, even a $0.04 move triggers confirmation re-checks
-    scraper.get_gas_prices_ajax(
+    result = scraper.get_gas_prices_ajax(
         locations,
         last_known_prices=last_known,
         verify_all_changes=True,
     )
     assert confirm_called is True
+    ts = next(iter(result))
+    # Confirmed new price since rechecks agreed on 4.45
+    assert result[ts]["CA"]["Fresno"] == [4.45, 4.89, None]
+    assert call_count >= 4
+
+
+def test_verify_all_changes_reverts_glitch_to_last_known(monkeypatch):
+    import scraper
+
+    # First fetch returns glitch (4.45), rechecks return actual price (4.49)
+    responses = [
+        {"1": {"regular": "$4.45", "premium": "$4.89", "diesel": "N/A"}},  # Initial glitch
+        {"1": {"regular": "$4.49", "premium": "$4.89", "diesel": "N/A"}},  # Recheck 1
+        {"1": {"regular": "$4.49", "premium": "$4.89", "diesel": "N/A"}},  # Recheck 2
+        {"1": {"regular": "$4.49", "premium": "$4.89", "diesel": "N/A"}},  # Recheck 3
+    ]
+    call_idx = 0
+    def mock_session_get(*args, **kwargs):
+        nonlocal call_idx
+        resp_data = responses[min(call_idx, len(responses) - 1)]
+        call_idx += 1
+        class MockResp:
+            def raise_for_status(self): pass
+            def json(self): return resp_data
+        return MockResp()
+
+    monkeypatch.setattr("scraper.create_session", lambda: type("Session", (), {"get": mock_session_get})())
+    monkeypatch.setattr(scraper, "RECHECK_DELAY_RANGE", (0.01, 0.02))
+
+    locations = {"CA": {"Fresno": {"warehouse_id": "1"}}}
+    last_known = {"CA": {"Fresno": [4.49, 4.89, None]}}
+
+    result = scraper.get_gas_prices_ajax(
+        locations,
+        last_known_prices=last_known,
+        verify_all_changes=True,
+    )
+    ts = next(iter(result))
+    # Reverted back to 4.49!
+    assert result[ts]["CA"]["Fresno"] == [4.49, 4.89, None]
+    assert call_idx >= 4

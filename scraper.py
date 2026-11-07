@@ -43,9 +43,9 @@ TREND_LOOKBACK_HOURS = 72
 # Price-jump sanity check and multi-sample quorum settings.
 PRICE_JUMP_ABS_THRESHOLD = 0.30   # dollars
 PRICE_JUMP_PCT_THRESHOLD = 0.08   # 8%
-MAX_RECHECK_ATTEMPTS = 3
-RECHECK_DELAY_RANGE = (4.0, 8.0)
-CONFIRMATION_QUORUM = 2
+MAX_RECHECK_ATTEMPTS = 5
+RECHECK_DELAY_RANGE = (2.0, 4.0)
+CONFIRMATION_QUORUM = 3
 PRICE_MATCH_TOLERANCE = 0.01
 
 UNCONFIRMED_JUMPS_LOG_FILE = 'unconfirmed_jumps_log.jsonl'
@@ -546,14 +546,12 @@ def _prices_match(a: float | None, b: float | None, tol: float = PRICE_MATCH_TOL
     return abs(a - b) < tol
 
 
-def _quorum_value(samples: list[float | None]) -> float | None:
-    """Returns the value that has reached CONFIRMATION_QUORUM agreeing samples (favoring the freshest cluster)."""
+def _find_quorum(samples: list[float | None], quorum: int = CONFIRMATION_QUORUM) -> tuple[bool, float | None]:
+    """Returns (True, winning_value) if any value reaches quorum agreeing samples, else (False, None)."""
     if not samples:
-        return None
-    clusters: list[list[float]] = []
+        return False, None
+    clusters: list[list[float | None]] = []
     for val in samples:
-        if val is None:
-            continue
         for cluster in clusters:
             if _prices_match(cluster[0], val):
                 cluster.append(val)
@@ -561,14 +559,20 @@ def _quorum_value(samples: list[float | None]) -> float | None:
         else:
             clusters.append([val])
 
-    winning = [c for c in clusters if len(c) >= CONFIRMATION_QUORUM]
+    winning = [c for c in clusters if len(c) >= quorum]
     if not winning:
-        return None
+        return False, None
     for val in reversed(samples):
         for cluster in winning:
-            if val is not None and _prices_match(cluster[0], val):
-                return cluster[0]
-    return winning[-1][0]
+            if _prices_match(cluster[0], val):
+                return True, cluster[0]
+    return True, winning[-1][0]
+
+
+def _quorum_value(samples: list[float | None]) -> float | None:
+    """Returns the value that has reached CONFIRMATION_QUORUM agreeing samples (favoring the freshest cluster)."""
+    has_quorum, val = _find_quorum(samples)
+    return val if has_quorum else None
 
 
 def confirm_or_revert_price(
@@ -577,23 +581,39 @@ def confirm_or_revert_price(
     grade_prices: dict[str, float | None],
     last_grade_prices: dict[str, float | None],
     refetch_fn,
+    verify_all_changes: bool = False,
+    revert_unconfirmed: bool | None = None,
+    max_attempts: int = MAX_RECHECK_ATTEMPTS,
+    quorum: int = CONFIRMATION_QUORUM,
+    initial_delay: bool = True,
 ) -> tuple[dict[str, float | None], bool]:
-    """Re-fetches up to MAX_RECHECK_ATTEMPTS times when a price jump looks suspicious,
-    requiring CONFIRMATION_QUORUM agreeing recheck samples to confirm."""
-    suspicious = {
-        grade: is_suspicious_jump(grade_prices.get(grade), last_grade_prices.get(grade))
-        for grade in GRADES
-    }
+    """Re-fetches up to max_attempts times when a price jump looks suspicious or
+    when verify_all_changes is enabled, requiring quorum agreeing recheck samples to confirm."""
+    if revert_unconfirmed is None:
+        revert_unconfirmed = verify_all_changes
+
+    if verify_all_changes:
+        suspicious = {
+            grade: not _prices_match(grade_prices.get(grade), last_grade_prices.get(grade))
+            for grade in GRADES
+        }
+    else:
+        suspicious = {
+            grade: is_suspicious_jump(grade_prices.get(grade), last_grade_prices.get(grade))
+            for grade in GRADES
+        }
 
     details = [f"{grade} {last_grade_prices.get(grade)}->{grade_prices.get(grade)}"
                for grade in GRADES if suspicious[grade]]
-    print(f"  ⚠ Suspicious jump for {city}, {state}: {', '.join(details)}. Re-checking...")
+    action_label = "Price change" if verify_all_changes else "Suspicious jump"
+    print(f"  ⚠ {action_label} for {city}, {state}: {', '.join(details)}. Re-checking...")
 
     samples: dict[str, list[float | None]] = {grade: [] for grade in GRADES}
     final_prices = dict(grade_prices)
 
-    for _ in range(MAX_RECHECK_ATTEMPTS):
-        time.sleep(random.uniform(*RECHECK_DELAY_RANGE))
+    for attempt in range(max_attempts):
+        if attempt > 0 or initial_delay:
+            time.sleep(random.uniform(*RECHECK_DELAY_RANGE))
         recheck_prices = refetch_fn()
         if recheck_prices is None:
             continue
@@ -602,8 +622,8 @@ def confirm_or_revert_price(
             if not suspicious[grade]:
                 continue
             samples[grade].append(recheck_prices.get(grade))
-            quorum_val = _quorum_value(samples[grade])
-            if quorum_val is not None:
+            has_quorum, quorum_val = _find_quorum(samples[grade], quorum=quorum)
+            if has_quorum:
                 final_prices[grade] = quorum_val
                 suspicious[grade] = False
             else:
@@ -614,9 +634,17 @@ def confirm_or_revert_price(
 
     unconfirmed = any(suspicious.values())
     if unconfirmed:
-        print(f"  ⚠ {city}, {state}: couldn't confirm after {MAX_RECHECK_ATTEMPTS} recheck(s) - "
-              f"keeping most recent fetch ({final_prices}), flagging as unconfirmed "
-              f"[samples: {samples}]")
+        if revert_unconfirmed:
+            for grade in GRADES:
+                if suspicious[grade]:
+                    final_prices[grade] = last_grade_prices.get(grade)
+            print(f"  ⚠ {city}, {state}: couldn't confirm after {max_attempts} recheck(s) - "
+                  f"reverting to last known ({final_prices}), flagging as unconfirmed "
+                  f"[samples: {samples}]")
+        else:
+            print(f"  ⚠ {city}, {state}: couldn't confirm after {max_attempts} recheck(s) - "
+                  f"keeping most recent fetch ({final_prices}), flagging as unconfirmed "
+                  f"[samples: {samples}]")
     else:
         print(f"  ✓ Resolved {city}, {state}: {final_prices}")
 
@@ -684,115 +712,137 @@ def get_gas_prices_ajax(
     jump_log_filepath: str | None = None,
     dataset_label: str | None = None,
     verify_all_changes: bool = False,
+    revert_unconfirmed: bool | None = None,
 ) -> dict:
-    """Concurrently fetches gas prices (regular, premium, diesel) from Costco's AJAX API."""
+    """Concurrently fetches gas prices (regular, premium, diesel) from Costco's AJAX API.
+    Uses a two-phase sweep:
+      Phase 1: Rapid initial probe across all stores in parallel without artificial delays.
+      Phase 2: Targeted confirmation quorum rounds only for stores with detected price changes.
+    """
     fetched_prices = {}
     session = create_session()
     last_known_prices = last_known_prices or {}
 
-    def fetch_price(target_state, target_city, target_info):
+    def fetch_single_store(target_info):
         wh_id = target_info.get("warehouse_id") if isinstance(target_info, dict) else get_warehouse_id(target_info)
         ajax_url = f"https://www.costco.com/AjaxGetGasPricesService?warehouseid={wh_id}"
 
-        def attempt_fetch():
-            for attempt in range(MAX_FETCH_ATTEMPTS):
-                try:
-                    time.sleep(1 + attempt)
-                    resp = session.get(
-                        _cache_busted_url(ajax_url),
-                        headers={
-                            'User-Agent': random.choice(USER_AGENTS),
-                            'Cache-Control': 'no-cache, no-store',
-                            'Pragma': 'no-cache',
-                        },
-                        timeout=15,
-                    )
-                    resp.raise_for_status()
+        for attempt in range(MAX_FETCH_ATTEMPTS):
+            try:
+                time.sleep(1 + attempt)
+                resp = session.get(
+                    _cache_busted_url(ajax_url),
+                    headers={
+                        'User-Agent': random.choice(USER_AGENTS),
+                        'Cache-Control': 'no-cache, no-store',
+                        'Pragma': 'no-cache',
+                    },
+                    timeout=15,
+                )
+                resp.raise_for_status()
 
-                    raw_data = resp.json()
-                    if not raw_data:
-                        raise ValueError("Empty response")
+                raw_data = resp.json()
+                if not raw_data:
+                    raise ValueError("Empty response")
 
-                    inner_data = next(iter(raw_data.values()))
-                    normalized = {k.lower(): v for k, v in inner_data.items()}
-                    prices_by_grade = {g: format_price(normalized.get(g)) for g in GRADES}
+                inner_data = next(iter(raw_data.values()))
+                normalized = {k.lower(): v for k, v in inner_data.items()}
+                prices_by_grade = {g: format_price(normalized.get(g)) for g in GRADES}
 
-                    if any(v is not None for v in prices_by_grade.values()):
-                        return prices_by_grade
-                except (requests.exceptions.RequestException, json.JSONDecodeError, ValueError, KeyError):
-                    pass
-            return None
+                if any(v is not None for v in prices_by_grade.values()):
+                    return prices_by_grade
+            except (requests.exceptions.RequestException, json.JSONDecodeError, ValueError, KeyError):
+                pass
+        return None
 
-        result = attempt_fetch()
-        if result is None:
-            return target_state, target_city, None, False, None
+    def probe_store(state, city, info):
+        res = fetch_single_store(info)
+        return state, city, info, res
 
-        last = last_known_prices.get(target_state, {}).get(target_city)
-        last_grade_prices = {
-            grade: _grade_price(last, idx) if last else None
-            for idx, grade in enumerate(GRADES)
-        }
-
-        raw_result = dict(result)
-        flagged = False
-        should_check = any(is_suspicious_jump(result.get(g), last_grade_prices.get(g)) for g in GRADES)
-        if not should_check and verify_all_changes and last_grade_prices:
-            for g in GRADES:
-                if last_grade_prices.get(g) is not None and result.get(g) is not None:
-                    if not _prices_match(result.get(g), last_grade_prices.get(g)):
-                        should_check = True
-                        break
-
-        if should_check:
-            result, flagged = confirm_or_revert_price(
-                target_state, target_city, result, last_grade_prices, attempt_fetch
-            )
-
-        jump_detail = None
-        if flagged:
-            jump_detail = {
-                "last_reg": last_grade_prices["regular"], "last_prem": last_grade_prices["premium"],
-                "last_diesel": last_grade_prices["diesel"],
-                "raw_reg": raw_result["regular"], "raw_prem": raw_result["premium"],
-                "raw_diesel": raw_result["diesel"],
-                "final_reg": result["regular"], "final_prem": result["premium"],
-                "final_diesel": result["diesel"],
-            }
-
-        prices_list = [result[g] for g in GRADES]
-        return target_state, target_city, prices_list, flagged, jump_detail
-
-    print("Fetching live gas prices...")
+    print("Fetching live gas prices (Phase 1: sweep)...")
     total_stores = 0
     failed_stores: list[tuple[str, str]] = []
+    candidates = []
     unconfirmed_jumps: list[tuple[str, str]] = []
     jump_log_records: list[dict] = []
     run_timestamp = time.strftime("%Y-%m-%d %H:%M", time.localtime())
+    phase1_start = time.time()
 
     with ThreadPoolExecutor(max_workers=10) as executor:
-        futures = []
-        for state, cities in locations.items():
-            fetched_prices[state] = {}
-            for city, info in cities.items():
-                total_stores += 1
-                futures.append(executor.submit(fetch_price, state, city, info))
-
+        futures = [
+            executor.submit(probe_store, state, city, info)
+            for state, cities in locations.items()
+            for city, info in cities.items()
+        ]
         for future in as_completed(futures):
-            state, city, prices, flagged, jump_detail = future.result()
-            if prices:
-                fetched_prices[state][city] = prices
-                if flagged:
-                    unconfirmed_jumps.append((state, city))
-                    if jump_detail:
-                        jump_log_records.append({
-                            "timestamp": run_timestamp,
-                            "state": state,
-                            "city": city,
-                            "dataset": dataset_label,
-                            **jump_detail,
-                        })
-            else:
+            state, city, info, result = future.result()
+            total_stores += 1
+            if result is None:
                 failed_stores.append((state, city))
+                continue
+
+            last = last_known_prices.get(state, {}).get(city)
+            last_grade_prices = {
+                grade: _grade_price(last, idx) if last else None
+                for idx, grade in enumerate(GRADES)
+            }
+            has_baseline = last is not None and any(v is not None for v in last_grade_prices.values())
+            should_check = False
+            if has_baseline:
+                if verify_all_changes:
+                    should_check = any(not _prices_match(result.get(g), last_grade_prices.get(g)) for g in GRADES)
+                else:
+                    should_check = any(is_suspicious_jump(result.get(g), last_grade_prices.get(g)) for g in GRADES)
+
+            if should_check:
+                candidates.append((state, city, info, result, last_grade_prices))
+            else:
+                fetched_prices.setdefault(state, {})[city] = [result[g] for g in GRADES]
+
+    if candidates:
+        phase1_duration = time.time() - phase1_start
+        need_initial_delay = phase1_duration < 5.0
+        print(f"\nPhase 2: Verifying {len(candidates)} candidate store(s) with confirmation quorum...")
+
+        def verify_candidate(cand):
+            c_state, c_city, c_info, c_raw_result, c_last_grades = cand
+            refetch_fn = lambda: fetch_single_store(c_info)
+            final_prices, flagged = confirm_or_revert_price(
+                c_state,
+                c_city,
+                c_raw_result,
+                c_last_grades,
+                refetch_fn,
+                verify_all_changes=verify_all_changes,
+                revert_unconfirmed=revert_unconfirmed,
+                max_attempts=MAX_RECHECK_ATTEMPTS,
+                quorum=CONFIRMATION_QUORUM,
+                initial_delay=need_initial_delay,
+            )
+            return c_state, c_city, c_raw_result, c_last_grades, final_prices, flagged
+
+        with ThreadPoolExecutor(max_workers=min(10, len(candidates))) as executor:
+            cand_futures = [executor.submit(verify_candidate, c) for c in candidates]
+            for future in as_completed(cand_futures):
+                c_state, c_city, c_raw_result, c_last_grades, final_prices, flagged = future.result()
+                fetched_prices.setdefault(c_state, {})[c_city] = [final_prices[g] for g in GRADES]
+                if flagged:
+                    unconfirmed_jumps.append((c_state, c_city))
+                    jump_detail = {
+                        "last_reg": c_last_grades["regular"], "last_prem": c_last_grades["premium"],
+                        "last_diesel": c_last_grades["diesel"],
+                        "raw_reg": c_raw_result["regular"], "raw_prem": c_raw_result["premium"],
+                        "raw_diesel": c_raw_result["diesel"],
+                        "final_reg": final_prices["regular"], "final_prem": final_prices["premium"],
+                        "final_diesel": final_prices["diesel"],
+                    }
+                    jump_log_records.append({
+                        "timestamp": run_timestamp,
+                        "state": c_state,
+                        "city": c_city,
+                        "dataset": dataset_label,
+                        **jump_detail,
+                    })
 
     if unconfirmed_jumps:
         print(
@@ -994,11 +1044,22 @@ def refresh_store_details(stores: dict, filepath: str) -> int:
     return changed
 
 
-def process_and_save(locations: dict, source_filepath: str, history_file: str, latest_file: str, label: str) -> bool:
+def process_and_save(
+    locations: dict,
+    source_filepath: str,
+    history_file: str,
+    latest_file: str,
+    label: str,
+    verify_all_changes: bool = True,
+) -> bool:
     """Fetches prices for one dataset, validates completeness, and saves if healthy."""
     prices = get_gas_prices_ajax(
-        locations, source_filepath, load_latest_prices(latest_file),
-        jump_log_filepath=UNCONFIRMED_JUMPS_LOG_FILE, dataset_label=label,
+        locations,
+        source_filepath,
+        load_latest_prices(latest_file),
+        jump_log_filepath=UNCONFIRMED_JUMPS_LOG_FILE,
+        dataset_label=label,
+        verify_all_changes=verify_all_changes,
     )
     timestamp = next(iter(prices))
     fetched = prices[timestamp]

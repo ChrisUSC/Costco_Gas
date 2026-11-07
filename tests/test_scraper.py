@@ -14,6 +14,7 @@ from scraper import (
     extract_stores_from_html,
     is_suspicious_jump,
     _prices_match,
+    _find_quorum,
     confirm_or_revert_price,
     load_latest_prices,
     log_unconfirmed_jumps,
@@ -428,12 +429,13 @@ def test_confirm_or_revert_price_confirms_real_change(mock_sleep):
     last_prices = {"regular": 5.10, "premium": 5.60, "diesel": None}
     refetch = MagicMock(side_effect=[
         {"regular": 4.50, "premium": 5.60, "diesel": None},
-        {"regular": 4.50, "premium": 5.60, "diesel": None}
+        {"regular": 4.50, "premium": 5.60, "diesel": None},
+        {"regular": 4.50, "premium": 5.60, "diesel": None},
     ])
     final_prices, flagged = confirm_or_revert_price("CA", "Danville", new_prices, last_prices, refetch)
     assert final_prices == {"regular": 4.50, "premium": 5.60, "diesel": None}
     assert flagged is False
-    assert refetch.call_count == 2
+    assert refetch.call_count == 3
 
 
 @patch('scraper.time.sleep', return_value=None)
@@ -442,12 +444,13 @@ def test_confirm_or_revert_price_reverts_glitch(mock_sleep):
     last_prices = {"regular": 5.10, "premium": 5.60, "diesel": None}
     refetch = MagicMock(side_effect=[
         {"regular": 5.10, "premium": 5.60, "diesel": None},
-        {"regular": 5.10, "premium": 5.60, "diesel": None}
+        {"regular": 5.10, "premium": 5.60, "diesel": None},
+        {"regular": 5.10, "premium": 5.60, "diesel": None},
     ])
     final_prices, flagged = confirm_or_revert_price("CA", "Danville", glitch_prices, last_prices, refetch)
     assert final_prices == {"regular": 5.10, "premium": 5.60, "diesel": None}
     assert flagged is False
-    assert refetch.call_count == 2
+    assert refetch.call_count == 3
 
 
 @patch('scraper.time.sleep', return_value=None)
@@ -457,12 +460,14 @@ def test_confirm_or_revert_price_inconclusive_keeps_freshest_and_flags(mock_slee
     refetch = MagicMock(side_effect=[
         {"regular": 2.00, "premium": 5.60, "diesel": None},
         {"regular": 3.00, "premium": 5.60, "diesel": None},
-        {"regular": 4.00, "premium": 5.60, "diesel": None}
+        {"regular": 4.00, "premium": 5.60, "diesel": None},
+        {"regular": 5.00, "premium": 5.60, "diesel": None},
+        {"regular": 6.00, "premium": 5.60, "diesel": None},
     ])
     final_prices, flagged = confirm_or_revert_price("CA", "Danville", glitch_prices, last_prices, refetch)
-    assert final_prices == {"regular": 4.00, "premium": 5.60, "diesel": None}
+    assert final_prices == {"regular": 6.00, "premium": 5.60, "diesel": None}
     assert flagged is True
-    assert refetch.call_count == 3
+    assert refetch.call_count == 5
 
 
 @patch('scraper.time.sleep', return_value=None)
@@ -471,12 +476,105 @@ def test_confirm_or_revert_price_mixed_only_suspicious_grade_confirmed(mock_slee
     last_prices = {"regular": 5.10, "premium": 5.60, "diesel": None}
     refetch = MagicMock(side_effect=[
         {"regular": 5.10, "premium": 6.50, "diesel": None},
-        {"regular": 5.10, "premium": 6.50, "diesel": None}
+        {"regular": 5.10, "premium": 6.50, "diesel": None},
+        {"regular": 5.10, "premium": 6.50, "diesel": None},
     ])
     final_prices, flagged = confirm_or_revert_price("CA", "Danville", mixed_prices, last_prices, refetch)
     assert final_prices == {"regular": 5.10, "premium": 6.50, "diesel": None}
     assert flagged is False
-    assert refetch.call_count == 2
+    assert refetch.call_count == 3
+
+
+def test_find_quorum_handles_floats_and_none():
+    # Quorum of 3 on floats
+    has_q, val = _find_quorum([5.00, 5.00, 5.00])
+    assert has_q is True and val == 5.00
+
+    # Quorum of 3 on None (e.g. confirming no diesel)
+    has_q, val = _find_quorum([None, None, None])
+    assert has_q is True and val is None
+
+    # Inconclusive (only 2 agreeing when quorum is 3)
+    has_q, val = _find_quorum([5.00, 5.00, 5.10])
+    assert has_q is False and val is None
+
+    # Resolves to majority with noise (3 out of 4)
+    has_q, val = _find_quorum([5.00, 5.10, 5.00, 5.00])
+    assert has_q is True and val == 5.00
+
+
+@patch('scraper.time.sleep', return_value=None)
+def test_confirm_or_revert_price_verify_all_small_change_confirmed(mock_sleep):
+    # Small $0.05 move confirms when 3 rechecks agree
+    new_prices = {"regular": 5.05, "premium": 5.60, "diesel": None}
+    last_prices = {"regular": 5.00, "premium": 5.60, "diesel": None}
+    refetch = MagicMock(side_effect=[
+        {"regular": 5.05, "premium": 5.60, "diesel": None},
+        {"regular": 5.05, "premium": 5.60, "diesel": None},
+        {"regular": 5.05, "premium": 5.60, "diesel": None},
+    ])
+    final_prices, flagged = confirm_or_revert_price(
+        "CA", "Danville", new_prices, last_prices, refetch, verify_all_changes=True
+    )
+    assert final_prices == {"regular": 5.05, "premium": 5.60, "diesel": None}
+    assert flagged is False
+    assert refetch.call_count == 3
+
+
+@patch('scraper.time.sleep', return_value=None)
+def test_confirm_or_revert_price_verify_all_small_change_reverts_glitch(mock_sleep):
+    # Small $0.05 transient glitch reverts to last known price
+    glitch_prices = {"regular": 5.05, "premium": 5.60, "diesel": None}
+    last_prices = {"regular": 5.00, "premium": 5.60, "diesel": None}
+    refetch = MagicMock(side_effect=[
+        {"regular": 5.00, "premium": 5.60, "diesel": None},
+        {"regular": 5.00, "premium": 5.60, "diesel": None},
+        {"regular": 5.00, "premium": 5.60, "diesel": None},
+    ])
+    final_prices, flagged = confirm_or_revert_price(
+        "CA", "Danville", glitch_prices, last_prices, refetch, verify_all_changes=True
+    )
+    assert final_prices == {"regular": 5.00, "premium": 5.60, "diesel": None}
+    assert flagged is False
+    assert refetch.call_count == 3
+
+
+@patch('scraper.time.sleep', return_value=None)
+def test_confirm_or_revert_price_verify_all_inconclusive_reverts_to_last(mock_sleep):
+    # If rechecks flap and cannot reach quorum, revert to last known price instead of saving jitter
+    glitch_prices = {"regular": 5.05, "premium": 5.60, "diesel": None}
+    last_prices = {"regular": 5.00, "premium": 5.60, "diesel": None}
+    refetch = MagicMock(side_effect=[
+        {"regular": 5.05, "premium": 5.60, "diesel": None},
+        {"regular": 5.00, "premium": 5.60, "diesel": None},
+        {"regular": 5.10, "premium": 5.60, "diesel": None},
+        {"regular": 5.15, "premium": 5.60, "diesel": None},
+        {"regular": 5.20, "premium": 5.60, "diesel": None},
+    ])
+    final_prices, flagged = confirm_or_revert_price(
+        "CA", "Danville", glitch_prices, last_prices, refetch, verify_all_changes=True
+    )
+    assert final_prices == {"regular": 5.00, "premium": 5.60, "diesel": None}
+    assert flagged is True
+    assert refetch.call_count == 5
+
+
+@patch('scraper.time.sleep', return_value=None)
+def test_confirm_or_revert_price_diesel_phantom_glitch_reverted(mock_sleep):
+    # Phantom diesel (None -> 7.60) from cached node reverts back to None
+    glitch_prices = {"regular": 5.00, "premium": 5.60, "diesel": 7.60}
+    last_prices = {"regular": 5.00, "premium": 5.60, "diesel": None}
+    refetch = MagicMock(side_effect=[
+        {"regular": 5.00, "premium": 5.60, "diesel": None},
+        {"regular": 5.00, "premium": 5.60, "diesel": None},
+        {"regular": 5.00, "premium": 5.60, "diesel": None},
+    ])
+    final_prices, flagged = confirm_or_revert_price(
+        "CA", "Danville", glitch_prices, last_prices, refetch, verify_all_changes=True
+    )
+    assert final_prices == {"regular": 5.00, "premium": 5.60, "diesel": None}
+    assert flagged is False
+    assert refetch.call_count == 3
 
 
 def test_load_latest_prices_missing_file_returns_empty():
@@ -515,40 +613,11 @@ def test_get_gas_prices_ajax_no_jump_makes_single_call(mock_sleep, mock_create_s
 @patch('scraper.time.sleep', return_value=None)
 def test_get_gas_prices_ajax_real_change_confirmed(mock_sleep, mock_create_session):
     mock_session = MagicMock()
-    mock_session.get.side_effect = [_resp("4.50", "5.60"), _resp("4.50", "5.60"), _resp("4.50", "5.60")]
-    mock_create_session.return_value = mock_session
-
-    locations = {"CA": {"Danville": {"warehouse_id": "12345"}}}
-    last_known = {"CA": {"Danville": [5.10, 5.60, None]}}
-    result = get_gas_prices_ajax(locations, None, last_known)
-
-    ts = next(iter(result))
-    assert result[ts]["CA"]["Danville"] == [4.50, 5.60, None]
-    assert mock_session.get.call_count == 3
-
-
-@patch('scraper.create_session')
-@patch('scraper.time.sleep', return_value=None)
-def test_get_gas_prices_ajax_glitch_reverted(mock_sleep, mock_create_session):
-    mock_session = MagicMock()
-    mock_session.get.side_effect = [_resp("1.00", "5.60"), _resp("5.10", "5.60"), _resp("5.10", "5.60")]
-    mock_create_session.return_value = mock_session
-
-    locations = {"CA": {"Danville": {"warehouse_id": "12345"}}}
-    last_known = {"CA": {"Danville": [5.10, 5.60, None]}}
-    result = get_gas_prices_ajax(locations, None, last_known)
-
-    ts = next(iter(result))
-    assert result[ts]["CA"]["Danville"] == [5.10, 5.60, None]
-    assert mock_session.get.call_count == 3
-
-
-@patch('scraper.create_session')
-@patch('scraper.time.sleep', return_value=None)
-def test_get_gas_prices_ajax_inconclusive_flags_but_keeps_freshest(mock_sleep, mock_create_session, capsys):
-    mock_session = MagicMock()
     mock_session.get.side_effect = [
-        _resp("1.00", "5.60"), _resp("2.00", "5.60"), _resp("3.00", "5.60"), _resp("4.00", "5.60"),
+        _resp("4.50", "5.60"),
+        _resp("4.50", "5.60"),
+        _resp("4.50", "5.60"),
+        _resp("4.50", "5.60"),
     ]
     mock_create_session.return_value = mock_session
 
@@ -557,7 +626,51 @@ def test_get_gas_prices_ajax_inconclusive_flags_but_keeps_freshest(mock_sleep, m
     result = get_gas_prices_ajax(locations, None, last_known)
 
     ts = next(iter(result))
-    assert result[ts]["CA"]["Danville"] == [4.00, 5.60, None]
+    assert result[ts]["CA"]["Danville"] == [4.50, 5.60, None]
+    assert mock_session.get.call_count == 4
+
+
+@patch('scraper.create_session')
+@patch('scraper.time.sleep', return_value=None)
+def test_get_gas_prices_ajax_glitch_reverted(mock_sleep, mock_create_session):
+    mock_session = MagicMock()
+    mock_session.get.side_effect = [
+        _resp("1.00", "5.60"),
+        _resp("5.10", "5.60"),
+        _resp("5.10", "5.60"),
+        _resp("5.10", "5.60"),
+    ]
+    mock_create_session.return_value = mock_session
+
+    locations = {"CA": {"Danville": {"warehouse_id": "12345"}}}
+    last_known = {"CA": {"Danville": [5.10, 5.60, None]}}
+    result = get_gas_prices_ajax(locations, None, last_known)
+
+    ts = next(iter(result))
+    assert result[ts]["CA"]["Danville"] == [5.10, 5.60, None]
+    assert mock_session.get.call_count == 4
+
+
+@patch('scraper.create_session')
+@patch('scraper.time.sleep', return_value=None)
+def test_get_gas_prices_ajax_inconclusive_flags_but_keeps_freshest(mock_sleep, mock_create_session, capsys):
+    mock_session = MagicMock()
+    mock_session.get.side_effect = [
+        _resp("1.00", "5.60"),
+        _resp("2.00", "5.60"),
+        _resp("3.00", "5.60"),
+        _resp("4.00", "5.60"),
+        _resp("5.00", "5.60"),
+        _resp("6.00", "5.60"),
+    ]
+    mock_create_session.return_value = mock_session
+
+    locations = {"CA": {"Danville": {"warehouse_id": "12345"}}}
+    last_known = {"CA": {"Danville": [5.10, 5.60, None]}}
+    result = get_gas_prices_ajax(locations, None, last_known)
+
+    ts = next(iter(result))
+    assert result[ts]["CA"]["Danville"] == [6.00, 5.60, None]
     captured = capsys.readouterr()
     assert "couldn't be confirmed" in captured.out
 
@@ -579,10 +692,53 @@ def test_get_gas_prices_ajax_no_baseline_never_triggers_recheck(mock_sleep, mock
 
 @patch('scraper.create_session')
 @patch('scraper.time.sleep', return_value=None)
+def test_get_gas_prices_ajax_two_phase_sweep_only_rechecks_changed_store(mock_sleep, mock_create_session):
+    mock_session = MagicMock()
+    # Fresno is unchanged: calls return 4.50, 4.80
+    # Danville changed from 5.10 to 5.05: initial returns 5.05, rechecks return 5.05
+    def mock_get(url, *args, **kwargs):
+        if "warehouseid=1" in url:
+            return _resp("4.50", "4.80")
+        elif "warehouseid=2" in url:
+            return _resp("5.05", "5.60")
+        raise ValueError(f"Unexpected url {url}")
+
+    mock_session.get.side_effect = mock_get
+    mock_create_session.return_value = mock_session
+
+    locations = {
+        "CA": {
+            "Fresno": {"warehouse_id": "1"},
+            "Danville": {"warehouse_id": "2"},
+        }
+    }
+    last_known = {
+        "CA": {
+            "Fresno": [4.50, 4.80, None],     # Matches! No change
+            "Danville": [5.10, 5.60, None],   # Changed 5.10 -> 5.05
+        }
+    }
+
+    result = get_gas_prices_ajax(locations, None, last_known, verify_all_changes=True)
+    ts = next(iter(result))
+    assert result[ts]["CA"]["Fresno"] == [4.50, 4.80, None]
+    assert result[ts]["CA"]["Danville"] == [5.05, 5.60, None]
+
+    # Total calls: Fresno (1 in Phase 1) + Danville (1 in Phase 1 + 3 in Phase 2) = 5
+    assert mock_session.get.call_count == 5
+
+
+@patch('scraper.create_session')
+@patch('scraper.time.sleep', return_value=None)
 def test_get_gas_prices_ajax_logs_unconfirmed_jump_when_path_given(mock_sleep, mock_create_session, tmp_path):
     mock_session = MagicMock()
     mock_session.get.side_effect = [
-        _resp("1.00", "5.60"), _resp("2.00", "5.60"), _resp("3.00", "5.60"), _resp("4.00", "5.60"),
+        _resp("1.00", "5.60"),
+        _resp("2.00", "5.60"),
+        _resp("3.00", "5.60"),
+        _resp("4.00", "5.60"),
+        _resp("5.00", "5.60"),
+        _resp("6.00", "5.60"),
     ]
     mock_create_session.return_value = mock_session
 
@@ -602,7 +758,7 @@ def test_get_gas_prices_ajax_logs_unconfirmed_jump_when_path_given(mock_sleep, m
     assert record["dataset"] == "Local"
     assert record["last_reg"] == 5.10
     assert record["raw_reg"] == 1.00
-    assert record["final_reg"] == 4.00
+    assert record["final_reg"] == 6.00
 
 
 @patch('scraper.create_session')
