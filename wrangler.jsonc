@@ -1,20 +1,21 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "costco-gas",
+  "main": "worker.js",
   "compatibility_date": "2026-06-30",
   "observability": {
     "enabled": true
   },
   "assets": {
-    "directory": "."
+    "directory": ".",
+    "binding": "ASSETS"
   },
   "r2_buckets": [
-      {
-        "binding": "DATA_BUCKET",
-        "bucket_name": "costco-gas-data"
-      }
-    ]
-  }
+    {
+      "binding": "DATA_BUCKET",
+      "bucket_name": "costco-gas-data"
+    }
+  ],
   "compatibility_flags": [
     "nodejs_compat"
   ]
