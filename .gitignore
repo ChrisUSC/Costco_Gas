@@ -20,6 +20,8 @@ __pycache__/
 *.bak*
 *.tmp
 unconfirmed_jumps_log.jsonl
+data_backups/
+
 
 # Dynamic price data snapshots (stored strictly in Cloudflare R2)
 *_latest.json

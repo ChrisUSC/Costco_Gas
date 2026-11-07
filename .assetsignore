@@ -11,6 +11,8 @@ unconfirmed_jumps_log.jsonl
 # Temporary and backup files
 *.bak*
 *.tmp
+data_backups/
+
 
 # Docs / repo metadata
 README.md
