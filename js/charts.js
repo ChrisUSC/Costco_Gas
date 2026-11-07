@@ -16,6 +16,9 @@ let historyLoadPromise = null;
 let currentModalState = null;
 let currentModalCity = null;
 
+// Show a dot on every day (including unchanged ones) when the range has this many points or fewer.
+const SHOW_ALL_DOTS_MAX_POINTS = 45;
+
 export const HISTORY_RANGE_OPTIONS = [
     { label: '7D', days: 7 },
     { label: '30D', days: 30 },
@@ -69,6 +72,32 @@ function showChartMessage(msg, isError = false) {
     if (!chartContainer) return;
     const color = isError ? 'var(--costco-red)' : 'var(--text-muted)';
     chartContainer.innerHTML = `<p class="empty-msg" style="color:${color};">${msg}</p>`;
+}
+
+// Turn change-only entries into one point per day (last known price carried forward).
+// `points` must be sorted ascending by rawDate. Days before the first known price are skipped.
+function expandToDaily(points, start, end) {
+    const out = [];
+    let idx = 0;
+    let last = null;
+    const d = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+    const endDay = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+
+    for (; d <= endDay; d.setDate(d.getDate() + 1)) {
+        const nextDay = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1);
+        while (idx < points.length && points[idx].rawDate < nextDay) {
+            last = points[idx++];
+        }
+        if (last) {
+            out.push({
+                rawDate: new Date(d),
+                reg: last.reg,
+                prem: last.prem,
+                diesel: last.diesel
+            });
+        }
+    }
+    return out;
 }
 
 export function renderRangeControls() {
@@ -137,6 +166,7 @@ export function renderPriceChart(stateCode, city) {
         chartContainer.innerHTML = `<canvas id="priceChart"></canvas>`;
     }
 
+    // Keep only the last entry per calendar day
     let dedupedHistory = [];
     const seenDates = new Set();
     for (let i = history.length - 1; i >= 0; i--) {
@@ -148,87 +178,43 @@ export function renderPriceChart(stateCode, city) {
 
     const now = state.latestTimestamp ? (parseScraperTimestamp(state.latestTimestamp) || new Date()) : new Date();
 
-    if (state.historyRangeDays > 0) {
-        const cutoff = new Date(now.getTime() - state.historyRangeDays * 86400 * 1000);
+    // Expand change-only entries into one point per day. Prices from before the
+    // range start are carried forward automatically, and the series always
+    // extends through today.
+    const start = state.historyRangeDays > 0
+        ? new Date(now.getTime() - state.historyRangeDays * 86400 * 1000)
+        : dedupedHistory[0].rawDate;
 
-        // Find the most recent price before or at cutoff to anchor the left edge of the range
-        let baselineBeforeCutoff = null;
-        for (let i = 0; i < dedupedHistory.length; i++) {
-            if (dedupedHistory[i].rawDate <= cutoff) {
-                baselineBeforeCutoff = dedupedHistory[i];
-            } else {
-                break;
-            }
-        }
-
-        const inRange = dedupedHistory.filter(h => h.rawDate > cutoff && h.rawDate <= now);
-
-        if (baselineBeforeCutoff) {
-            dedupedHistory = [
-                {
-                    rawDate: cutoff,
-                    dayStr: cutoff.toLocaleDateString(),
-                    reg: baselineBeforeCutoff.reg,
-                    prem: baselineBeforeCutoff.prem,
-                    diesel: baselineBeforeCutoff.diesel
-                },
-                ...inRange
-            ];
-        } else if (inRange.length > 0) {
-            dedupedHistory = inRange;
-        } else {
-            // All recorded history was before cutoff; anchor at cutoff with latest known price
-            const last = dedupedHistory[dedupedHistory.length - 1];
-            dedupedHistory = [
-                {
-                    rawDate: cutoff,
-                    dayStr: cutoff.toLocaleDateString(),
-                    reg: last.reg,
-                    prem: last.prem,
-                    diesel: last.diesel
-                }
-            ];
-        }
-    }
-
-    // Always anchor the right edge to 'now' so the line extends across un-changed days to today
-    if (dedupedHistory.length > 0) {
-        const lastPoint = dedupedHistory[dedupedHistory.length - 1];
-        if (lastPoint.rawDate.getTime() < now.getTime()) {
-            dedupedHistory.push({
-                rawDate: now,
-                dayStr: now.toLocaleDateString(),
-                reg: lastPoint.reg,
-                prem: lastPoint.prem,
-                diesel: lastPoint.diesel
-            });
-        }
-    }
+    dedupedHistory = expandToDaily(dedupedHistory, start, now);
 
     if (dedupedHistory.length === 0) {
         showChartMessage(`No price history available for ${city}, ${stateCode} in this range.`);
         return;
     }
 
+    const showAllDots = dedupedHistory.length <= SHOW_ALL_DOTS_MAX_POINTS;
+    const surfaceColor = state.isDarkMode ? '#1e293b' : '#ffffff';
+
     const labels = dedupedHistory.map(h => h.rawDate);
     const datasets = GRADE_KEYS
         .map(g => {
             const info = GRADE_INFO[g];
             const data = dedupedHistory.map(h => h[info.histKey] === Infinity ? null : h[info.histKey]);
-            // Only show a dot where THIS grade's price actually changed (or the first point).
-            // An entry exists whenever any grade moved, so other grades would otherwise get
-            // identical-price dots on days they didn't change.
+            // Filled dot = this grade's price changed that day (or first point).
+            // Hollow dot = carried forward from an earlier day (short ranges only).
             const changed = data.map((v, i) => i === 0 || v !== data[i - 1]);
             return {
                 grade: g,
                 label: info.label,
                 data,
+                changed,
                 borderColor: info.color,
                 backgroundColor: info.color,
                 stepped: 'after',
-                pointRadius: changed.map(c => (c ? 3 : 0)),
-                pointHoverRadius: changed.map(c => (c ? 6 : 0)),
-                pointHitRadius: changed.map(c => (c ? 6 : 0)),
+                pointBackgroundColor: changed.map(c => (c ? info.color : surfaceColor)),
+                pointBorderColor: info.color,
+                pointRadius: changed.map(c => (c ? 4 : showAllDots ? 2.5 : 0)),
+                pointHoverRadius: 6,
                 spanGaps: true
             };
         })
@@ -246,11 +232,18 @@ export function renderPriceChart(stateCode, city) {
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            // Hover anywhere along the x-axis to see every grade's price for that day
+            interaction: { mode: 'index', intersect: false },
             plugins: {
                 legend: { labels: { color: textColor } },
                 tooltip: {
                     callbacks: {
-                        label: context => `${context.dataset.label}: $${context.raw.toFixed(2)}`
+                        label: context => {
+                            if (context.raw === null || context.raw === undefined) return `${context.dataset.label}: n/a`;
+                            return `${context.dataset.label}: $${context.raw.toFixed(2)}`;
+                        },
+                        afterLabel: context =>
+                            context.dataset.changed[context.dataIndex] ? '  (price changed)' : ''
                     }
                 }
             },
@@ -265,6 +258,7 @@ export function renderPriceChart(stateCode, city) {
                     grid: { color: gridColor }
                 },
                 y: {
+                    grace: '5%', // keeps flat lines from hugging the chart edges
                     ticks: { color: textColor, callback: value => `$${value.toFixed(2)}` },
                     grid: { color: gridColor }
                 }
