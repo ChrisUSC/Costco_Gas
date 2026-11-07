@@ -8,6 +8,13 @@
   "assets": {
     "directory": "."
   },
+  "r2_buckets": [
+      {
+        "binding": "DATA_BUCKET",
+        "bucket_name": "costco-gas-data"
+      }
+    ]
+  }
   "compatibility_flags": [
     "nodejs_compat"
   ]
