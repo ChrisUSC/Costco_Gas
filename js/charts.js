@@ -215,6 +215,10 @@ export function renderPriceChart(stateCode, city) {
         .map(g => {
             const info = GRADE_INFO[g];
             const data = dedupedHistory.map(h => h[info.histKey] === Infinity ? null : h[info.histKey]);
+            // Only show a dot where THIS grade's price actually changed (or the first point).
+            // An entry exists whenever any grade moved, so other grades would otherwise get
+            // identical-price dots on days they didn't change.
+            const changed = data.map((v, i) => i === 0 || v !== data[i - 1]);
             return {
                 grade: g,
                 label: info.label,
@@ -222,8 +226,9 @@ export function renderPriceChart(stateCode, city) {
                 borderColor: info.color,
                 backgroundColor: info.color,
                 stepped: 'after',
-                pointRadius: 3,
-                pointHoverRadius: 6,
+                pointRadius: changed.map(c => (c ? 3 : 0)),
+                pointHoverRadius: changed.map(c => (c ? 6 : 0)),
+                pointHitRadius: changed.map(c => (c ? 6 : 0)),
                 spanGaps: true
             };
         })
