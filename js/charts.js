@@ -210,7 +210,8 @@ export function renderPriceChart(stateCode, city) {
                 changed,
                 borderColor: info.color,
                 backgroundColor: info.color,
-                stepped: 'after',
+                // 'before' = flat at the old price, then jump ON the day the new price appears
+                stepped: 'before',
                 pointBackgroundColor: changed.map(c => (c ? info.color : surfaceColor)),
                 pointBorderColor: info.color,
                 pointRadius: changed.map(c => (c ? 4 : showAllDots ? 2.5 : 0)),
@@ -241,9 +242,7 @@ export function renderPriceChart(stateCode, city) {
                         label: context => {
                             if (context.raw === null || context.raw === undefined) return `${context.dataset.label}: n/a`;
                             return `${context.dataset.label}: $${context.raw.toFixed(2)}`;
-                        },
-                        afterLabel: context =>
-                            context.dataset.changed[context.dataIndex] ? '  (price changed)' : ''
+                        }
                     }
                 }
             },
