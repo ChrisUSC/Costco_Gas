@@ -2,10 +2,15 @@
 # even though assets.directory is "." (the whole repo root). Gitignore syntax.
 # See: https://developers.cloudflare.com/workers/static-assets/binding/
 
-# Scraper source + internals
-scraper.py
-requirements.txt
+# Python source, dependencies & test internals
+*.py
+requirements*.txt
+pytest.ini
 unconfirmed_jumps_log.jsonl
+
+# Temporary and backup files
+*.bak*
+*.tmp
 
 # Docs / repo metadata
 README.md
@@ -16,19 +21,19 @@ README.md
 .venv
 .pytest_cache
 
-# Scraper-only intermediate/subset data - the frontend only ever fetches
+# Scraper-only intermediate/subset/experiment data - the frontend only ever fetches
 # us_latest.json, us_stores.json, and us_history.json.
 ca_latest.json
 ca_history.json
 ca_stores.json
+ca_freq_*.json
 local_latest.json
 local_history.json
 local_stores.json
 state_list.json
 
-# Tests
+# Tests & bytecode
 tests/
-test_validate_snapshot.py
 **/__pycache__
 **/*.pyc
 

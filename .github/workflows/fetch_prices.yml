@@ -47,7 +47,7 @@ jobs:
           timeout_minutes: 10
           max_attempts: 3
           retry_wait_seconds: 120
-          command: python scraper.py 4
+          command: python scraper.py 3
 
       - name: Commit and push updated JSON files to all branches
         run: |
@@ -55,7 +55,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           
           # Stage the files updated by the scraper
-          git add us_history.json us_latest.json ca_history.json ca_latest.json local_history.json local_latest.json index.html
+          git add us_history.json us_latest.json ca_history.json ca_latest.json local_history.json local_latest.json
           
           if git diff --staged --quiet; then
             echo "No gas price changes detected. Skipping commit."
@@ -73,10 +73,10 @@ jobs:
             git pull origin $branch --rebase
             
             # Forcefully extract the exact files from the stash, overwriting any conflicts
-            git checkout stash@{0} -- us_history.json us_latest.json ca_history.json ca_latest.json local_history.json local_latest.json index.html
+            git checkout stash@{0} -- us_history.json us_latest.json ca_history.json ca_latest.json local_history.json local_latest.json
             
             # Stage the forcefully applied files
-            git add us_history.json us_latest.json ca_history.json ca_latest.json local_history.json local_latest.json index.html
+            git add us_history.json us_latest.json ca_history.json ca_latest.json local_history.json local_latest.json
             
             # Commit and push if there are changes
             if ! git diff --staged --quiet; then
