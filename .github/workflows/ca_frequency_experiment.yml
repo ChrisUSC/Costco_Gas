@@ -39,6 +39,14 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      - name: Download existing snapshots from R2
+        run: python r2_sync.py download ca_freq_history.json ca_freq_latest.json
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+
       - name: Run CA frequency price check
         run: python ca_frequency_runner.py
 
@@ -49,21 +57,11 @@ jobs:
             python analyze_price_frequency.py ca_freq_history.json
           fi
 
-      - name: Commit and push updated CA frequency files
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add ca_freq_history.json ca_freq_latest.json
-          if git diff --staged --quiet; then
-            echo "No price changes detected. Skipping commit."
-            exit 0
-          fi
-          git commit -m "chore(ca-freq): auto-update CA gas prices [$(TZ=America/Los_Angeles date '+%Y-%m-%d %H:%M PT')]"
-          for i in 1 2 3; do
-            git pull --rebase --autostash origin ${{ github.ref_name }} && \
-            git push origin ${{ github.ref_name }} && exit 0
-            echo "Push attempt $i failed, retrying..."
-            sleep 5
-          done
-          echo "Failed to push after 3 attempts"
-          exit 1
+      - name: Upload updated CA frequency files to R2
+        run: python r2_sync.py upload ca_freq_history.json ca_freq_latest.json
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+

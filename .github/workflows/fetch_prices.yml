@@ -41,6 +41,14 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      - name: Download existing snapshots from R2
+        run: python r2_sync.py download
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+
       - name: Run scraper
         uses: nick-fields/retry@v3
         with:
@@ -49,46 +57,11 @@ jobs:
           retry_wait_seconds: 120
           command: python scraper.py 3
 
-      - name: Commit and push updated JSON files to all branches
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          
-          # Stage the files updated by the scraper
-          git add us_history.json us_latest.json ca_history.json ca_latest.json local_history.json local_latest.json
-          
-          if git diff --staged --quiet; then
-            echo "No gas price changes detected. Skipping commit."
-            exit 0
-          fi
-          
-          # Stash the staged changes
-          git stash
-          
-          # Iterate over all remote branches
-          for branch in $(git branch -r | grep -v '\->' | sed 's/origin\///'); do
-            echo "--- Updating branch: $branch ---"
-            
-            git checkout $branch
-            git pull origin $branch --rebase
-            
-            # Forcefully extract the exact files from the stash, overwriting any conflicts
-            git checkout stash@{0} -- us_history.json us_latest.json ca_history.json ca_latest.json local_history.json local_latest.json
-            
-            # Stage the forcefully applied files
-            git add us_history.json us_latest.json ca_history.json ca_latest.json local_history.json local_latest.json
-            
-            # Commit and push if there are changes
-            if ! git diff --staged --quiet; then
-              git commit -m "chore: auto-update gas prices [$(TZ=America/Los_Angeles date '+%Y-%m-%d %H:%M PT')]"
-              git push origin $branch
-            else
-              echo "No changes needed for $branch"
-            fi
-            
-            # Clean up the working directory before moving to the next branch
-            git reset --hard
-          done
-          
-          # Clear the stash now that we're done
-          git stash drop
+      - name: Upload updated snapshots to R2
+        run: python r2_sync.py upload
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+
