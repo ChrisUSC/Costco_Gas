@@ -24,7 +24,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-
       - run: pip install -r requirements.txt
-      - run: python scraper.py 6
+      - run: python pipeline/scraper.py 6
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v8
@@ -32,9 +32,9 @@ jobs:
           commit-message: "chore: auto-discover new Costco gas stations"
           title: "New Costco gas stations discovered"
           body: |
-            Automated weekly scan found changes to `us_stores.json`. Please review the diff before merging.
+            Automated weekly scan found changes to `public/us_stores.json`. Please review the diff before merging.
           branch: auto/costco-gas-stations
           delete-branch: true
           reviewers: ChrisUSC
           add-paths: |
-            us_stores.json
+            public/us_stores.json

@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 env:
   TZ: America/Los_Angeles
@@ -20,8 +20,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -40,7 +38,7 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Download existing snapshots from R2
-        run: python r2_sync.py download ca_freq_history.json ca_freq_latest.json
+        run: python pipeline/r2_sync.py download ca_freq_history.json ca_freq_latest.json
         env:
           R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
@@ -48,17 +46,17 @@ jobs:
           R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
 
       - name: Run CA frequency price check
-        run: python ca_frequency_runner.py
+        run: python pipeline/ca_frequency_runner.py
 
       - name: Run price change velocity analysis
         continue-on-error: true
         run: |
-          if [ -f ca_freq_history.json ]; then
-            python analyze_price_frequency.py ca_freq_history.json
+          if [ -f data/snapshots/ca_freq_history.json ]; then
+            python pipeline/analyze_price_frequency.py data/snapshots/ca_freq_history.json
           fi
 
       - name: Upload updated CA frequency files to R2
-        run: python r2_sync.py upload ca_freq_history.json ca_freq_latest.json
+        run: python pipeline/r2_sync.py upload ca_freq_history.json ca_freq_latest.json
         env:
           R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}

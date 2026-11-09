@@ -7,9 +7,10 @@ Works with us_history.json, ca_history.json, local_history.json, or any
 frequency experiment history file.
 
 Usage:
-    python analyze_price_frequency.py [history_file]
-    python analyze_price_frequency.py us_history.json
-    python analyze_price_frequency.py local_history.json
+    python pipeline/analyze_price_frequency.py [history_file]
+    python pipeline/analyze_price_frequency.py data/snapshots/ca_freq_history.json
+
+With no argument, the first of us/ca/local_history.json found in data/snapshots/ is used.
 """
 
 import json
@@ -17,6 +18,8 @@ import os
 import sys
 from collections import defaultdict
 from datetime import datetime
+
+from paths import snapshot_path
 
 
 def load_history(filepath: str) -> dict:
@@ -228,7 +231,7 @@ def analyze(history: dict, filename: str) -> None:
         perm_pct = 100.0 - flap_pct
         print(f"• Flapping rate (A -> B -> A jitter): {flapping_count:,} of {total_flappable_changes:,} ({flap_pct:.1f}%) -> {perm_pct:.1f}% are permanent price moves")
     else:
-        print(f"• Flapping rate (A -> B -> A jitter): 0 of 0 (insufficient history; requires ≥2 changes per store to detect oscillation)")
+        print("• Flapping rate (A -> B -> A jitter): 0 of 0 (insufficient history; requires ≥2 changes per store to detect oscillation)")
     print()
     print("─── 2. WHEN DO PRICES CHANGE? (HOURLY PT DISTRIBUTION) ───")
     sorted_hours = sorted(hourly_runs.keys())
@@ -263,12 +266,11 @@ def analyze(history: dict, filename: str) -> None:
 
 
 def main():
-    target_file = sys.argv[1] if len(sys.argv) > 1 else "us_history.json"
-    if not os.path.exists(target_file):
-        for candidate in ["us_history.json", "ca_history.json", "local_history.json"]:
-            if os.path.exists(candidate):
-                target_file = candidate
-                break
+    if len(sys.argv) > 1:
+        target_file = sys.argv[1]
+    else:
+        candidates = [snapshot_path(n) for n in ("us_history.json", "ca_history.json", "local_history.json")]
+        target_file = next((c for c in candidates if os.path.exists(c)), candidates[0])
     history = load_history(target_file)
     analyze(history, target_file)
 

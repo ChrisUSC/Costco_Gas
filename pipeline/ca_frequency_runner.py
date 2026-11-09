@@ -8,7 +8,7 @@ at higher frequency, storing results in dedicated files isolated from production
 - Latest:  ca_freq_latest.json   (latest active snapshot)
 
 Usage:
-    python ca_frequency_runner.py
+    python pipeline/ca_frequency_runner.py
 """
 
 import json
@@ -24,11 +24,13 @@ from scraper import (
     reconstruct_store_prices_at,
     find_trend_baseline,
     write_pretty_top_level,
+    atomic_write_json,
 )
+from paths import CA_STORES_FILE, snapshot_path
 
-CA_STORES_FILE = "ca_stores.json"
-CA_FREQ_HISTORY_FILE = "ca_freq_history.json"
-CA_FREQ_LATEST_FILE = "ca_freq_latest.json"
+CA_FREQ_HISTORY_FILE = snapshot_path("ca_freq_history.json")
+CA_FREQ_LATEST_FILE = snapshot_path("ca_freq_latest.json")
+CA_LATEST_FILE = snapshot_path("ca_latest.json")
 
 # True: only rewrite the latest file when a price actually changed (or it doesn't exist yet).
 #       Avoids a commit on every run, but the file's "timestamp" then means "last change",
@@ -64,8 +66,8 @@ def run_ca_tracker(
 
     # Prioritize existing frequency latest, fall back to production ca_latest.json
     latest_known = load_latest_prices(latest_path)
-    if not latest_known and os.path.exists("ca_latest.json"):
-        latest_known = load_latest_prices("ca_latest.json")
+    if not latest_known:
+        latest_known = load_latest_prices(CA_LATEST_FILE)
 
     prices = get_gas_prices_ajax(
         stores,
@@ -116,10 +118,7 @@ def run_ca_tracker(
         "previous": prev_prices,
         "previous_timestamp": prev_timestamp,
     }
-    tmp_path = f"{latest_path}.tmp"
-    with open(tmp_path, "w", encoding="utf-8") as f:
-        json.dump(latest_payload, f, separators=(',', ':'))
-    os.replace(tmp_path, latest_path)
+    atomic_write_json(latest_path, latest_payload, separators=(',', ':'))
 
     print(f"✅ Saved latest CA snapshot -> {latest_path}")
     return True

@@ -1,95 +1,149 @@
 # Costco Gas Prices
 
-A self-hosted, live-updating map of Costco gas prices across the US, built on scraped data with no backend server — just static files on Cloudflare and a scheduled scraper.
+A live-updating map of Costco gas prices across the US. A scheduled scraper collects prices, stores them in Cloudflare R2, and a static site on Cloudflare Pages displays them. There's no backend server to run.
 
 **Live site:** [https://costco-gas.pages.dev](https://costco-gas.pages.dev)
 
-![Cloudflare Pages](https://img.shields.io/badge/hosted%20on-Cloudflare-orange)
+![Cloudflare Pages](https://img.shields.io/badge/hosted%20on-Cloudflare%20Pages-orange)
 ![Python](https://img.shields.io/badge/scraper-Python%203.11-blue)
 
 ## Features
 
-- 📍 Interactive Leaflet map of every Costco warehouse with a gas station, with price badges that appear as you zoom in
-- ⛽ Regular, Premium, and Diesel toggle (automatically filters to Diesel-carrying stations when Diesel is selected)
-- 🕒 Live "Open / Closing soon / Closed" status computed in each store's local timezone, plus expandable 7-day gas station hours
-- 🛣️ **Route Finder** — find the cheapest Costco gas stations within a configurable distance of your driving route (via OSRM, with straight-line corridor fallback)
-- ★ **Favorites** — save favorite stations and driving routes locally for quick access
-- 🔍 Autocomplete search by city, address, or zip code (local store matches + map-biased Nominatim geocoding)
-- 📈 Interactive price history chart per store (Chart.js) with 7D / 30D / 90D / 1Y / All-time range filters, lazy-loaded on demand
-- 🥇 "State Lowest" leaderboard with medal ranking and 72-hour price trend arrows (`▲` / `▼` / `–`)
-- 📍 "Near Me" geolocation with radius (5–100 mi) and Price / Distance sorting
-- 🔗 Shareable direct links (`?store=STATE_City`) that fly straight to a station and open its popup
-- 🌙 Dark mode with matching CARTO map tiles
+- 📍 Interactive Leaflet map of every Costco warehouse with a gas station; price badges appear as you zoom in
+- ⛽ Regular / Premium / Diesel toggle (Diesel shows only stations that sell it)
+- 🕒 Live "Open / Closing soon / Closed" status in each station's local time zone, plus 7-day gas hours
+- 🛣️ **Route Finder**: cheapest stations within a set distance of a driving route (OSRM, with a straight-line fallback)
+- ★ **Favorites**: save stations and routes in your browser
+- 🔍 Search by city, address or zip code (store matches plus Nominatim geocoding)
+- 📈 Price-history chart per station with 7D / 30D / 90D / 1Y / All ranges
+- 🥇 "State Lowest" leaderboard with 72-hour trend arrows (`▲` / `▼` / `–`)
+- 📍 "Near Me" with a 5–100 mi radius and price or distance sorting
+- 🔗 Shareable links (`?store=STATE_City`) that open a specific station
+- 🌙 Dark mode with matching map tiles
 
 ## How it works
 
 ```
-[Cloudflare Worker Cron] (Hourly trigger via GitHub API)
+GitHub Actions (fetch_prices.yml, 3× daily)
         │
         ▼
-scraper.py (GitHub Actions runner)
-        │
-        ├─ downloads previous snapshot baseline from Cloudflare R2 (r2_sync.py)
-        ├─ fetches live prices from Costco's gas-price AJAX endpoint
-        ├─ confirms suspicious price jumps via cache-busted quorum rechecks
-        ├─ validates snapshot coverage & computes deltas
+pipeline/r2_sync.py download   ← previous snapshots from R2 into data/snapshots/
+pipeline/scraper.py 3          ← fetch prices from Costco, confirm suspicious jumps,
+        │                         validate coverage, append changes to history
+        ▼
+pipeline/r2_sync.py upload     → us_latest.json / us_history.json (+ daily backup) to R2
         │
         ▼
-Cloudflare R2 Bucket (Object Storage)
-  ├── us_latest.json / us_history.json
-  ├── ca_latest.json / ca_history.json
-  └── local_latest.json / local_history.json
-        │
-        ▼
-worker.js (Cloudflare Workers + Static Assets)
-  ├── Dynamic JSON requests  ──► Streamed directly from R2 Bucket (with edge caching)
-  └── Static site assets     ──► Served via Cloudflare CDN (index.html, styles.css, app.js, us_stores.json)
+Cloudflare R2 bucket ──► functions/_middleware.js ──► browser
+                          (serves *_latest.json / *_history.json from R2)
+public/ (HTML, JS, CSS, us_stores.json) ──► Cloudflare Pages static hosting ──► browser
 ```
 
-The scraper runs hourly triggered by a Cloudflare Worker via GitHub Actions, computes price deltas, and updates the JSON files in Cloudflare R2. Cloudflare Worker sits in front of the site, streaming dynamic snapshots from R2 and serving the static website files from edge assets — with no Git commits and no manual server maintenance.
+- **Prices** never touch git. They live in R2 and are streamed to the site by the Pages middleware.
+- **Store list** (`public/us_stores.json`) is in git. A weekly workflow discovers new warehouses and opens a pull request for review.
+- **Schedule:** prices update at 00:00, 08:00 and 16:00 UTC. Discovery runs Mondays at 08:00 UTC. Both can also be started by hand from the Actions tab.
 
 ## Project structure
 
 ```
-├── index.html              # App shell
-├── styles.css              # Styling, light/dark theme via CSS variables
-├── app.js                  # Main application entry point, map lifecycle & event delegation
-├── worker.js               # Cloudflare Worker edge proxy: streams dynamic data from R2, falls back to assets
-├── r2_sync.py              # Cloudflare R2 S3-compatible sync utility (download baselines / upload snapshots)
-├── js/
-│   ├── utils.js            # Pure utilities, constants, distance/route math, gas hours & timestamps
-│   ├── state.js            # Centralized application state & localStorage persistence
-│   ├── components.js       # Reusable DOM components (store cards, mobile sheet, saved routes)
-│   ├── search.js           # Autocomplete & map-biased Nominatim geocoding
-│   ├── charts.js           # Lazy-loaded history fetcher & Chart.js price history modal
-│   └── routes.js           # OSRM driving route lookup, corridor filtering & saved routes
+├── public/                     # Everything the browser loads (Cloudflare Pages output directory)
+│   ├── index.html              # App shell
+│   ├── styles.css              # Styling, light/dark theme via CSS variables
+│   ├── app.js                  # Entry point: map, sidebar views, event handling
+│   ├── js/
+│   │   ├── utils.js            # Constants, price/grade helpers, distance math, gas hours, timestamps
+│   │   ├── state.js            # App state and localStorage preferences
+│   │   ├── components.js       # Store cards, mobile sheet, saved-route cards
+│   │   ├── search.js           # Autocomplete and Nominatim geocoding
+│   │   ├── charts.js           # Price-history loading and Chart.js modal
+│   │   └── routes.js           # OSRM routing, corridor filtering, saved routes
+│   └── us_stores.json          # Master store list: address, coordinates, hours, phone, time zone
 │
-├── scraper.py              # Store discovery, metadata enrichment & AJAX price scraper
-├── requirements.txt        # Python dependencies (includes boto3 for R2 sync)
-├── wrangler.jsonc          # Cloudflare Workers Static Assets & R2 bucket binding config
+├── functions/
+│   └── _middleware.js          # Pages Function: serves price snapshots from the R2 bucket
+├── worker.js                   # Same R2 routing as a standalone Cloudflare Worker
+├── wrangler.jsonc              # Worker config (static assets from public/, R2 binding)
 │
-├── us_stores.json          # Master store list: address, lat/lng, warehouse ID, hours, phone, tz
-├── ca_stores.json          # Subset: California stores only
-├── local_stores.json       # Subset: nearby stores for fast local runs
+├── pipeline/                   # Python data pipeline
+│   ├── scraper.py              # Store discovery, metadata, price scraping and snapshot saving
+│   ├── r2_sync.py              # Download/upload snapshots, list and restore R2 backups
+│   ├── paths.py                # Central file locations used by the scripts
+│   ├── ca_frequency_runner.py  # High-frequency California price tracker (experiment)
+│   └── analyze_price_frequency.py # Reports how often prices change in a history file
 │
+├── data/
+│   ├── ca_stores.json          # California store list (used by option 2 and the CA experiment)
+│   ├── local_stores.json       # Small nearby subset for quick local runs (option 1)
+│   └── snapshots/              # Local copies of R2 snapshots (git-ignored)
+│
+├── tests/                      # pytest suite for the pipeline
 ├── .github/workflows/
-│   ├── fetch_prices.yml            # Main scraping workflow (syncs with R2, runs scraper)
-│   ├── ca_frequency_experiment.yml # High-frequency CA tracker workflow
-│   ├── seed_r2.yml                 # Manual workflow to test the R2 connection
-│   ├── discover.yml                # Weekly automated Costco station discovery PR generator
-│   └── testing.yml                 # Automated test suite (pytest)
-│
-└── tests/
-    ├── test_scraper.py     # Unit tests for price parsing, metadata, quorum rechecks & file I/O
-    ├── test_store_hours.py # Unit tests for JSON-LD / HTML gas hours extraction & detail refresh
-    ├── test_trend_data.py  # Unit tests for trend baseline lookback & latest snapshot generation
-    └── test_delta_storage.py # Unit tests for delta storage, history reconstruction & runner logic
+│   ├── fetch_prices.yml        # Scheduled price scrape (R2 download → scrape → upload)
+│   ├── discover.yml            # Weekly new-store discovery; opens a PR
+│   ├── ca_frequency_experiment.yml # Manual CA high-frequency run
+│   ├── seed_r2.yml             # Manual R2 connection test
+│   └── testing.yml             # Runs pytest on pushes and PRs to main
+├── requirements.txt            # Pipeline dependencies
+├── requirements-dev.txt        # + pytest
+└── pytest.ini
 ```
 
+The pipeline scripts resolve their paths from `pipeline/paths.py`, so they can be run from any directory.
+
+## Running the pipeline
+
+```bash
+pip install -r requirements.txt
+```
+
+```bash
+python pipeline/scraper.py          # interactive menu
+```
+
+```bash
+python pipeline/scraper.py 3        # non-interactive (what CI runs)
+```
+
+| Option | What it does |
+|---|---|
+| `1` | Update prices for `data/local_stores.json` |
+| `2` | Update prices for `data/ca_stores.json` |
+| `3` | Update prices for `public/us_stores.json` (all US stores) |
+| `4` | Run 1 + 2 + 3 |
+| `5` | **Full rebuild**: re-discover every warehouse from costco.com and rewrite `public/us_stores.json` |
+| `6` | Discover *new* stores and refresh details (`phone`, `gas_hours`, `tz`) in `public/us_stores.json` |
+| `8` | Refresh store details across all three store lists |
+
+Price snapshots are written to `data/snapshots/`. To start from the real data, download it from R2 first (needs the R2 environment variables below):
+
+```bash
+python pipeline/r2_sync.py download
+```
+
+### R2 sync and backups
+
+`r2_sync.py` needs `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` and `R2_BUCKET_NAME` (stored as GitHub Actions secrets for CI).
+
+| Command | What it does |
+|---|---|
+| `python pipeline/r2_sync.py download [files…]` | Download snapshots into `data/snapshots/` |
+| `python pipeline/r2_sync.py upload [files…]` | Upload snapshots; history files also get a dated copy under `backups/` |
+| `python pipeline/r2_sync.py list-backups` | List backup objects |
+| `python pipeline/r2_sync.py restore <backup_key> [target]` | Download a backup into `data/snapshots/` |
+| `python pipeline/r2_sync.py test` | Check the bucket connection |
+
+With no file names, `download` and `upload` handle all US, CA, local and CA-frequency snapshots.
+
+### Built-in safety checks
+
+- **Price-jump confirmation:** a change of ≥$0.30 or ≥8% (or any change, in the default verify-all mode) is re-fetched with cache-busting until a quorum of samples agrees; unconfirmed changes revert to the last known price.
+- **Snapshot validation:** a run is only saved if at least 85% of states and 75% of stores returned prices.
+- **No automatic store deletion:** stores that return no prices are listed in the run log but stay in the store list. Removing a store is a manual edit.
+- **Full-rebuild guard:** option `5` won't overwrite `public/us_stores.json` if the new list is more than 25% smaller.
 
 ## Data format
 
-**`*_latest.json`**
+**`*_latest.json`** (in R2)
 ```json
 {
   "timestamp": "2026-06-30 10:53",
@@ -104,17 +158,19 @@ The scraper runs hourly triggered by a Cloudflare Worker via GitHub Actions, com
 }
 ```
 
-**`*_history.json`** — one entry per scrape, keyed by timestamp, same inner shape as `prices` above:
+`previous` holds prices from about 72 hours earlier and drives the trend arrows. Timestamps are Pacific time.
+
+**`*_history.json`** (in R2): change-only. The first entry is a full snapshot; each later entry lists only the stores whose prices changed.
 ```json
 {
-  "2026-06-30 09:00": { "CA": { "Turlock": [4.50, 4.90, null] } },
-  "2026-06-30 10:53": { "CA": { "Turlock": [4.45, 4.85, null] } }
+  "2026-06-30 09:00": { "CA": { "Turlock": [4.50, 4.90, null], "Tracy": [4.39, 4.79, null] } },
+  "2026-06-30 16:00": { "CA": { "Turlock": [4.45, 4.85, null] } }
 }
 ```
 
-Price arrays are `[regular, premium, diesel]`. `null` means that grade wasn't available at that store (legacy 2-element `[regular, premium]` entries are also supported transparently).
+Price arrays are `[regular, premium, diesel]`. `null` means that grade isn't sold there (older 2-element `[regular, premium]` entries are still read correctly).
 
-**`*_stores.json`**
+**`public/us_stores.json`**
 ```json
 {
   "CA": {
@@ -128,10 +184,6 @@ Price arrays are `[regular, premium, diesel]`. `null` means that grade wasn't av
       "tz": "America/Los_Angeles",
       "gas_hours": {
         "mon": ["06:00", "22:00"],
-        "tue": ["06:00", "22:00"],
-        "wed": ["06:00", "22:00"],
-        "thu": ["06:00", "22:00"],
-        "fri": ["06:00", "22:00"],
         "sat": ["06:00", "20:30"],
         "sun": ["06:00", "20:00"]
       }
@@ -140,45 +192,36 @@ Price arrays are `[regular, premium, diesel]`. `null` means that grade wasn't av
 }
 ```
 
-## Running the scraper
-
-```bash
-pip install -r requirements.txt
-
-python scraper.py          # interactive menu
-python scraper.py 3        # non-interactive, for cron/CI (see options below)
-```
-
-| Option | What it does |
-|---|---|
-| `1` | Update prices for `local_stores.json` (small nearby subset) |
-| `2` | Update prices for `ca_stores.json` (California only) |
-| `3` | Update prices for `us_stores.json` (all US stores) |
-| `4` | Run 1 + 2 + 3 |
-| `5` | **Full rebuild** — re-discovers every warehouse address/coordinates from costco.com from scratch |
-| `6` | Discover any *new* stores in existing states and refresh store details (`phone`, `gas_hours`, `tz`) |
-| `8` | Refresh store details (`gas_hours`, `phone`, `tz`) additively across `local_stores.json`, `ca_stores.json`, and `us_stores.json` |
-
-### Built-in safety checks
-
-- **Price-jump quorum check** — if a store's price moves by ≥$0.30 or ≥8% vs. its last saved price, the scraper re-fetches with cache-busting query nonces and requires a quorum of agreeing samples before confirming the jump.
-- **No automatic store deletion** — stores that return no price data are reported in the run log but never removed from `*_stores.json`; removals are a manual edit.
-- **Full-rebuild guard** — option `5` refuses to overwrite `us_stores.json` if the freshly rebuilt list is more than 25% smaller than the existing file.
-- **Snapshot validation** — before saving any price snapshot, `validate_snapshot()` verifies that at least 85% of expected states and 75% of expected stores returned prices.
+`gas_hours` always has all seven days (shortened here); a closed day is `null`. `data/ca_stores.json` and `data/local_stores.json` use an older format mapping each city straight to its price-API URL.
 
 ## Local frontend development
 
-Serve the repo root with any static HTTP server:
+The site needs price snapshots, which live in R2. Download them, copy the US files into `public/` (they're git-ignored there), and serve the folder:
 
 ```bash
-python3 -m http.server 8000
+python pipeline/r2_sync.py download us_latest.json us_history.json
+```
+
+```bash
+cp data/snapshots/us_latest.json data/snapshots/us_history.json public/
+```
+
+```bash
+python3 -m http.server 8000 -d public
 ```
 
 Then open `http://localhost:8000`.
 
 ## Deployment
 
-Deployed on Cloudflare as Workers Static Assets (`wrangler.jsonc` points `assets.directory` at the repo root, and `.assetsignore` excludes scraper internals and tests):
+**Cloudflare Pages** (the live site) deploys from this repo. Project settings:
+
+- **Build command:** none
+- **Build output directory:** `public`
+- **Root directory:** repo root (so `functions/` is picked up)
+- **Functions → R2 bucket bindings:** `DATA_BUCKET` → `costco-gas-data`
+
+**Cloudflare Worker** (optional, same behaviour): `worker.js` with `wrangler.jsonc` serves `public/` as static assets and routes snapshot requests to R2.
 
 ```bash
 npx wrangler deploy
@@ -187,5 +230,9 @@ npx wrangler deploy
 ## Testing
 
 ```bash
-PYTHONPATH=. pytest -v
+pip install -r requirements-dev.txt
+```
+
+```bash
+pytest
 ```
