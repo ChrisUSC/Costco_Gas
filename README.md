@@ -24,7 +24,7 @@ A live-updating map of Costco gas prices across the US. A scheduled scraper coll
 ## How it works
 
 ```
-GitHub Actions (fetch_prices.yml, 3× daily)
+GitHub Actions (fetch_prices.yml, hourly)
         │
         ▼
 pipeline/r2_sync.py download   ← previous snapshots from R2 into data/snapshots/
@@ -41,7 +41,7 @@ public/ (HTML, JS, CSS, us_stores.json) ──► Cloudflare Pages static hostin
 
 - **Prices** never touch git. They live in R2 and are streamed to the site by the Pages middleware.
 - **Store list** (`public/us_stores.json`) is in git. A weekly workflow discovers new warehouses and opens a pull request for review.
-- **Schedule:** prices update at 00:00, 08:00 and 16:00 UTC. Discovery runs Mondays at 08:00 UTC. Both can also be started by hand from the Actions tab.
+- **Schedule:** prices update hourly. An external scheduler starts `fetch_prices.yml` through GitHub's `workflow_dispatch` API at the top of every hour. The workflow's own cron (00:00, 08:00 and 16:00 UTC) is a backup in case those calls stop; overlapping runs queue instead of racing. Discovery runs Mondays at 08:00 UTC. Any workflow can also be started by hand from the Actions tab.
 
 ## Project structure
 
