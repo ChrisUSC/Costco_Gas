@@ -69,12 +69,7 @@ def run_ca_tracker(
 
     prices = get_gas_prices_ajax(
         stores,
-        # None = never delete stores from ca_stores.json from this high-frequency job;
-        # transient fetch failures shouldn't permanently remove stores. The production
-        # scraper still handles real removals.
-        source_filepath=None,
         last_known_prices=latest_known,
-        dataset_label="CA-Frequency",
         verify_all_changes=True,
     )
 

@@ -74,7 +74,7 @@ def test_save_data_skips_appending_when_no_change(tmp_path):
     latest_file = tmp_path / "latest.json"
 
     initial_run = {"2026-10-01 10:00": {"CA": {"LA": [4.50, 4.80, None]}}}
-    save_data(initial_run, str(history_file), str(latest_file), delta_mode=True)
+    save_data(initial_run, str(history_file), str(latest_file))
 
     content1 = json.loads(history_file.read_text())
     assert "2026-10-01 10:00" in content1
@@ -82,7 +82,7 @@ def test_save_data_skips_appending_when_no_change(tmp_path):
 
     # Second run with exact same prices
     second_run = {"2026-10-01 18:00": {"CA": {"LA": [4.50, 4.80, None]}}}
-    save_data(second_run, str(history_file), str(latest_file), delta_mode=True)
+    save_data(second_run, str(history_file), str(latest_file))
 
     content2 = json.loads(history_file.read_text())
     # History file should NOT have appended 18:00 because prices didn't change!
@@ -121,30 +121,6 @@ def test_find_trend_baseline_with_deltas():
     assert baseline_ts == "2026-10-01 10:00"
     assert baseline_prices["CA"]["Tracy"] == [4.50, 4.90, None]
     assert baseline_prices["CA"]["Modesto"] == [4.40, 4.80, None]
-
-
-def test_migrate_history_to_delta_lossless():
-    from migrate_history_to_delta import convert_to_delta, verify_lossless
-
-    dummy_history = {
-        "2026-10-01 08:00": {
-            "CA": {"Tracy": [4.50, 4.90, None], "Modesto": [4.40, 4.80, None]}
-        },
-        "2026-10-01 16:00": {
-            "CA": {"Tracy": [4.50, 4.90, None], "Modesto": [4.40, 4.80, None]}  # No change
-        },
-        "2026-10-02 08:00": {
-            "CA": {"Tracy": [4.45, 4.85, None], "Modesto": [4.40, 4.80, None]}  # Tracy changed
-        },
-        "2026-10-02 16:00": {
-            "CA": {"Tracy": [4.45, 4.85, None], "Modesto": [4.35, 4.75, None]}  # Modesto changed
-        }
-    }
-
-    delta_hist, total_orig, total_delta = convert_to_delta(dummy_history)
-    assert len(delta_hist) == 3  # 16:00 on Oct 01 had 0 changes, so it was omitted
-    assert "2026-10-01 16:00" not in delta_hist
-    assert verify_lossless(dummy_history, delta_hist) is True
 
 
 def test_ca_frequency_runner(tmp_path, monkeypatch):

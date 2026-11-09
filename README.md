@@ -75,16 +75,15 @@ The scraper runs hourly triggered by a Cloudflare Worker via GitHub Actions, com
 ├── .github/workflows/
 │   ├── fetch_prices.yml            # Main scraping workflow (syncs with R2, runs scraper)
 │   ├── ca_frequency_experiment.yml # High-frequency CA tracker workflow
-│   ├── seed_r2.yml                 # Utility workflow to test R2 connection & seed bucket data
+│   ├── seed_r2.yml                 # Manual workflow to test the R2 connection
 │   ├── discover.yml                # Weekly automated Costco station discovery PR generator
 │   └── testing.yml                 # Automated test suite (pytest)
 │
-├── state_list.json         # Costco's state → warehouse-sitemap URL mapping
 └── tests/
     ├── test_scraper.py     # Unit tests for price parsing, metadata, quorum rechecks & file I/O
     ├── test_store_hours.py # Unit tests for JSON-LD / HTML gas hours extraction & detail refresh
     ├── test_trend_data.py  # Unit tests for trend baseline lookback & latest snapshot generation
-    └── test_delta_storage.py # Unit tests for delta compaction, history reconstruction & runner logic
+    └── test_delta_storage.py # Unit tests for delta storage, history reconstruction & runner logic
 ```
 
 
@@ -158,13 +157,12 @@ python scraper.py 3        # non-interactive, for cron/CI (see options below)
 | `4` | Run 1 + 2 + 3 |
 | `5` | **Full rebuild** — re-discovers every warehouse address/coordinates from costco.com from scratch |
 | `6` | Discover any *new* stores in existing states and refresh store details (`phone`, `gas_hours`, `tz`) |
-| `7` | Print a summary of stores with the most frequent unconfirmed price jumps from `unconfirmed_jumps_log.jsonl` |
 | `8` | Refresh store details (`gas_hours`, `phone`, `tz`) additively across `local_stores.json`, `ca_stores.json`, and `us_stores.json` |
 
 ### Built-in safety checks
 
 - **Price-jump quorum check** — if a store's price moves by ≥$0.30 or ≥8% vs. its last saved price, the scraper re-fetches with cache-busting query nonces and requires a quorum of agreeing samples before confirming the jump.
-- **Store-deletion circuit breaker** — a store is only removed from `*_stores.json` after failing every retry *and* when the overall run failure rate is below the circuit-breaker thresholds (<25% on batches of 10+ stores, <80% on batches of 3+ stores).
+- **No automatic store deletion** — stores that return no price data are reported in the run log but never removed from `*_stores.json`; removals are a manual edit.
 - **Full-rebuild guard** — option `5` refuses to overwrite `us_stores.json` if the freshly rebuilt list is more than 25% smaller than the existing file.
 - **Snapshot validation** — before saving any price snapshot, `validate_snapshot()` verifies that at least 85% of expected states and 75% of expected stores returned prices.
 

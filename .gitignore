@@ -1,8 +1,6 @@
 .DS_Store
-.idea/vcs.xml
-.idea/modules.xml
-.idea/inspectionProfiles/profiles_settings.xml
-.idea/Costco_Gas.iml
+.idea/
+.venv/
 
 # wrangler files
 .wrangler
@@ -19,16 +17,10 @@ __pycache__/
 # Backups, logs and temporary files
 *.bak*
 *.tmp
-unconfirmed_jumps_log.jsonl
 data_backups/
-
 
 # Dynamic price data snapshots (stored strictly in Cloudflare R2)
 *_latest.json
 *_history.json
 ca_freq_*.json
 *.r2tmp
-
-
-
-

@@ -23,11 +23,8 @@ USER_AGENTS = [
 MAX_FETCH_ATTEMPTS = 5
 EXCLUDED_STATES = {"PR"}
 
-# Circuit breakers protecting *_stores.json from mass deletion during rate-limits/outages.
-FAILURE_RATE_THRESHOLD = 0.25
-MIN_STORES_FOR_CIRCUIT_BREAKER = 10
-HIGH_FAILURE_RATE_THRESHOLD = 0.8
-MIN_STORES_FOR_HIGH_RATE_CHECK = 3
+# Full rebuild (option 5) refuses to overwrite us_stores.json if it shrinks by more than this.
+REBUILD_MAX_DROP = 0.25
 
 # Snapshot completeness thresholds required before saving *_latest.json / *_history.json.
 SNAPSHOT_STATE_COVERAGE_THRESHOLD = 0.85
@@ -48,7 +45,6 @@ RECHECK_DELAY_RANGE = (2.0, 4.0)
 CONFIRMATION_QUORUM = 3
 PRICE_MATCH_TOLERANCE = 0.01
 
-UNCONFIRMED_JUMPS_LOG_FILE = 'unconfirmed_jumps_log.jsonl'
 GRADES = ("regular", "premium", "diesel")
 STORE_DETAIL_FIELDS = ("phone", "gas_hours", "tz")
 
@@ -207,9 +203,9 @@ def find_trend_baseline(history: dict, current_timestamp_str: str) -> tuple[dict
     return reconstruct_store_prices_at(history, latest_prior), latest_prior
 
 
-def save_data(data: dict, history_path: str, latest_path: str, delta_mode: bool = False) -> None:
-    """Appends snapshot to history_path (delta changes if delta_mode=True, full snapshot if False)
-    and writes the compact latest snapshot to latest_path."""
+def save_data(data: dict, history_path: str, latest_path: str) -> None:
+    """Appends only changed store prices to history_path (seeding a full snapshot if the
+    history is empty) and writes the compact latest snapshot to latest_path."""
     timestamp_str = next(iter(data.keys()), None)
     if not timestamp_str:
         return
@@ -236,7 +232,7 @@ def save_data(data: dict, history_path: str, latest_path: str, delta_mode: bool 
 
     previous_prices, previous_timestamp = find_trend_baseline(save_prices, timestamp_str)
 
-    if delta_mode and save_prices:
+    if save_prices:
         current_active = reconstruct_store_prices_at(save_prices, timestamp_str)
         delta_prices = compute_price_deltas(sorted_states_data, current_active)
         if delta_prices:
@@ -299,26 +295,6 @@ def load_store_locations(file_path: str) -> dict | None:
             return json.load(json_file)
     except (FileNotFoundError, json.JSONDecodeError):
         return None
-
-
-def remove_location_from_file(filepath: str | None, state: str, city: str) -> None:
-    """Opens the source JSON file, deletes the failing city, and resaves it."""
-    if not filepath or not os.path.exists(filepath):
-        return
-    try:
-        with open(filepath, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-
-        if state in data and city in data[state]:
-            del data[state][city]
-            print(f"--> Removed {city}, {state} from {filepath}")
-            if not data[state]:
-                del data[state]
-
-        out_data = sort_stores_dict(data) if not filepath.endswith("local_stores.json") else data
-        atomic_write_json(filepath, out_data, indent=4)
-    except Exception as e:
-        print(f"Failed to remove {city} from {filepath}: {e}")
 
 
 # --- Store hours parsing -----------------------------------------------------
@@ -657,48 +633,6 @@ def confirm_or_revert_price(
     return final_prices, unconfirmed
 
 
-def log_unconfirmed_jumps(records: list[dict], filepath: str = UNCONFIRMED_JUMPS_LOG_FILE) -> None:
-    """Appends one JSON line per unconfirmed price jump for diagnostic tracking."""
-    if not records:
-        return
-    try:
-        with open(filepath, 'a', encoding='utf-8') as f:
-            for record in records:
-                f.write(json.dumps(record, separators=(',', ':')) + '\n')
-    except OSError as e:
-        print(f"⚠️  Couldn't write to unconfirmed-jumps log '{filepath}': {e}")
-
-
-def summarize_unconfirmed_jumps(filepath: str = UNCONFIRMED_JUMPS_LOG_FILE, top_n: int = 15) -> None:
-    """Prints the stores that appear most frequently in the unconfirmed-jumps log."""
-    if not os.path.exists(filepath):
-        print(f"No unconfirmed-jumps log found at '{filepath}' yet.")
-        return
-
-    counts: dict[tuple[str, str], int] = {}
-    total = 0
-    with open(filepath, 'r', encoding='utf-8') as f:
-        for line in f:
-            line = line.strip()
-            if not line:
-                continue
-            try:
-                record = json.loads(line)
-            except json.JSONDecodeError:
-                continue
-            key = (record.get("state", "?"), record.get("city", "?"))
-            counts[key] = counts.get(key, 0) + 1
-            total += 1
-
-    if total == 0:
-        print(f"'{filepath}' exists but has no valid records yet.")
-        return
-
-    print(f"{total} unconfirmed jump(s) logged across {len(counts)} store(s). Top offenders:")
-    for (state, city), count in sorted(counts.items(), key=lambda kv: kv[1], reverse=True)[:top_n]:
-        print(f"  {count:>3}x  {city}, {state}")
-
-
 def load_latest_prices(latest_path: str) -> dict:
     """Loads the 'prices' dict from an existing *_latest.json file, or {} if missing/corrupt."""
     if not os.path.exists(latest_path):
@@ -713,10 +647,7 @@ def load_latest_prices(latest_path: str) -> dict:
 
 def get_gas_prices_ajax(
     locations: dict,
-    source_filepath: str | None = None,
     last_known_prices: dict | None = None,
-    jump_log_filepath: str | None = None,
-    dataset_label: str | None = None,
     verify_all_changes: bool = False,
     revert_unconfirmed: bool | None = None,
 ) -> dict:
@@ -770,7 +701,6 @@ def get_gas_prices_ajax(
     failed_stores: list[tuple[str, str]] = []
     candidates = []
     unconfirmed_jumps: list[tuple[str, str]] = []
-    jump_log_records: list[dict] = []
     run_timestamp = time.strftime("%Y-%m-%d %H:%M", time.localtime())
     phase1_start = time.time()
 
@@ -825,30 +755,15 @@ def get_gas_prices_ajax(
                 quorum=CONFIRMATION_QUORUM,
                 initial_delay=need_initial_delay,
             )
-            return c_state, c_city, c_raw_result, c_last_grades, final_prices, flagged
+            return c_state, c_city, final_prices, flagged
 
         with ThreadPoolExecutor(max_workers=min(10, len(candidates))) as executor:
             cand_futures = [executor.submit(verify_candidate, c) for c in candidates]
             for future in as_completed(cand_futures):
-                c_state, c_city, c_raw_result, c_last_grades, final_prices, flagged = future.result()
+                c_state, c_city, final_prices, flagged = future.result()
                 fetched_prices.setdefault(c_state, {})[c_city] = [final_prices[g] for g in GRADES]
                 if flagged:
                     unconfirmed_jumps.append((c_state, c_city))
-                    jump_detail = {
-                        "last_reg": c_last_grades["regular"], "last_prem": c_last_grades["premium"],
-                        "last_diesel": c_last_grades["diesel"],
-                        "raw_reg": c_raw_result["regular"], "raw_prem": c_raw_result["premium"],
-                        "raw_diesel": c_raw_result["diesel"],
-                        "final_reg": final_prices["regular"], "final_prem": final_prices["premium"],
-                        "final_diesel": final_prices["diesel"],
-                    }
-                    jump_log_records.append({
-                        "timestamp": run_timestamp,
-                        "state": c_state,
-                        "city": c_city,
-                        "dataset": dataset_label,
-                        **jump_detail,
-                    })
 
     if unconfirmed_jumps:
         print(
@@ -859,31 +774,10 @@ def get_gas_prices_ajax(
         for state, city in unconfirmed_jumps:
             print(f"  - {city}, {state}")
 
-        if jump_log_filepath:
-            log_unconfirmed_jumps(jump_log_records, jump_log_filepath)
-
-    failure_rate = (len(failed_stores) / total_stores) if total_stores else 0
-    circuit_tripped = (
-        (len(failed_stores) >= MIN_STORES_FOR_CIRCUIT_BREAKER and failure_rate > FAILURE_RATE_THRESHOLD)
-        or (len(failed_stores) >= MIN_STORES_FOR_HIGH_RATE_CHECK and failure_rate >= HIGH_FAILURE_RATE_THRESHOLD)
-    )
-
     if failed_stores:
-        if circuit_tripped:
-            print(
-                f"⚠️  WARNING: {len(failed_stores)}/{total_stores} stores "
-                f"({failure_rate:.0%}) returned no price data this run. That failure "
-                f"rate usually means Costco rate-limited/blocked the scraper rather "
-                f"than that many stores losing their gas station on the same day. "
-                f"Leaving '{source_filepath}' untouched - nothing will be removed. "
-                f"Retry the run later; investigate if this keeps happening."
-            )
-            for state, city in failed_stores:
-                print(f"  - no data (left in place): {city}, {state}")
-        else:
-            for state, city in failed_stores:
-                print(f"Removing {city}, {state} - Max retries hit or no gas available.")
-                remove_location_from_file(source_filepath, state, city)
+        print(f"⚠️  {len(failed_stores)}/{total_stores} store(s) returned no price data this run:")
+        for state, city in sorted(failed_stores):
+            print(f"  - {city}, {state}")
 
     fetched_prices = {k: v for k, v in fetched_prices.items() if v}
     return {run_timestamp: fetched_prices}
@@ -994,7 +888,7 @@ def build_and_save_master_db(states_to_update: list, output_filepath: str) -> No
     if os.path.exists(output_filepath):
         existing = load_store_locations(output_filepath) or {}
         existing_total = sum(len(cities) for cities in existing.values())
-        if existing_total > 0 and new_total < existing_total * (1 - FAILURE_RATE_THRESHOLD):
+        if existing_total > 0 and new_total < existing_total * (1 - REBUILD_MAX_DROP):
             drop_pct = 1 - (new_total / existing_total)
             print(
                 f"⚠️  WARNING: Rebuild produced {new_total} store(s) vs. {existing_total} "
@@ -1047,7 +941,6 @@ def refresh_store_details(stores: dict, filepath: str) -> int:
 
 def process_and_save(
     locations: dict,
-    source_filepath: str,
     history_file: str,
     latest_file: str,
     label: str,
@@ -1056,10 +949,7 @@ def process_and_save(
     """Fetches prices for one dataset, validates completeness, and saves if healthy."""
     prices = get_gas_prices_ajax(
         locations,
-        source_filepath,
         load_latest_prices(latest_file),
-        jump_log_filepath=UNCONFIRMED_JUMPS_LOG_FILE,
-        dataset_label=label,
         verify_all_changes=verify_all_changes,
     )
     timestamp = next(iter(prices))
@@ -1072,7 +962,7 @@ def process_and_save(
         return False
 
     print(f"✅ {label} snapshot looks healthy: {reason}")
-    save_data(prices, history_file, latest_file, delta_mode=True)
+    save_data(prices, history_file, latest_file)
     print_lowest_prices(prices)
     return True
 
@@ -1088,7 +978,6 @@ def main() -> None:
         print("4: Update All Prices")
         print("5: FULL REBUILD (Fetch ALL store addresses, coordinates, and prices for the US)")
         print("6: Discover new stores")
-        print("7: Show unconfirmed price-jump summary (which stores flag most often)")
         print("8: Refresh store details (gas hours, phone, timezone) for existing stores")
         try:
             run_type = int(input("Enter choice: "))
@@ -1099,14 +988,14 @@ def main() -> None:
     if run_type in DATASETS:
         label, store_file, hist_file, latest_file = DATASETS[run_type]
         stores = load_store_locations(store_file)
-        if stores and not process_and_save(stores, store_file, hist_file, latest_file, label):
+        if stores and not process_and_save(stores, hist_file, latest_file, label):
             sys.exit(1)
 
     elif run_type == 4:
         ok = True
         for label, store_file, hist_file, latest_file in DATASETS.values():
             if stores := load_store_locations(store_file):
-                ok &= process_and_save(stores, store_file, hist_file, latest_file, label)
+                ok &= process_and_save(stores, hist_file, latest_file, label)
         if not ok:
             sys.exit(1)
 
@@ -1120,9 +1009,6 @@ def main() -> None:
         us_stores = load_store_locations('us_stores.json') or {}
         us_stores = discover_new_stores(states_to_scrape, us_stores, 'us_stores.json')
         refresh_store_details(us_stores, 'us_stores.json')
-
-    elif run_type == 7:
-        summarize_unconfirmed_jumps()
 
     elif run_type == 8:
         for _, path, _, _ in DATASETS.values():
