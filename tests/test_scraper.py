@@ -9,7 +9,6 @@ from scraper import (
     load_store_locations,
     save_data,
     write_pretty_top_level,
-    remove_location_from_file,
     get_gas_prices_ajax,
     extract_stores_from_html,
     is_suspicious_jump,
@@ -17,8 +16,6 @@ from scraper import (
     _find_quorum,
     confirm_or_revert_price,
     load_latest_prices,
-    log_unconfirmed_jumps,
-    summarize_unconfirmed_jumps,
     validate_snapshot,
     find_trend_baseline,
     fetch_state_codes,
@@ -173,21 +170,6 @@ def test_sort_stores_dict():
     assert list(sorted_dict["WA"].keys()) == ["Bellevue", "Seattle"]
 
 
-def test_remove_location_from_file_preserves_sort(tmp_path):
-    stores_file = tmp_path / "stores.json"
-    initial = {
-        "TX": {"Dallas": {}, "Austin": {}, "Houston": {}},
-        "CA": {"San Diego": {}, "Bakersfield": {}, "Alhambra": {}}
-    }
-    stores_file.write_text(json.dumps(initial))
-    remove_location_from_file(str(stores_file), "TX", "Dallas")
-
-    saved = json.loads(stores_file.read_text())
-    assert list(saved.keys()) == ["CA", "TX"]
-    assert list(saved["CA"].keys()) == ["Alhambra", "Bakersfield", "San Diego"]
-    assert list(saved["TX"].keys()) == ["Austin", "Houston"]
-
-
 @patch('scraper._fetch_store_page_metadata')
 @patch('scraper.create_session')
 def test_refresh_store_details_writes_sorted_json(mock_session, mock_fetch_meta, tmp_path):
@@ -284,23 +266,6 @@ def test_write_pretty_top_level(tmp_path):
     assert '"2023-10-27 12:00": {"CA":{"LA":[4.99,5.29,null]}}' in content
 
 
-def test_remove_location_from_file(tmp_path):
-    file = tmp_path / "stores.json"
-    initial_data = {
-        "CA": {
-            "Los Angeles": {"warehouse_id": "123"},
-            "San Diego": {"warehouse_id": "456"}
-        }
-    }
-    file.write_text(json.dumps(initial_data))
-
-    remove_location_from_file(str(file), "CA", "Los Angeles")
-
-    updated_data = json.loads(file.read_text())
-    assert "Los Angeles" not in updated_data["CA"]
-    assert "San Diego" in updated_data["CA"]
-
-
 def test_save_data_appends_correctly(tmp_path):
     history_file = tmp_path / "historical_prices.json"
     latest_file = tmp_path / "latest_prices.json"
@@ -365,16 +330,13 @@ def test_get_gas_prices_ajax(mock_create_session):
 
 @patch('scraper.create_session')
 @patch('scraper.time.sleep', return_value=None)
-def test_get_gas_prices_ajax_max_retries(mock_sleep, mock_create_session, tmp_path):
+def test_get_gas_prices_ajax_max_retries(mock_sleep, mock_create_session):
     mock_session = MagicMock()
     mock_session.get.side_effect = requests.exceptions.RequestException("Connection refused")
     mock_create_session.return_value = mock_session
 
-    dummy_file = tmp_path / "dummy_stores.json"
-    dummy_file.write_text(json.dumps({"CA": {"Fail City": {"warehouse_id": "999"}}}))
-
     locations = {"CA": {"Fail City": {"warehouse_id": "999"}}}
-    result = get_gas_prices_ajax(locations, source_filepath=str(dummy_file))
+    result = get_gas_prices_ajax(locations)
 
     timestamp_key = next(iter(result.keys()))
     assert result[timestamp_key] == {}
@@ -602,7 +564,7 @@ def test_get_gas_prices_ajax_no_jump_makes_single_call(mock_sleep, mock_create_s
 
     locations = {"CA": {"Danville": {"warehouse_id": "12345"}}}
     last_known = {"CA": {"Danville": [5.10, 5.60, None]}}
-    result = get_gas_prices_ajax(locations, None, last_known)
+    result = get_gas_prices_ajax(locations, last_known)
 
     ts = next(iter(result))
     assert result[ts]["CA"]["Danville"] == [5.15, 5.65, None]
@@ -623,7 +585,7 @@ def test_get_gas_prices_ajax_real_change_confirmed(mock_sleep, mock_create_sessi
 
     locations = {"CA": {"Danville": {"warehouse_id": "12345"}}}
     last_known = {"CA": {"Danville": [5.10, 5.60, None]}}
-    result = get_gas_prices_ajax(locations, None, last_known)
+    result = get_gas_prices_ajax(locations, last_known)
 
     ts = next(iter(result))
     assert result[ts]["CA"]["Danville"] == [4.50, 5.60, None]
@@ -644,7 +606,7 @@ def test_get_gas_prices_ajax_glitch_reverted(mock_sleep, mock_create_session):
 
     locations = {"CA": {"Danville": {"warehouse_id": "12345"}}}
     last_known = {"CA": {"Danville": [5.10, 5.60, None]}}
-    result = get_gas_prices_ajax(locations, None, last_known)
+    result = get_gas_prices_ajax(locations, last_known)
 
     ts = next(iter(result))
     assert result[ts]["CA"]["Danville"] == [5.10, 5.60, None]
@@ -667,7 +629,7 @@ def test_get_gas_prices_ajax_inconclusive_flags_but_keeps_freshest(mock_sleep, m
 
     locations = {"CA": {"Danville": {"warehouse_id": "12345"}}}
     last_known = {"CA": {"Danville": [5.10, 5.60, None]}}
-    result = get_gas_prices_ajax(locations, None, last_known)
+    result = get_gas_prices_ajax(locations, last_known)
 
     ts = next(iter(result))
     assert result[ts]["CA"]["Danville"] == [6.00, 5.60, None]
@@ -683,7 +645,7 @@ def test_get_gas_prices_ajax_no_baseline_never_triggers_recheck(mock_sleep, mock
     mock_create_session.return_value = mock_session
 
     locations = {"CA": {"Danville": {"warehouse_id": "12345"}}}
-    result = get_gas_prices_ajax(locations, None, None)
+    result = get_gas_prices_ajax(locations, None)
 
     ts = next(iter(result))
     assert result[ts]["CA"]["Danville"] == [1.00, 1.50, None]
@@ -719,109 +681,13 @@ def test_get_gas_prices_ajax_two_phase_sweep_only_rechecks_changed_store(mock_sl
         }
     }
 
-    result = get_gas_prices_ajax(locations, None, last_known, verify_all_changes=True)
+    result = get_gas_prices_ajax(locations, last_known, verify_all_changes=True)
     ts = next(iter(result))
     assert result[ts]["CA"]["Fresno"] == [4.50, 4.80, None]
     assert result[ts]["CA"]["Danville"] == [5.05, 5.60, None]
 
     # Total calls: Fresno (1 in Phase 1) + Danville (1 in Phase 1 + 3 in Phase 2) = 5
     assert mock_session.get.call_count == 5
-
-
-@patch('scraper.create_session')
-@patch('scraper.time.sleep', return_value=None)
-def test_get_gas_prices_ajax_logs_unconfirmed_jump_when_path_given(mock_sleep, mock_create_session, tmp_path):
-    mock_session = MagicMock()
-    mock_session.get.side_effect = [
-        _resp("1.00", "5.60"),
-        _resp("2.00", "5.60"),
-        _resp("3.00", "5.60"),
-        _resp("4.00", "5.60"),
-        _resp("5.00", "5.60"),
-        _resp("6.00", "5.60"),
-    ]
-    mock_create_session.return_value = mock_session
-
-    log_file = tmp_path / "jumps.jsonl"
-    locations = {"CA": {"Danville": {"warehouse_id": "12345"}}}
-    last_known = {"CA": {"Danville": [5.10, 5.60, None]}}
-    get_gas_prices_ajax(
-        locations, None, last_known,
-        jump_log_filepath=str(log_file), dataset_label="Local",
-    )
-
-    lines = log_file.read_text().strip().splitlines()
-    assert len(lines) == 1
-    record = json.loads(lines[0])
-    assert record["state"] == "CA"
-    assert record["city"] == "Danville"
-    assert record["dataset"] == "Local"
-    assert record["last_reg"] == 5.10
-    assert record["raw_reg"] == 1.00
-    assert record["final_reg"] == 6.00
-
-
-@patch('scraper.create_session')
-@patch('scraper.time.sleep', return_value=None)
-def test_get_gas_prices_ajax_no_log_file_written_when_no_jumps(mock_sleep, mock_create_session, tmp_path):
-    mock_session = MagicMock()
-    mock_session.get.return_value = _resp("5.15", "5.65")
-    mock_create_session.return_value = mock_session
-
-    log_file = tmp_path / "jumps.jsonl"
-    locations = {"CA": {"Danville": {"warehouse_id": "12345"}}}
-    last_known = {"CA": {"Danville": [5.10, 5.60, None]}}
-    get_gas_prices_ajax(locations, None, last_known, jump_log_filepath=str(log_file))
-
-    assert not log_file.exists()
-
-
-def test_log_unconfirmed_jumps_appends_without_clobbering(tmp_path):
-    log_file = tmp_path / "jumps.jsonl"
-    log_unconfirmed_jumps([{"state": "CA", "city": "Danville"}], str(log_file))
-    log_unconfirmed_jumps([{"state": "TX", "city": "Austin"}], str(log_file))
-
-    lines = log_file.read_text().strip().splitlines()
-    assert len(lines) == 2
-    assert json.loads(lines[0])["city"] == "Danville"
-    assert json.loads(lines[1])["city"] == "Austin"
-
-
-def test_log_unconfirmed_jumps_empty_records_no_op(tmp_path):
-    log_file = tmp_path / "jumps.jsonl"
-    log_unconfirmed_jumps([], str(log_file))
-    assert not log_file.exists()
-
-
-def test_summarize_unconfirmed_jumps_missing_file(capsys):
-    summarize_unconfirmed_jumps("does_not_exist_12345.jsonl")
-    captured = capsys.readouterr()
-    assert "No unconfirmed-jumps log found" in captured.out
-
-
-def test_summarize_unconfirmed_jumps_counts_and_ranks(tmp_path, capsys):
-    log_file = tmp_path / "jumps.jsonl"
-    records = (
-        [{"state": "CA", "city": "Danville"}] * 3
-        + [{"state": "TX", "city": "Austin"}] * 1
-    )
-    log_unconfirmed_jumps(records, str(log_file))
-
-    summarize_unconfirmed_jumps(str(log_file))
-    captured = capsys.readouterr()
-    assert "4 unconfirmed jump(s) logged across 2 store(s)" in captured.out
-    danville_pos = captured.out.find("Danville")
-    austin_pos = captured.out.find("Austin")
-    assert 0 <= danville_pos < austin_pos
-
-
-def test_summarize_unconfirmed_jumps_skips_corrupt_lines(tmp_path, capsys):
-    log_file = tmp_path / "jumps.jsonl"
-    log_file.write_text('{"state": "CA", "city": "Danville"}\nnot valid json\n\n')
-
-    summarize_unconfirmed_jumps(str(log_file))
-    captured = capsys.readouterr()
-    assert "1 unconfirmed jump(s) logged across 1 store(s)" in captured.out
 
 
 @patch('scraper.create_session')
@@ -833,7 +699,7 @@ def test_get_gas_prices_ajax_missing_grade_does_not_false_flag(mock_sleep, mock_
 
     locations = {"CA": {"Danville": {"warehouse_id": "12345"}}}
     last_known = {"CA": {"Danville": [5.10, 5.60, None]}}
-    result = get_gas_prices_ajax(locations, None, last_known)
+    result = get_gas_prices_ajax(locations, last_known)
 
     ts = next(iter(result))
     assert result[ts]["CA"]["Danville"] == [5.15, None, None]

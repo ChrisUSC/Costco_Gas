@@ -6,13 +6,11 @@
 *.py
 requirements*.txt
 pytest.ini
-unconfirmed_jumps_log.jsonl
 
 # Temporary and backup files
 *.bak*
 *.tmp
 data_backups/
-
 
 # Docs / repo metadata
 README.md
@@ -29,10 +27,6 @@ README.md
 ca_freq_*.json
 ca_stores.json
 local_stores.json
-state_list.json
-
-
-
 
 # Tests & bytecode
 tests/

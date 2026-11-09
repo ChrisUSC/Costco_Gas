@@ -484,20 +484,10 @@ async function loadData() {
         const latestData = await latestRes.json();
         const storeData = await storesRes.json();
 
-        let latestTimestamp;
-        let timestampedPrices;
-        let previousPrices = {};
-        let previousTimestamp = null;
-
-        if (latestData.timestamp && latestData.prices) {
-            latestTimestamp = latestData.timestamp;
-            timestampedPrices = latestData.prices;
-            previousPrices = latestData.previous || {};
-            previousTimestamp = latestData.previous_timestamp || null;
-        } else {
-            latestTimestamp = Object.keys(latestData)[0];
-            timestampedPrices = latestData[latestTimestamp] || {};
-        }
+        const latestTimestamp = latestData.timestamp;
+        const timestampedPrices = latestData.prices || {};
+        const previousPrices = latestData.previous || {};
+        const previousTimestamp = latestData.previous_timestamp || null;
 
         state.trendBaselineLabel = getRelativeTimeLabel(previousTimestamp);
         state.latestTimestamp = latestTimestamp;
