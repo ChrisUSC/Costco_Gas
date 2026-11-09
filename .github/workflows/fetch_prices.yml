@@ -1,8 +1,7 @@
 name: Update Gas Prices
 
+# Started hourly by a scheduled job on Cloudflare via the workflow_dispatch API.
 on:
-  schedule:
-    - cron: '0 8,16,0 * * *'
   workflow_dispatch:
 
 permissions:
