@@ -1,8 +1,7 @@
 name: Update Gas Prices
 
+# Started hourly by a scheduled job on Cloudflare via the workflow_dispatch API.
 on:
-  schedule:
-    - cron: '0 8,16,0 * * *'
   workflow_dispatch:
 
 permissions:
@@ -40,7 +39,7 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Download existing snapshots from R2
-        run: python r2_sync.py download
+        run: python pipeline/r2_sync.py download
         env:
           R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
@@ -53,10 +52,10 @@ jobs:
           timeout_minutes: 10
           max_attempts: 3
           retry_wait_seconds: 120
-          command: python scraper.py 3
+          command: python pipeline/scraper.py 3
 
       - name: Upload updated snapshots to R2
-        run: python r2_sync.py upload
+        run: python pipeline/r2_sync.py upload
         env:
           R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}

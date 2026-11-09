@@ -22,7 +22,7 @@ jobs:
         run: pip install boto3
 
       - name: Test R2 Connection
-        run: python r2_sync.py test
+        run: python pipeline/r2_sync.py test
         env:
           R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}

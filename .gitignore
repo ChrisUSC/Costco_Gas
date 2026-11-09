@@ -19,7 +19,8 @@ __pycache__/
 *.tmp
 data_backups/
 
-# Dynamic price data snapshots (stored strictly in Cloudflare R2)
+# Dynamic price data snapshots (stored strictly in Cloudflare R2; local copies in data/snapshots/)
+data/snapshots/
 *_latest.json
 *_history.json
 ca_freq_*.json

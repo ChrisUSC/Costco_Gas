@@ -14,6 +14,8 @@ from bs4 import BeautifulSoup
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
+from paths import CA_STORES_FILE, LOCAL_STORES_FILE, US_STORES_FILE, snapshot_path
+
 USER_AGENTS = [
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36',
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
@@ -30,9 +32,9 @@ REBUILD_MAX_DROP = 0.25
 SNAPSHOT_STATE_COVERAGE_THRESHOLD = 0.85
 SNAPSHOT_STORE_COVERAGE_THRESHOLD = 0.75
 
-LOCAL_HISTORY_FILE, LOCAL_LATEST_FILE = 'local_history.json', 'local_latest.json'
-CA_HISTORY_FILE, CA_LATEST_FILE = 'ca_history.json', 'ca_latest.json'
-US_HISTORY_FILE, US_LATEST_FILE = 'us_history.json', 'us_latest.json'
+LOCAL_HISTORY_FILE, LOCAL_LATEST_FILE = snapshot_path('local_history.json'), snapshot_path('local_latest.json')
+CA_HISTORY_FILE, CA_LATEST_FILE = snapshot_path('ca_history.json'), snapshot_path('ca_latest.json')
+US_HISTORY_FILE, US_LATEST_FILE = snapshot_path('us_history.json'), snapshot_path('us_latest.json')
 
 # Compare current prices against a snapshot ~72h back so trend arrows reflect meaningful moves.
 TREND_LOOKBACK_HOURS = 72
@@ -49,9 +51,9 @@ GRADES = ("regular", "premium", "diesel")
 STORE_DETAIL_FIELDS = ("phone", "gas_hours", "tz")
 
 DATASETS = {
-    1: ("Local", "local_stores.json", LOCAL_HISTORY_FILE, LOCAL_LATEST_FILE),
-    2: ("CA", "ca_stores.json", CA_HISTORY_FILE, CA_LATEST_FILE),
-    3: ("US", "us_stores.json", US_HISTORY_FILE, US_LATEST_FILE),
+    1: ("Local", LOCAL_STORES_FILE, LOCAL_HISTORY_FILE, LOCAL_LATEST_FILE),
+    2: ("CA", CA_STORES_FILE, CA_HISTORY_FILE, CA_LATEST_FILE),
+    3: ("US", US_STORES_FILE, US_HISTORY_FILE, US_LATEST_FILE),
 }
 
 
@@ -260,6 +262,7 @@ def save_data(data: dict, history_path: str, latest_path: str) -> None:
 
 def atomic_write_json(file_path: str, data: dict, indent: int | None = None, separators: tuple[str, str] | None = None) -> None:
     """Safely writes JSON data to a temporary file and atomically replaces the destination."""
+    os.makedirs(os.path.dirname(file_path) or ".", exist_ok=True)
     tmp_path = f"{file_path}.tmp"
     with open(tmp_path, 'w', encoding='utf-8') as f:
         json.dump(data, f, indent=indent, separators=separators)
@@ -269,6 +272,7 @@ def atomic_write_json(file_path: str, data: dict, indent: int | None = None, sep
 def write_pretty_top_level(data: dict, file_path: str) -> None:
     """Writes JSON with one line per top-level key and compact nested content.
     Writes to a temp file and swaps it in, so a crash mid-write can't truncate the real file."""
+    os.makedirs(os.path.dirname(file_path) or ".", exist_ok=True)
     tmp_path = f"{file_path}.tmp"
     with open(tmp_path, "w", encoding='utf-8') as fp:
         fp.write("{\n")
@@ -1002,13 +1006,13 @@ def main() -> None:
     elif run_type == 5:
         states_to_scrape = fetch_state_codes()
         print(f"Found {len(states_to_scrape)} states to process.")
-        build_and_save_master_db(states_to_scrape, "us_stores.json")
+        build_and_save_master_db(states_to_scrape, US_STORES_FILE)
 
     elif run_type == 6:
         states_to_scrape = fetch_state_codes()
-        us_stores = load_store_locations('us_stores.json') or {}
-        us_stores = discover_new_stores(states_to_scrape, us_stores, 'us_stores.json')
-        refresh_store_details(us_stores, 'us_stores.json')
+        us_stores = load_store_locations(US_STORES_FILE) or {}
+        us_stores = discover_new_stores(states_to_scrape, us_stores, US_STORES_FILE)
+        refresh_store_details(us_stores, US_STORES_FILE)
 
     elif run_type == 8:
         for _, path, _, _ in DATASETS.values():

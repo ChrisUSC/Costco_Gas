@@ -8,6 +8,7 @@ and upload updated snapshots after scraping, with automated daily backup snapsho
 from __future__ import annotations
 
 import os
+import re
 import sys
 from datetime import datetime, timezone
 from typing import Sequence
@@ -15,6 +16,8 @@ from typing import Sequence
 import boto3
 from botocore.config import Config
 from botocore.exceptions import ClientError
+
+from paths import SNAPSHOT_DIR, snapshot_path
 
 DEFAULT_FILES = [
     "us_latest.json",
@@ -79,14 +82,16 @@ def test_connection():
 def download_files(files: Sequence[str]):
     client = get_s3_client()
     bucket = os.environ["R2_BUCKET_NAME"]
-    print(f"⬇️ Downloading baseline snapshots from R2 bucket '{bucket}'...")
+    print(f"⬇️ Downloading baseline snapshots from R2 bucket '{bucket}' into {SNAPSHOT_DIR}...")
+    os.makedirs(SNAPSHOT_DIR, exist_ok=True)
 
     for filename in files:
-        tmp_name = f"{filename}.r2tmp"
+        local_path = snapshot_path(filename)
+        tmp_name = f"{local_path}.r2tmp"
         try:
             client.download_file(bucket, filename, tmp_name)
-            os.replace(tmp_name, filename)
-            size = os.path.getsize(filename)
+            os.replace(tmp_name, local_path)
+            size = os.path.getsize(local_path)
             print(f"  ✓ Downloaded {filename} ({size:,} bytes)")
         except ClientError as e:
             if os.path.exists(tmp_name):
@@ -111,7 +116,8 @@ def upload_files(files: Sequence[str]):
     today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
     for filename in files:
-        if not os.path.exists(filename):
+        local_path = snapshot_path(filename)
+        if not os.path.exists(local_path):
             print(f"  - Skipping {filename} (file does not exist locally)")
             continue
 
@@ -121,7 +127,7 @@ def upload_files(files: Sequence[str]):
         try:
             # 1. Upload current live object
             client.upload_file(
-                filename,
+                local_path,
                 bucket,
                 filename,
                 ExtraArgs={
@@ -129,7 +135,7 @@ def upload_files(files: Sequence[str]):
                     "CacheControl": cache_control,
                 },
             )
-            size = os.path.getsize(filename)
+            size = os.path.getsize(local_path)
             print(f"  ✓ Uploaded {filename} ({size:,} bytes) [Cache-Control: {cache_control}]")
             uploaded_count += 1
 
@@ -138,7 +144,7 @@ def upload_files(files: Sequence[str]):
                 base_name = os.path.splitext(filename)[0]
                 backup_key = f"backups/{base_name}_{today_str}.json"
                 client.upload_file(
-                    filename,
+                    local_path,
                     bucket,
                     backup_key,
                     ExtraArgs={
@@ -181,12 +187,10 @@ def restore_backup(backup_key: str, target_file: str | None = None):
     bucket = os.environ["R2_BUCKET_NAME"]
 
     if not target_file:
-        # Infer target file, e.g. backups/us_history_2026-11-07.json -> us_history.json
+        # Infer target file, e.g. backups/us_history_2026-11-07.json -> data/snapshots/us_history.json
         base = os.path.basename(backup_key)
-        # strip _YYYY-MM-DD
-        import re
-        cleaned = re.sub(r'_\d{4}-\d{2}-\d{2}\.json$', '.json', base)
-        target_file = cleaned
+        target_file = snapshot_path(re.sub(r'_\d{4}-\d{2}-\d{2}\.json$', '.json', base))
+        os.makedirs(SNAPSHOT_DIR, exist_ok=True)
 
     print(f"Restoring '{backup_key}' from R2 to local file '{target_file}'...")
     try:
@@ -200,11 +204,11 @@ def restore_backup(backup_key: str, target_file: str | None = None):
 def main():
     if len(sys.argv) < 2:
         print("Usage:")
-        print("  python r2_sync.py download [file1 file2 ...]")
-        print("  python r2_sync.py upload [file1 file2 ...]")
-        print("  python r2_sync.py list-backups")
-        print("  python r2_sync.py restore <backup_key> [target_file]")
-        print("  python r2_sync.py test")
+        print("  python pipeline/r2_sync.py download [file1 file2 ...]")
+        print("  python pipeline/r2_sync.py upload [file1 file2 ...]")
+        print("  python pipeline/r2_sync.py list-backups")
+        print("  python pipeline/r2_sync.py restore <backup_key> [target_file]")
+        print("  python pipeline/r2_sync.py test")
         sys.exit(1)
 
     action = sys.argv[1].lower()
@@ -218,7 +222,7 @@ def main():
         list_backups()
     elif action == "restore":
         if len(sys.argv) < 3:
-            print("Usage: python r2_sync.py restore <backup_key> [target_file]")
+            print("Usage: python pipeline/r2_sync.py restore <backup_key> [target_file]")
             sys.exit(1)
         target = sys.argv[3] if len(sys.argv) > 3 else None
         restore_backup(sys.argv[2], target)
