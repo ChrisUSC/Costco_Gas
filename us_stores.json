@@ -3128,6 +3128,45 @@
             },
             "tz": "America/Los_Angeles"
         },
+        "Lodi": {
+            "url": "https://www.costco.com/w/-/ca/lodi/1091",
+            "warehouse_id": "1091",
+            "lat": 38.10004949,
+            "lng": -121.2636789,
+            "address": "2680 REYNOLDS RANCH PKWY, LODI, CA 95240-6848",
+            "phone": "(209) 366-7300",
+            "gas_hours": {
+                "mon": [
+                    "06:00",
+                    "22:00"
+                ],
+                "tue": [
+                    "06:00",
+                    "22:00"
+                ],
+                "wed": [
+                    "06:00",
+                    "22:00"
+                ],
+                "thu": [
+                    "06:00",
+                    "22:00"
+                ],
+                "fri": [
+                    "06:00",
+                    "22:00"
+                ],
+                "sat": [
+                    "06:00",
+                    "20:30"
+                ],
+                "sun": [
+                    "06:00",
+                    "20:00"
+                ]
+            },
+            "tz": "America/Los_Angeles"
+        },
         "Manteca": {
             "url": "https://www.costco.com/w/-/ca/manteca/1031",
             "warehouse_id": "1031",
@@ -5508,12 +5547,12 @@
             "tz": "America/Los_Angeles"
         },
         "Vallejo": {
-            "url": "https://www.costco.com/w/-/ca/vallejo/132",
-            "warehouse_id": "132",
-            "lat": 38.13312248,
-            "lng": -122.2137108,
-            "address": "198 PLAZA DR, VALLEJO, CA 94591-3702",
-            "phone": "(707) 553-6400",
+            "url": "https://www.costco.com/w/-/ca/vallejo/1684",
+            "warehouse_id": "1684",
+            "lat": 38.128305,
+            "lng": -122.224628,
+            "address": "860 ADMIRAL CALLAGHAN LANE, VALLEJO, CA 94591-0000",
+            "phone": "(707) 674-6465",
             "gas_hours": {
                 "mon": [
                     "06:00",
@@ -8676,6 +8715,45 @@
             },
             "tz": "America/New_York"
         },
+        "Town Center": {
+            "url": "https://www.costco.com/w/-/ga/kennesaw/189",
+            "warehouse_id": "189",
+            "lat": 34.00502957,
+            "lng": -84.56994851,
+            "address": "645 BARRETT PARKWAY NW, KENNESAW, GA 30144-4922",
+            "phone": "(770) 794-1767",
+            "gas_hours": {
+                "mon": [
+                    "06:00",
+                    "22:00"
+                ],
+                "tue": [
+                    "06:00",
+                    "22:00"
+                ],
+                "wed": [
+                    "06:00",
+                    "22:00"
+                ],
+                "thu": [
+                    "06:00",
+                    "22:00"
+                ],
+                "fri": [
+                    "06:00",
+                    "22:00"
+                ],
+                "sat": [
+                    "06:00",
+                    "20:30"
+                ],
+                "sun": [
+                    "06:00",
+                    "19:30"
+                ]
+            },
+            "tz": "America/New_York"
+        },
         "Woodstock": {
             "url": "https://www.costco.com/w/-/ga/woodstock/1295",
             "warehouse_id": "1295",
@@ -9313,6 +9391,45 @@
             "lng": -112.4548686,
             "address": "305 W QUINN RD, POCATELLO, ID 83201-4988",
             "phone": "(208) 238-4040",
+            "gas_hours": {
+                "mon": [
+                    "06:00",
+                    "22:00"
+                ],
+                "tue": [
+                    "06:00",
+                    "22:00"
+                ],
+                "wed": [
+                    "06:00",
+                    "22:00"
+                ],
+                "thu": [
+                    "06:00",
+                    "22:00"
+                ],
+                "fri": [
+                    "06:00",
+                    "22:00"
+                ],
+                "sat": [
+                    "06:00",
+                    "20:30"
+                ],
+                "sun": [
+                    "06:00",
+                    "19:30"
+                ]
+            },
+            "tz": "America/Boise"
+        },
+        "S Meridian": {
+            "url": "https://www.costco.com/w/-/id/meridian/1806",
+            "warehouse_id": "1806",
+            "lat": 43.545489,
+            "lng": -116.393051,
+            "address": "203 E TOWER LN, MERIDIAN, ID 83642-7202",
+            "phone": "(208) 576-7183",
             "gas_hours": {
                 "mon": [
                     "06:00",
@@ -17161,6 +17278,45 @@
             "lng": -75.23441934,
             "address": "740 UPPER STATE RD, NORTH WALES, PA 19454-1403",
             "phone": "(215) 353-4153",
+            "gas_hours": {
+                "mon": [
+                    "06:00",
+                    "22:00"
+                ],
+                "tue": [
+                    "06:00",
+                    "22:00"
+                ],
+                "wed": [
+                    "06:00",
+                    "22:00"
+                ],
+                "thu": [
+                    "06:00",
+                    "22:00"
+                ],
+                "fri": [
+                    "06:00",
+                    "22:00"
+                ],
+                "sat": [
+                    "06:00",
+                    "20:30"
+                ],
+                "sun": [
+                    "06:00",
+                    "19:30"
+                ]
+            },
+            "tz": "America/New_York"
+        },
+        "Robinson": {
+            "url": "https://www.costco.com/w/-/pa/pittsburgh/332",
+            "warehouse_id": "332",
+            "lat": 40.45916374,
+            "lng": -80.16569015,
+            "address": "202 COSTCO DR, PITTSBURGH, PA 15205-4858",
+            "phone": "(412) 490-2204",
             "gas_hours": {
                 "mon": [
                     "06:00",
