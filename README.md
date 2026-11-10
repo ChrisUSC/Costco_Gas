@@ -9,21 +9,22 @@ A live-updating map of Costco gas prices across the US. A scheduled scraper coll
 
 ## Features
 
-- 📍 Interactive Leaflet map of every Costco warehouse with a gas station; stations cluster when zoomed out and show price badges as you zoom in
-- 🎨 Pins coloured by relative price: green, amber and red for the cheapest, middle and most expensive third of the prices in view
-- 🧭 One-tap **Directions** to any station (opens Google Maps)
-- ⛽ Regular / Premium / Diesel toggle (Diesel shows only stations that sell it)
+- 📍 Interactive Leaflet map of every Costco warehouse with a gas station; stations cluster when zoomed out and turn into price pills as you zoom in
+- 🎨 Pins and price pills coloured by relative price: green, amber and red for the cheapest, middle and most expensive third of the prices in view
+- 🧭 One-tap **Directions** to any station (Google Maps, Apple Maps or Waze)
+- ⛽ Regular / Premium / Diesel toggle (Diesel shows only stations that sell it); station cards lead with the selected grade's price
 - 🕒 Live "Open / Closing soon / Closed" status in each station's local time zone, plus 7-day gas hours
-- 🛣️ **Route Finder**: cheapest stations within a set distance of a driving route (OSRM, with a straight-line fallback)
+- 🛣️ **Route**: cheapest stations within a set distance of a driving route (OSRM, with a straight-line fallback)
 - ★ **Favorites**: save stations and routes in your browser
 - 🔍 Search by city, address or zip code (store matches plus Nominatim geocoding)
 - 📈 Price-history chart per station with 7D / 30D / 90D / 1Y / All ranges
-- 🥇 "State Lowest" leaderboard with 72-hour trend arrows (`▲` / `▼` / `–`)
-- 📍 "Near Me" with a 5–100 mi radius and price or distance sorting
+- 🥇 **Lowest**: a ranked state leaderboard, with 72-hour price trends shown as an arrow and the size of the move (`▼ 4¢`, `▲ 6¢`, `–`)
+- 📍 **Nearby**: stations within a 5–100 mi radius of you, a searched place or the map centre, sorted by price or distance
 - 🔗 Shareable links: `?store=STATE_City` opens a station, and `?tab=`, `?grade=` and `?state=` restore the view
 - 📲 Installable to a phone or desktop home screen (web app manifest)
 - ⚙️ Settings panel: clustering and price colours on/off, directions app (Google Maps, Apple Maps or Waze), light/dark/system theme, start-up tab, and automatic location on/off. Settings are saved in the browser.
-- 🌙 Dark mode with matching map tiles
+- 🌙 Light and dark themes with matching map tiles, following the system setting by default
+- ♿ Keyboard navigation with visible focus, 44px touch targets, reduced-motion support and text contrast that meets WCAG AA
 
 ## How it works
 
@@ -97,6 +98,17 @@ public/ (HTML, JS, CSS, us_stores.json) ──► Cloudflare Pages static hostin
 ```
 
 The pipeline scripts resolve their paths from `pipeline/paths.py`, so they can be run from any directory.
+
+## Frontend design
+
+The frontend is plain HTML, CSS and ES modules with no build step.
+
+- **Design tokens:** every colour, radius, shadow and type size is a CSS variable defined at the top of `public/styles.css`, with a light set on `:root` and a dark set on `body.dark-mode`. Change a token rather than a component when adjusting the look.
+- **Icons:** `public/js/icons.js` holds one inline SVG set. Use `icon('name', size)` in templates instead of emoji, and give icon-only buttons an `aria-label`.
+- **Buttons and fields:** shared classes `btn` (`btn-primary`, `btn-tonal`, `btn-secondary`, `btn-ghost`, `btn-icon`), `input` and `select`.
+- **Font:** the system UI font stack, so no web font is downloaded.
+- **Layout tiers:** phone ≤ 599px (map with a draggable bottom sheet), tablet 600–1099px (narrow sidebar, floating details card), desktop ≥ 1100px (sidebar plus map popups).
+- **Canvas colours:** Chart.js reads the same tokens at render time, so the chart follows the theme.
 
 ## Running the pipeline
 
