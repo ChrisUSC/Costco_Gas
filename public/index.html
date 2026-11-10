@@ -7,6 +7,13 @@
     <meta name="description" content="Live Costco gas prices on a map: find the cheapest Regular, Premium and Diesel near you or along a route.">
     <meta name="theme-color" content="#005DAA">
     <meta name="color-scheme" content="light dark">
+    <!-- Installable web app -->
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Costco Gas">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta property="og:type" content="website">
     <meta property="og:title" content="Costco Gas Prices">
     <meta property="og:description" content="Live Costco gas prices on a map: find the cheapest Regular, Premium and Diesel near you or along a route.">
@@ -22,6 +29,8 @@
          `defer` keeps the scripts off the critical rendering path and preserves order. -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+    <script defer src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.6.1/dist/chart.umd.js"></script>
     <!-- Chart.js Time Adapter (Fixes the X-Axis Spacing) -->
     <script defer src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
@@ -54,9 +63,9 @@
 
         <!-- Gas Preference Toggle -->
         <div class="gas-toggle" id="gasToggle">
-            <button type="button" class="gas-toggle-btn active" id="btn-regular" data-gas-pref="regular">Regular</button>
-            <button type="button" class="gas-toggle-btn" id="btn-premium" data-gas-pref="premium">Premium</button>
-            <button type="button" class="gas-toggle-btn" id="btn-diesel" data-gas-pref="diesel">Diesel</button>
+            <button type="button" class="gas-toggle-btn active" id="btn-regular" data-gas-pref="regular" aria-pressed="false">Regular</button>
+            <button type="button" class="gas-toggle-btn" id="btn-premium" data-gas-pref="premium" aria-pressed="false">Premium</button>
+            <button type="button" class="gas-toggle-btn" id="btn-diesel" data-gas-pref="diesel" aria-pressed="false">Diesel</button>
         </div>
 
         <button type="button" class="btn-action btn-near-me" data-action="find-me">📍 Near Me</button>
@@ -74,7 +83,10 @@
             <button type="button" class="tab" id="tab-search" data-tab="search" role="tab" aria-selected="false" aria-controls="sidebarContent" tabindex="-1"><span class="tab-full">All Stores</span><span class="tab-short">All</span></button>
             <button type="button" class="tab" id="tab-favorites" data-tab="favorites" role="tab" aria-selected="false" aria-controls="sidebarContent" tabindex="-1">Favorites</button>
         </div>
-        <div class="sidebar-content" id="sidebarContent" role="tabpanel"></div>
+        <div class="sidebar-content" id="sidebarContent" role="tabpanel">
+            <!-- Placeholder until app.js renders (replaced by skeleton cards, then the list) -->
+            <p class="empty-msg">Loading stations…</p>
+        </div>
         <!-- Phone: store details live inside this same sheet (tablet uses the floating card below) -->
         <section class="sheet-detail" id="sheetDetail" aria-label="Station details" hidden>
             <div id="sheetDetailContent"></div>

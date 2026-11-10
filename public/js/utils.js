@@ -315,6 +315,14 @@ export function getTrendArrow(current, previous, baselineLabel = 'the last updat
     return `<span class="trend-down" title="Down $${Math.abs(diff).toFixed(2)} since ${labelEscaped}">▼</span>`;
 }
 
+// Turn-by-turn directions to the station (opens the Maps app on phones).
+export function directionsUrl(store) {
+    const dest = store.lat && store.lng
+        ? `${store.lat},${store.lng}`
+        : `Costco Gas, ${store.address || `${store.city}, ${store.state}`}`;
+    return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(dest)}`;
+}
+
 export function getMedal(index) {
     if (index === 0) return '🥇';
     if (index === 1) return '🥈';

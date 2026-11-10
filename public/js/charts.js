@@ -6,7 +6,8 @@ import {
     extractGradePrices,
     getValidPrice,
     GRADE_KEYS,
-    GRADE_INFO
+    GRADE_INFO,
+    escapeHtml
 } from './utils.js';
 import { state, setHistoryRangeDays } from './state.js';
 
@@ -74,6 +75,25 @@ function showChartMessage(msg, isError = false) {
     if (!chartContainer) return;
     const color = isError ? 'var(--costco-red)' : 'var(--text-muted)';
     chartContainer.innerHTML = `<p class="empty-msg" style="color:${color};">${msg}</p>`;
+}
+
+function showChartSkeleton() {
+    const chartContainer = document.querySelector('.chart-container');
+    if (!chartContainer) return;
+    chartContainer.innerHTML = `<div class="skeleton chart-skeleton" role="status"><span class="sr-only">Loading price history…</span></div>`;
+}
+
+function showChartError(stateCode, city) {
+    const chartContainer = document.querySelector('.chart-container');
+    if (!chartContainer) return;
+    chartContainer.innerHTML = `
+        <div class="empty-state error-state" role="alert">
+            <div class="error-state-icon" aria-hidden="true">⚠️</div>
+            <h3>Couldn't load price history</h3>
+            <p>${navigator.onLine === false ? 'You appear to be offline.' : 'Something went wrong.'} Please try again.</p>
+            <button type="button" class="btn-action" data-action="history" data-state="${escapeHtml(stateCode)}" data-city="${escapeHtml(city)}">↻ Try again</button>
+        </div>`;
+    chartContainer.querySelector('button')?.focus();
 }
 
 // Turn change-only entries into one point per day (last known price carried forward).
@@ -166,12 +186,12 @@ export async function openHistoryModal(stateCode, city) {
     document.querySelector('#chartModal .modal-close')?.focus();
 
     if (!historyLoaded) {
-        showChartMessage('Loading price history…');
+        showChartSkeleton();
         try {
             await ensureHistoryLoaded();
         } catch (e) {
             console.error('Error loading price history:', e);
-            showChartMessage("Couldn't load price history. Please try again.", true);
+            showChartError(stateCode, city);
             return;
         }
     }
