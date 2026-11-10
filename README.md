@@ -22,6 +22,7 @@ A live-updating map of Costco gas prices across the US. A scheduled scraper coll
 - 📍 "Near Me" with a 5–100 mi radius and price or distance sorting
 - 🔗 Shareable links: `?store=STATE_City` opens a station, and `?tab=`, `?grade=` and `?state=` restore the view
 - 📲 Installable to a phone or desktop home screen (web app manifest)
+- ⚙️ Settings panel: clustering and price colours on/off, directions app (Google Maps, Apple Maps or Waze), light/dark/system theme, start-up tab, and automatic location on/off. Settings are saved in the browser.
 - 🌙 Dark mode with matching map tiles
 
 ## How it works

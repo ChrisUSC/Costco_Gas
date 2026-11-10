@@ -23,6 +23,7 @@ import {
     escapeHtml,
     debounce,
     directionsUrl,
+    DIRECTIONS_APP_LABELS,
     showToast,
     prefersReducedMotion,
     requestBrowserLocation
@@ -33,6 +34,11 @@ import {
     toggleFavoriteStore,
     findStore,
     hasExplicitThemePref,
+    getThemePref,
+    setThemePref,
+    setSetting,
+    TAB_NAMES,
+    DIRECTIONS_APPS,
     setGasPref as saveGasPref,
     setDarkMode as saveDarkMode,
     setNearbyRadius as saveNearbyRadius,
@@ -391,6 +397,10 @@ function closeHistory() {
 
 // Browser Back / Forward landed on an entry: make the sheet and modal match it.
 function applyOverlayFromHistory(overlay) {
+    const wantSettings = overlay?.type === 'settings';
+    if (isSettingsOpen() && !wantSettings) closeSettings({ fromHistory: true });
+    else if (wantSettings && !isSettingsOpen()) openSettings({ fromHistory: true });
+
     const wantModal = overlay?.type === 'modal';
     if (isChartModalOpen() && !wantModal) closeHistoryModal();
     else if (wantModal && !isChartModalOpen()) openHistoryModal(overlay.state, overlay.city);
@@ -429,17 +439,18 @@ function getShareUrl(stateCode, city) {
     return url.toString();
 }
 
+// The stations the map should show: the route's stations on the Route tab, otherwise all.
+function currentMapData() {
+    return state.currentTab === 'route' && state.lastRouteState?.along?.length > 0
+        ? state.lastRouteState.along
+        : state.stores;
+}
+
 function toggleFavoriteStoreAndRefresh(stateCode, city) {
     const isNowFav = toggleFavoriteStore(stateCode, city);
     showToast(isNowFav ? '★ Added to favorites' : 'Removed from favorites');
 
-    if (state.stores.length > 0) {
-        renderMap(
-            state.currentTab === 'route' && state.lastRouteState?.along?.length > 0
-                ? state.lastRouteState.along
-                : state.stores
-        );
-    }
+    if (state.stores.length > 0) renderMap(currentMapData());
     refreshCurrentDisplay();
 
     if (state.activeMobileStore && state.activeMobileStore.state === stateCode && state.activeMobileStore.city === city) {
@@ -571,16 +582,123 @@ function toggleTheme() {
     refreshChartTheme();
 }
 
+// --- Settings panel ---
+
+let lastFocusedBeforeSettings = null;
+
+function isSettingsOpen() {
+    return document.getElementById('settingsModal')?.classList.contains('active') || false;
+}
+
+// Fill the form from the current state (the 🌙 button can change the theme meanwhile).
+function syncSettingsForm() {
+    const form = document.getElementById('settingsForm');
+    if (!form) return;
+    form.elements.clusterMarkers.checked = state.clusterMarkers;
+    form.elements.colorPins.checked = state.colorPins;
+    form.elements.autoLocate.checked = state.autoLocate;
+    form.elements.defaultTab.value = state.defaultTab;
+    form.querySelector(`input[name="directionsApp"][value="${state.directionsApp}"]`).checked = true;
+    form.querySelector(`input[name="theme"][value="${getThemePref()}"]`).checked = true;
+}
+
+function openSettings({ fromHistory = false } = {}) {
+    const modal = document.getElementById('settingsModal');
+    if (!modal || isSettingsOpen()) return;
+    if (isChartModalOpen()) closeHistory();
+    lastFocusedBeforeSettings = document.activeElement;
+    syncSettingsForm();
+    modal.classList.add('active');
+    modal.querySelector('.modal-close')?.focus();
+    if (!fromHistory) pushOverlay({ type: 'settings' });
+}
+
+function closeSettings({ fromHistory = false } = {}) {
+    const modal = document.getElementById('settingsModal');
+    if (!modal || !isSettingsOpen()) return;
+    modal.classList.remove('active');
+    if (lastFocusedBeforeSettings && document.contains(lastFocusedBeforeSettings)) {
+        lastFocusedBeforeSettings.focus();
+    }
+    lastFocusedBeforeSettings = null;
+    if (!fromHistory) popOverlay('settings');
+}
+
+// Keeps Tab / Shift+Tab inside the open settings panel. Returns true if handled.
+function trapSettingsFocus(e) {
+    if (e.key !== 'Tab' || !isSettingsOpen()) return false;
+    const modal = document.getElementById('settingsModal');
+    const focusable = [...modal.querySelectorAll('button, select, input:not([type="radio"]), input[type="radio"]:checked')]
+        .filter(el => el.offsetParent !== null);
+    if (focusable.length === 0) return false;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (!modal.contains(document.activeElement)) {
+        e.preventDefault();
+        first.focus();
+    } else if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+    }
+    return true;
+}
+
+// Every setting applies as soon as it changes.
+function applySettingChange(name, input) {
+    switch (name) {
+        case 'clusterMarkers':
+            setSetting('clusterMarkers', input.checked);
+            rebuildMarkersLayer();
+            break;
+        case 'colorPins':
+            setSetting('colorPins', input.checked);
+            updatePinTiers();
+            break;
+        case 'directionsApp':
+            if (!DIRECTIONS_APPS.includes(input.value)) return;
+            setSetting('directionsApp', input.value);
+            refreshDirectionsLinks();
+            break;
+        case 'theme':
+            setThemePref(input.value);
+            applyTheme(state.isDarkMode);
+            setMapTiles();
+            refreshChartTheme();
+            break;
+        case 'defaultTab':
+            if (TAB_NAMES.includes(input.value)) setSetting('defaultTab', input.value);
+            break;
+        case 'autoLocate':
+            setSetting('autoLocate', input.checked);
+            break;
+    }
+}
+
+// Re-render everything that shows a Directions link so it uses the new app.
+function refreshDirectionsLinks() {
+    if (loadStatus === 'ready') renderCurrentTab();
+    if (state.activeMobileStore) renderMobileStoreCardContent(state.activeMobileStore);
+    if (popupStore && popupStore.leafletMarker?.isPopupOpen()) {
+        popupStore.leafletMarker.getPopup().setContent(storePopupHtml(popupStore));
+    }
+}
+
+function setupSettings() {
+    const form = document.getElementById('settingsForm');
+    form?.addEventListener('change', (e) => {
+        if (e.target.name) applySettingChange(e.target.name, e.target);
+    });
+}
+
 function setGasPref(pref) {
     saveGasPref(pref);
 
     syncGradeButtons();
 
-    if (state.stores.length > 0) {
-        renderMap(state.currentTab === 'route' && state.lastRouteState?.along?.length > 0
-            ? state.lastRouteState.along
-            : state.stores);
-    }
+    if (state.stores.length > 0) renderMap(currentMapData());
     refreshCurrentDisplay();
 
     if (state.activeMobileStore) {
@@ -679,7 +797,7 @@ function initMap() {
 // Below PIN_ZOOM nearby stations merge into a bubble showing how many there are and the
 // cheapest price among them. Falls back to plain markers if the plugin failed to load.
 function createMarkersLayer() {
-    if (typeof L.markerClusterGroup !== 'function') return L.layerGroup();
+    if (!state.clusterMarkers || typeof L.markerClusterGroup !== 'function') return L.layerGroup();
     return L.markerClusterGroup({
         disableClusteringAtZoom: PIN_ZOOM,
         maxClusterRadius: 56,
@@ -701,6 +819,17 @@ function createMarkersLayer() {
     });
 }
 
+// Swap between clustered and plain pins, keeping whatever the map is showing.
+function rebuildMarkersLayer() {
+    if (!map) return;
+    const reopen = popupStore;
+    map.closePopup();
+    map.removeLayer(markersLayer);
+    markersLayer = createMarkersLayer().addTo(map);
+    if (state.stores.length > 0) renderMap(currentMapData());
+    if (reopen?.leafletMarker && !isMobileViewport()) reopen.leafletMarker.openPopup();
+}
+
 const PRICE_TIERS = ['low', 'mid', 'high', 'flat', 'none'];
 const MIN_TIER_SPREAD = 0.03; // dollars; below this every station is effectively the same price
 
@@ -713,7 +842,7 @@ function updatePinTiers() {
     const prices = inView.map(m => m.options.price);
     const min = Math.min(...prices);
     const max = Math.max(...prices);
-    const comparable = inView.length >= 3 && max - min >= MIN_TIER_SPREAD;
+    const comparable = state.colorPins && inView.length >= 3 && max - min >= MIN_TIER_SPREAD;
     const inViewSet = new Set(inView);
 
     storeMarkers.forEach(marker => {
@@ -786,7 +915,7 @@ function storePopupHtml(store) {
         ${store.phone ? `<div class="popup-phone"><a href="tel:${escapeHtml(store.phone.replace(/[^0-9+]/g, ''))}">${escapeHtml(store.phone)}</a></div>` : ''}
         <div class="popup-prices-grid">${priceBoxesHtml}</div>
         <div class="popup-actions-row">
-            <a href="${escapeHtml(directionsUrl(store))}" target="_blank" rel="noopener noreferrer" class="popup-btn popup-btn-directions">${DIRECTIONS_ICON} Directions</a>
+            <a href="${escapeHtml(directionsUrl(store, state.directionsApp))}" title="Open in ${DIRECTIONS_APP_LABELS[state.directionsApp]}" target="_blank" rel="noopener noreferrer" class="popup-btn popup-btn-directions">${DIRECTIONS_ICON} Directions</a>
             <button type="button" class="popup-btn popup-btn-outline" data-action="history" ${where}>📈 History</button>
         </div>
         <div class="popup-actions-row">
@@ -992,8 +1121,8 @@ async function loadData() {
         const [latestRes, storesRes, _, autoLocation] = await Promise.all([
             fetch(`us_latest.json?t=${cb}`),
             fetch(`us_stores.json?t=${cb}`),
-            detectUserState(),
-            tryAutoLocateOnLoad()
+            state.autoLocate ? detectUserState() : null,
+            state.autoLocate ? tryAutoLocateOnLoad() : null
         ]);
 
         if (!latestRes.ok || !storesRes.ok) throw new Error('Failed to fetch latest snapshot or store list');
@@ -1370,10 +1499,13 @@ function setupKeyboardSupport() {
     });
 
     document.addEventListener('keydown', (e) => {
-        if (trapModalFocus(e)) return;
+        if (trapSettingsFocus(e) || trapModalFocus(e)) return;
 
         if (e.key === 'Escape') {
-            if (isChartModalOpen()) {
+            if (isSettingsOpen()) {
+                e.preventDefault();
+                closeSettings();
+            } else if (isChartModalOpen()) {
                 e.preventDefault();
                 closeHistory();
             } else if (state.activeMobileStore && !e.target.closest?.('input, select')) {
@@ -1403,6 +1535,10 @@ function setupEventListeners() {
         }
 
         // Close modal when clicking backdrop
+        if (e.target.id === 'settingsModal') {
+            closeSettings();
+            return;
+        }
         if (e.target.id === 'chartModal') {
             closeHistory();
             return;
@@ -1438,6 +1574,12 @@ function setupEventListeners() {
         switch (action) {
             case 'find-me':
                 triggerFindMe();
+                break;
+            case 'open-settings':
+                openSettings();
+                break;
+            case 'close-settings':
+                closeSettings();
                 break;
             case 'toggle-theme':
                 toggleTheme();
@@ -1544,7 +1686,7 @@ function setupEventListeners() {
 
 // A shared link's tab and grade win over the defaults (without overwriting the saved grade).
 if (initialUrl.grade) state.gasPref = initialUrl.grade;
-if (initialUrl.tab) state.currentTab = initialUrl.tab;
+state.currentTab = initialUrl.tab || state.defaultTab;
 
 initNav({
     getView: () => {
@@ -1584,6 +1726,7 @@ initRoutes({
 
 setupEventListeners();
 setupKeyboardSupport();
+setupSettings();
 switchTab(state.currentTab); // highlight the tab from the URL while the data loads
 loadData();
 setInterval(refreshLastUpdatedLabel, 60000);

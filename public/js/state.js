@@ -14,6 +14,36 @@ export function hasExplicitThemePref() {
     return saved === 'dark' || saved === 'light';
 }
 
+export const TAB_NAMES = ['nearby', 'lowest', 'route', 'search', 'favorites'];
+export const DIRECTIONS_APPS = ['google', 'apple', 'waze'];
+
+function oneOf(value, allowed, fallback) {
+    return allowed.includes(value) ? value : fallback;
+}
+
+function loadBoolPref(key, fallback) {
+    const v = localStorage.getItem(key);
+    return v === null ? fallback : v === 'true';
+}
+
+// 'light' | 'dark' | 'system' (no saved choice: follow the operating system)
+export function getThemePref() {
+    const saved = localStorage.getItem('theme');
+    return saved === 'dark' || saved === 'light' ? saved : 'system';
+}
+
+export function setThemePref(pref) {
+    if (pref === 'system') localStorage.removeItem('theme');
+    else localStorage.setItem('theme', pref);
+    state.isDarkMode = initialDarkMode();
+}
+
+// Saves one of the boolean / choice settings above.
+export function setSetting(key, value) {
+    state[key] = value;
+    localStorage.setItem(key, String(value));
+}
+
 export const state = {
     // Master data
     stores: [],
@@ -34,6 +64,12 @@ export const state = {
     nearbySortMode: localStorage.getItem('nearbySort') || 'price', // 'price' | 'distance'
     favoriteStoreKeys: new Set(loadJsonPref('favoriteStores', [])),
     favoriteRoutes: loadJsonPref('favoriteRoutes', []),
+    // Settings panel (see SETTINGS_DEFAULTS)
+    clusterMarkers: loadBoolPref('clusterMarkers', true),
+    colorPins: loadBoolPref('colorPins', true),
+    directionsApp: oneOf(localStorage.getItem('directionsApp'), DIRECTIONS_APPS, 'google'),
+    defaultTab: oneOf(localStorage.getItem('defaultTab'), TAB_NAMES, 'nearby'),
+    autoLocate: loadBoolPref('autoLocate', true),
     historyRangeDays: (() => {
         const val = parseInt(localStorage.getItem('historyRangeDays'), 10);
         return isNaN(val) ? 30 : val;
