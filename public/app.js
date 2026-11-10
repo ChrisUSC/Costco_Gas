@@ -123,6 +123,26 @@ function isMobileViewport() {
 // --- Phone list sheet: peek (tabs only) / half / full ---
 const SHEET_STATES = ['peek', 'half', 'full'];
 const SHEET_HALF_FRACTION = 0.5; // how much of the sheet is pushed down at "half"
+const DETAIL_MAX_FRACTION = 0.88; // a station card never covers more of the sheet than this
+let sheetStateBeforeDetail = null; // list position to return to when the station card closes
+
+// Resting translateY (px) of the "half" state. For the list it's half the sheet; a station
+// card instead sizes the sheet to its content, so it is never cut off and covers no more
+// map than it needs.
+function sheetHalfY() {
+    const sidebar = document.getElementById('sidebar');
+    if (!sidebar) return 0;
+    const h = sidebar.offsetHeight;
+    const detail = document.getElementById('sheetDetail');
+    const content = document.getElementById('sheetDetailContent');
+    if (!sidebar.classList.contains('has-detail') || !detail || detail.hidden || !content) {
+        return Math.round(h * SHEET_HALF_FRACTION);
+    }
+    const cs = getComputedStyle(detail);
+    const needed = (document.getElementById('sheetGrabber')?.offsetHeight || 0)
+        + content.offsetHeight + parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+    return Math.round(Math.max(h * (1 - DETAIL_MAX_FRACTION), h - needed));
+}
 
 function setSheetState(next, { keepDetail = false } = {}) {
     if (!SHEET_STATES.includes(next)) next = 'peek';
@@ -136,7 +156,7 @@ function setSheetState(next, { keepDetail = false } = {}) {
     if (sidebar) sidebar.style.transform = ''; // drop any drag offset
     syncSheetA11y();
     // Dragging down to peek dismisses the details; opening further keeps them.
-    if (!keepDetail && state.activeMobileStore && next === 'peek') closeMobileStoreCard();
+    if (!keepDetail && state.activeMobileStore && next === 'peek') closeMobileStoreCard({ restoreSheet: false });
     if (map) setTimeout(() => map.invalidateSize(), 60);
 }
 
@@ -149,7 +169,11 @@ function syncSheetA11y() {
     if (grabber) grabber.setAttribute('aria-expanded', String(!collapsed));
     // At "half" the lower part of the sheet is off-screen; the list must stop above it.
     const sidebar = document.getElementById('sidebar');
-    if (sidebar) sidebar.style.setProperty('--sheet-hidden', `${Math.round(sidebar.offsetHeight * SHEET_HALF_FRACTION)}px`);
+    if (sidebar) {
+        const halfY = `${sheetHalfY()}px`;
+        sidebar.style.setProperty('--half-y', halfY);
+        sidebar.style.setProperty('--sheet-hidden', halfY);
+    }
 }
 
 // Back-compat wrapper: 'list' opens the sheet, 'map' tucks it away to show the map.
@@ -167,7 +191,7 @@ function setupSheetDrag() {
     // Resting translateY (px) of each state, measured against the sheet's own height.
     const restingY = () => {
         const h = sidebar.offsetHeight;
-        return { full: 0, half: h * SHEET_HALF_FRACTION, peek: Math.max(0, h - peekHeight()) };
+        return { full: 0, half: sheetHalfY(), peek: Math.max(0, h - peekHeight()) };
     };
     const nearest = (y) => {
         const r = restingY();
@@ -342,10 +366,10 @@ function openMobileStoreCard(store, { fromHistory = false } = {}) {
         // One sheet: the list gives way to the station's details, same drag heights.
         const sidebar = document.getElementById('sidebar');
         const detail = document.getElementById('sheetDetail');
+        if (sidebar && !sidebar.classList.contains('has-detail')) sheetStateBeforeDetail = state.mobileViewMode;
         if (detail) { detail.hidden = false; detail.scrollTop = 0; }
         if (sidebar) sidebar.classList.add('has-detail');
-        if (state.mobileViewMode === 'peek') setSheetState('half', { keepDetail: true });
-        else syncSheetA11y();
+        setSheetState('half', { keepDetail: true }); // sized to the card (see sheetHalfY)
         detail?.querySelector('.mobile-sheet-close')?.focus({ preventScroll: true });
         if (!fromHistory) recordSheetOpen(store);
         return;
@@ -361,7 +385,7 @@ function openMobileStoreCard(store, { fromHistory = false } = {}) {
     if (!fromHistory) recordSheetOpen(store);
 }
 
-function closeMobileStoreCard({ fromHistory = false } = {}) {
+function closeMobileStoreCard({ fromHistory = false, restoreSheet = true } = {}) {
     const hadStore = Boolean(state.activeMobileStore);
     state.activeMobileStore = null;
     const sheet = document.getElementById('mobileStoreSheet');
@@ -376,6 +400,13 @@ function closeMobileStoreCard({ fromHistory = false } = {}) {
     if (container) container.classList.remove('mobile-sheet-open');
     if (sidebar) sidebar.classList.remove('has-detail');
     if (detail) detail.hidden = true;
+    // Put the list back where it was before the card opened (e.g. tucked away at "peek").
+    const before = sheetStateBeforeDetail;
+    sheetStateBeforeDetail = null;
+    if (hadStore && isPhoneViewport()) {
+        if (restoreSheet && before && before !== state.mobileViewMode) setSheetState(before, { keepDetail: true });
+        else syncSheetA11y();
+    }
     if (hadStore && isPhoneViewport()) document.getElementById('sheetGrabber')?.focus({ preventScroll: true });
     if (hadStore && !fromHistory && !popOverlay('sheet')) syncUrl();
 }
@@ -416,10 +447,12 @@ function applyOverlayFromHistory(overlay) {
 }
 
 // On phones the sheet covers the lower half, so aim the map at the visible upper part.
+// Call after the card has opened, so its height is known.
 function sheetAwareCenter(latlng, zoom) {
     if (!isPhoneViewport() || !map) return latlng;
-    const shift = map.getSize().y * 0.22;
-    return map.unproject(map.project(latlng, zoom).add([0, shift]), zoom);
+    const sidebar = document.getElementById('sidebar');
+    const covered = sidebar ? sidebar.offsetHeight - sheetHalfY() : map.getSize().y * 0.44;
+    return map.unproject(map.project(latlng, zoom).add([0, covered / 2]), zoom);
 }
 
 function refreshLastUpdatedLabel() {
@@ -838,6 +871,12 @@ function initMap() {
     setupMobileSheetGestures();
     setupSheetDrag();
     setSheetState('peek');
+    // Re-fit the sheet when the card's height changes (gas hours expanded, re-render, fonts).
+    const detailContent = document.getElementById('sheetDetailContent');
+    if (detailContent && typeof ResizeObserver === 'function') {
+        new ResizeObserver(() => { if (isPhoneViewport() && state.activeMobileStore) syncSheetA11y(); })
+            .observe(detailContent);
+    }
     setupMapAreaSearch();
     setupDoubleTapZoom();
 
@@ -1069,8 +1108,8 @@ function moveMapTo(latlng, zoom, duration) {
 
 function flyToStore(store) {
     if (isMobileViewport()) {
+        openMobileStoreCard(store); // first, so the map can centre above the card
         moveMapTo(sheetAwareCenter(L.latLng(store.lat, store.lng), 14), 14, 1.2);
-        openMobileStoreCard(store);
         return;
     }
     // Register first: with reduced motion the move (and its moveend) completes synchronously.

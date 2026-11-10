@@ -784,7 +784,7 @@ body.dark-mode .gas-status.closing-soon { color: #fbbf24; }
         overflow: hidden;
     }
     .sidebar.dragging { transition: none; }
-    .app-container.sheet-half .sidebar { transform: translateY(50%); }
+    .app-container.sheet-half .sidebar { transform: translateY(var(--half-y, 50%)); }
     .app-container.sheet-half .sidebar-content { margin-bottom: var(--sheet-hidden, 50%); }
     .app-container.sheet-full .sidebar { transform: translateY(0); }
     /* Store details take over the bottom edge; the list sheet slides away until they close */
