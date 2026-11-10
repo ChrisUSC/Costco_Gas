@@ -340,12 +340,14 @@ export function debounce(fn, delay) {
     };
 }
 
-export function showToast(message) {
+export function showToast(message, duration = 2200) {
     const existing = document.querySelector('.app-toast');
     if (existing) existing.remove();
 
     const toast = document.createElement('div');
     toast.className = 'app-toast';
+    toast.setAttribute('role', 'status');
+    toast.setAttribute('aria-live', 'polite');
     toast.textContent = message;
     document.body.appendChild(toast);
 
@@ -353,20 +355,35 @@ export function showToast(message) {
     setTimeout(() => {
         toast.classList.remove('visible');
         setTimeout(() => toast.remove(), 300);
-    }, 2200);
+    }, duration);
+}
+
+export function prefersReducedMotion() {
+    return Boolean(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+}
+
+function describeLocationError(err) {
+    if (err && err.code === 1) {
+        return "Location access is blocked. Allow it in your browser's site settings, or search for a city instead.";
+    }
+    if (err && err.code === 3) {
+        return "Locating you timed out. Try again, or search for a city instead.";
+    }
+    return "Couldn't get your location. Try again, or search for a city instead.";
 }
 
 export function requestBrowserLocation(onSuccess, onError) {
     if (!navigator.geolocation) {
-        if (onError) onError(new Error("Geolocation is not supported by your browser."));
-        else alert("Geolocation is not supported by your browser.");
+        const err = new Error("Geolocation is not supported by your browser.");
+        if (onError) onError(err);
+        else showToast("Your browser doesn't support location. Search for a city instead.", 5000);
         return;
     }
     navigator.geolocation.getCurrentPosition(
         onSuccess,
         (err) => {
             if (onError) onError(err);
-            else alert("Unable to retrieve your location. Check browser permissions.");
+            else showToast(describeLocationError(err), 5500);
         }
     );
 }
