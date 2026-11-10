@@ -4,9 +4,9 @@ export const SCRAPER_TIMEZONE = 'America/Los_Angeles';
 export const CARTO_API_KEY = 'cb1_2q9b_1_6d41dfc2a130168400103206';
 
 export const GRADE_INFO = {
-    regular: { label: 'Regular', color: '#059669', valKey: 'regVal', prevKey: 'prevRegVal', strKey: 'regularStr', histKey: 'reg' },
-    premium: { label: 'Premium', color: '#E31837', valKey: 'premVal', prevKey: 'prevPremVal', strKey: 'premiumStr', histKey: 'prem' },
-    diesel:  { label: 'Diesel',  color: '#7c3aed', valKey: 'dieselVal', prevKey: 'prevDieselVal', strKey: 'dieselStr', histKey: 'diesel' }
+    regular: { label: 'Regular', color: '#0f9d6b', valKey: 'regVal', prevKey: 'prevRegVal', strKey: 'regularStr', histKey: 'reg' },
+    premium: { label: 'Premium', color: '#3b82f6', valKey: 'premVal', prevKey: 'prevPremVal', strKey: 'premiumStr', histKey: 'prem' },
+    diesel:  { label: 'Diesel',  color: '#d97706', valKey: 'dieselVal', prevKey: 'prevDieselVal', strKey: 'dieselStr', histKey: 'diesel' }
 };
 export const GRADE_KEYS = Object.keys(GRADE_INFO);
 
@@ -221,7 +221,7 @@ export function gasStatusHtml(store) {
     const status = getGasStatus(store);
     if (!status) return '';
     const cls = status.isOpen ? (status.closingSoon ? 'closing-soon' : 'open') : 'closed';
-    return `<div class="gas-status ${cls}">● ${escapeHtml(status.text)}</div>`;
+    return `<div class="gas-status ${cls}"><span class="status-dot" aria-hidden="true"></span>${escapeHtml(status.text)}</div>`;
 }
 
 export function gasHoursDetailsHtml(store) {
@@ -281,7 +281,7 @@ export function getRelativeTimeLabel(timestampStr) {
 
 export function formatLastUpdatedLabel(timestampStr) {
     const d = parseScraperTimestamp(timestampStr);
-    if (!d) return { text: 'Last Updated: unknown', title: '' };
+    if (!d) return { text: 'Update time unknown', title: '' };
 
     const diffMs = Date.now() - d.getTime();
     const minutes = Math.round(diffMs / 60000);
@@ -289,10 +289,10 @@ export function formatLastUpdatedLabel(timestampStr) {
     const days = Math.round(hours / 24);
 
     let text;
-    if (minutes < 1) text = 'Last Updated: just now';
-    else if (minutes < 60) text = `Last Updated: ${minutes} minute${minutes === 1 ? '' : 's'} ago`;
-    else if (hours < 36) text = `Last Updated: ${hours} hour${hours === 1 ? '' : 's'} ago`;
-    else text = `Last Updated: ${days} day${days === 1 ? '' : 's'} ago`;
+    if (minutes < 1) text = 'Updated just now';
+    else if (minutes < 60) text = `Updated ${minutes} min ago`;
+    else if (hours < 36) text = `Updated ${hours} hr ago`;
+    else text = `Updated ${days} day${days === 1 ? '' : 's'} ago`;
 
     const title = d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
     return { text, title };
@@ -305,14 +305,18 @@ export function getTrendArrow(current, previous, baselineLabel = 'the last updat
     const diff = current - previous;
     if (isNaN(diff)) return '';
 
+    // Arrow plus the size of the move in cents. Never colour alone: the arrow and a
+    // screen-reader phrase carry the direction too.
     const labelEscaped = escapeHtml(baselineLabel);
     if (Math.abs(diff) < 0.005) {
-        return `<span class="trend-flat" title="No change since ${labelEscaped}">–</span>`;
+        return `<span class="trend trend-flat" title="No change since ${labelEscaped}"><span aria-hidden="true">–</span><span class="sr-only">no change</span></span>`;
     }
-    if (diff > 0) {
-        return `<span class="trend-up" title="Up $${diff.toFixed(2)} since ${labelEscaped}">▲</span>`;
-    }
-    return `<span class="trend-down" title="Down $${Math.abs(diff).toFixed(2)} since ${labelEscaped}">▼</span>`;
+    const up = diff > 0;
+    const cents = Math.round(Math.abs(diff) * 100);
+    return `<span class="trend ${up ? 'trend-up' : 'trend-down'}" title="${up ? 'Up' : 'Down'} $${Math.abs(diff).toFixed(2)} since ${labelEscaped}">`
+        + `<span class="trend-arrow" aria-hidden="true">${up ? '▲' : '▼'}</span>`
+        + `<span class="trend-amt" aria-hidden="true">${cents}¢</span>`
+        + `<span class="sr-only">${up ? 'up' : 'down'} ${cents} cents</span></span>`;
 }
 
 export const DIRECTIONS_APP_LABELS = { google: 'Google Maps', apple: 'Apple Maps', waze: 'Waze' };
@@ -334,11 +338,31 @@ export function directionsUrl(store, app = 'google') {
     return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(hasCoords ? coords : address)}`;
 }
 
+// Rank badge for leaderboards; the top three get the accent treatment.
 export function getMedal(index) {
-    if (index === 0) return '🥇';
-    if (index === 1) return '🥈';
-    if (index === 2) return '🥉';
-    return `<span style="font-size:13px; color:var(--text-muted); margin-right:4px;">#${index + 1}</span>`;
+    return `<span class="rank${index < 3 ? ' rank-top' : ''}" aria-label="Rank ${index + 1}">${index + 1}</span>`;
+}
+
+// Store addresses arrive in capitals ("2207 W COMMONWEALTH AVE, ALHAMBRA, CA 91803-1302").
+// Title-case them for reading, keeping state codes, compass points and highway prefixes.
+const ADDRESS_KEEP_UPPER = new Set(['N', 'S', 'E', 'W', 'NE', 'NW', 'SE', 'SW', 'US', 'PO', 'SR', 'CR', 'FM']);
+
+export function formatAddress(address) {
+    if (!address) return '';
+    if (/[a-z]/.test(address)) return address; // already mixed case
+    const titleWord = w => {
+        if (ADDRESS_KEEP_UPPER.has(w)) return w;
+        if (/^\d/.test(w)) return w.toLowerCase(); // 4TH -> 4th
+        return w.charAt(0) + w.slice(1).toLowerCase();
+    };
+    const parts = address.split(',');
+    return parts.map((part, i) => {
+        const isLast = i === parts.length - 1;
+        return part.split(' ').map(word => {
+            if (isLast && /^[A-Z]{2}$/.test(word)) return word; // state code before the zip
+            return word.split('-').map(titleWord).join('-');
+        }).join(' ');
+    }).join(',');
 }
 
 export function escapeHtml(str) {

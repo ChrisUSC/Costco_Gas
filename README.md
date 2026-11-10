@@ -52,12 +52,13 @@ public/ (HTML, JS, CSS, us_stores.json) ──► Cloudflare Pages static hostin
 ```
 ├── public/                     # Everything the browser loads (Cloudflare Pages output directory)
 │   ├── index.html              # App shell
-│   ├── styles.css              # Styling, light/dark theme via CSS variables
+│   ├── styles.css              # Design tokens (colour, type, radius, shadow) + all styling, light/dark
 │   ├── app.js                  # Entry point: map, sidebar views, event handling
 │   ├── js/
 │   │   ├── utils.js            # Constants, price/grade helpers, distance math, gas hours, timestamps
 │   │   ├── state.js            # App state and localStorage preferences
 │   │   ├── components.js       # Store cards, mobile sheet, saved-route cards
+│   │   ├── icons.js            # Inline SVG icon set (used instead of emoji)
 │   │   ├── search.js           # Autocomplete and Nominatim geocoding
 │   │   ├── charts.js           # Price-history loading and Chart.js modal
 │   │   ├── routes.js           # OSRM routing, corridor filtering, saved routes

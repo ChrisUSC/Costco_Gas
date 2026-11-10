@@ -1,787 +1,965 @@
+/* =====================================================================
+   COSTCO GAS PRICES
+   1. Design tokens      5. Sidebar & lists     9. Responsive tiers
+   2. Base               6. Station cards      10. Touch targets
+   3. Buttons & fields   7. Map                11. Motion preferences
+   4. Header             8. Overlays
+   ===================================================================== */
+
+/* =====================================================================
+   1. DESIGN TOKENS
+   Every colour, radius, shadow and type size in the app comes from here.
+   Text tokens meet WCAG AA (4.5:1) on the surfaces they are used on.
+   ===================================================================== */
 :root {
-    /* Light Theme Variables */
-    --costco-blue: #005DAA;
-    --costco-red: #E31837;
-    --bg-main: #f8fafc;
-    --bg-sidebar: #ffffff;
-    --bg-card: #ffffff;
-    --bg-input: #ffffff;
-    --text-main: #1e293b;
-    --text-muted: #64748b;
-    --border-color: #e2e8f0;
-    --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    --tag-bg: #f1f5f9;
-    --tag-highlight-bg: #ecfdf5;
-    --tag-highlight-border: #a7f3d0;
-    --price-color: #047857;
-    /* Brand blue used as TEXT/outline colour (the dark-mode variant keeps >= 4.5:1 on dark surfaces) */
-    --link-blue: #005DAA;
-    --focus-ring: #005DAA;
-    --star-color: #d97706;
-    --star-text: #b45309;
-    /* Relative-price pin colours (fill) and their badge text (>= 4.5:1 on the card colour) */
-    --tier-low: #059669;
-    --tier-mid: #d97706;
-    --tier-high: #dc2626;
-    --tier-low-text: #047857;
-    --tier-mid-text: #b45309;
-    --tier-high-text: #b91c1c;
-    --skeleton-base: #e2e8f0;
-    --skeleton-shine: #f1f5f9;
+    color-scheme: light;
+
+    /* Surfaces */
+    --bg: #f4f5f7;              /* app background, list gutter */
+    --surface: #ffffff;         /* header, cards, sheets, popups */
+    --surface-2: #f0f2f5;       /* insets: inputs, tiles, segmented tracks */
+    --surface-3: #e4e7ec;       /* hover / pressed on insets */
+    --border: #e2e5ea;
+    --border-strong: #c9ced6;
+
+    /* Text */
+    --text: #12161c;
+    --text-muted: #566070;
+
+    /* Brand & accent */
+    --brand-blue: #005daa;
+    --brand-red: #e31837;
+    --accent: #005daa;          /* filled controls */
+    --accent-hover: #004a8a;
+    --accent-text: #005daa;     /* links, selected text */
+    --accent-soft: #e6f0fa;     /* tonal buttons, selected rows */
+    --accent-soft-hover: #d6e6f7;
+    --on-accent: #ffffff;
+    --focus-ring: #005daa;
+
+    /* Status */
+    --positive: #0a7a52;
+    --positive-soft: #e3f5ec;
+    --warning: #9a5600;
+    --warning-soft: #fdf0d9;
+    --danger: #c0271f;
+    --danger-soft: #fdebe9;
+    --star: #d99a00;
+
+    /* Relative-price tiers on the map */
+    --tier-low: #0f9d6b;
+    --tier-mid: #e08a00;
+    --tier-high: #dc3b34;
+    --tier-none: #9aa3af;
+
+    /* Shape */
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 20px;
+    --radius-pill: 999px;
+
+    /* Elevation */
+    --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.06), 0 1px 3px rgba(16, 24, 40, 0.08);
+    --shadow-md: 0 4px 12px rgba(16, 24, 40, 0.10), 0 1px 3px rgba(16, 24, 40, 0.06);
+    --shadow-lg: 0 16px 40px rgba(16, 24, 40, 0.18), 0 4px 12px rgba(16, 24, 40, 0.08);
+    --scrim: rgba(10, 14, 20, 0.5);
+
+    /* Type: the platform's own UI font — no web-font download, no layout shift */
+    --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --text-xs: 0.75rem;     /* 12px */
+    --text-sm: 0.8125rem;   /* 13px */
+    --text-base: 0.875rem;  /* 14px */
+    --text-md: 1rem;        /* 16px */
+    --text-lg: 1.125rem;    /* 18px */
+    --text-xl: 1.5rem;      /* 24px */
+
+    /* Sizing & motion */
+    --control-h: 36px;
+    --header-h: 64px;
+    --ease: cubic-bezier(0.22, 1, 0.36, 1);
+    --fast: 0.15s;
 }
 
 body.dark-mode {
-    /* Dark Theme Variables */
-    --bg-main: #0f172a;
-    --bg-sidebar: #1e293b;
-    --bg-card: #0f172a;
-    --bg-input: #334155;
-    --text-main: #f8fafc;
-    --text-muted: #94a3b8;
-    --border-color: #334155;
-    --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
-    --tag-bg: #1e293b;
-    --tag-highlight-bg: #064e3b;
-    --tag-highlight-border: #047857;
-    --price-color: #34d399;
-    --link-blue: #60a5fa;
-    --focus-ring: #93c5fd;
-    --star-color: #fbbf24;
-    --star-text: #fbbf24;
-    --tier-low-text: #34d399;
-    --tier-mid-text: #fbbf24;
-    --tier-high-text: #f87171;
-    --skeleton-base: #1e293b;
-    --skeleton-shine: #334155;
+    color-scheme: dark;
+
+    --bg: #0d1015;
+    --surface: #161a21;
+    --surface-2: #1f242d;
+    --surface-3: #2a313c;
+    --border: #272d37;
+    --border-strong: #3a4350;
+
+    --text: #eef1f5;
+    --text-muted: #9ba6b5;
+
+    --accent: #1f6fd0;
+    --accent-hover: #2f7fe0;
+    --accent-text: #74b3ff;
+    --accent-soft: #15273f;
+    --accent-soft-hover: #1b3352;
+    --focus-ring: #8cc0ff;
+
+    --positive: #3ecf8e;
+    --positive-soft: #10291f;
+    --warning: #f2b544;
+    --warning-soft: #2e2410;
+    --danger: #ff8078;
+    --danger-soft: #331a18;
+    --star: #f5c132;
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.45);
+    --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.6);
+    --scrim: rgba(0, 0, 0, 0.65);
 }
 
-*, *::before, *::after {
-    box-sizing: border-box;
-}
+/* =====================================================================
+   2. BASE
+   ===================================================================== */
+*, *::before, *::after { box-sizing: border-box; }
 
-body, html {
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+
+html, body {
     margin: 0;
     padding: 0;
-    font-family: 'Inter', sans-serif;
     height: 100vh;
     height: 100dvh;
-    display: flex;
-    flex-direction: column;
-    background-color: var(--bg-main);
-    color: var(--text-main);
-    transition: background-color 0.3s, color 0.3s;
     overflow: hidden;
 }
 
-/* --- HEADER --- */
-header {
-    background-color: var(--costco-blue);
-    background-image: linear-gradient(135deg, #005DAA 0%, #004785 100%);
-    color: white;
-    padding: 14px 24px;
+body {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 16px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-    z-index: 1000;
-    border-bottom: 4px solid var(--costco-red);
-    flex-shrink: 0;
+    flex-direction: column;
+    font-family: var(--font);
+    font-size: var(--text-base);
+    line-height: 1.45;
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
 }
-.header-title {
-    flex-shrink: 0;
+
+h1, h2, h3, p { margin: 0; }
+button, input, select { font: inherit; color: inherit; }
+a { color: var(--accent-text); }
+[hidden] { display: none !important; }
+
+.icon { flex-shrink: 0; display: block; }
+
+.sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
 }
+
+/* Visible keyboard focus everywhere, never on mouse click */
+:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+}
+:focus:not(:focus-visible) { outline: none; }
+
+/* Prices and distances line up digit for digit */
+.card-price-val, .grade-chip-val, .price-tag .val, .pin-price-badge, .cluster-bubble,
+.distance-badge, .price-legend, .trend, .rank {
+    font-variant-numeric: tabular-nums;
+}
+
+/* =====================================================================
+   3. BUTTONS & FIELDS
+   ===================================================================== */
+.btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    min-height: var(--control-h); padding: 0 14px;
+    border: 1px solid transparent; border-radius: var(--radius-pill);
+    background: transparent; color: var(--text);
+    font-size: var(--text-base); font-weight: 600; line-height: 1;
+    white-space: nowrap; text-decoration: none; cursor: pointer;
+    transition: background-color var(--fast), border-color var(--fast), color var(--fast), transform var(--fast);
+    -webkit-user-select: none; user-select: none;
+}
+.btn:active { transform: scale(0.97); }
+
+.btn-primary { background: var(--accent); color: var(--on-accent); }
+.btn-tonal { background: var(--accent-soft); color: var(--accent-text); }
+.btn-secondary { background: var(--surface); border-color: var(--border-strong); color: var(--text); }
+.btn-ghost { color: var(--text-muted); }
+.btn-block { width: 100%; }
+
+/* Square icon-only button; always carries an aria-label */
+.btn-icon {
+    width: var(--control-h); min-width: var(--control-h); padding: 0;
+    color: var(--text-muted); flex-shrink: 0;
+}
+.btn-bordered { border-color: var(--border-strong); background: var(--surface); }
+
+@media (hover: hover) {
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-tonal:hover { background: var(--accent-soft-hover); }
+    .btn-secondary:hover, .btn-bordered:hover { background: var(--surface-2); }
+    .btn-ghost:hover, .btn-icon:hover { background: var(--surface-2); color: var(--text); }
+    .btn-danger:hover { background: var(--danger-soft); color: var(--danger); }
+}
+
+.favorite-btn.active { color: var(--star); }
+.favorite-btn.active .icon { fill: currentColor; }
+
+/* Labelled form field */
+.field label, .route-panel label {
+    display: block; margin-bottom: 6px;
+    font-size: var(--text-xs); font-weight: 600; color: var(--text-muted);
+}
+.input, .select {
+    width: 100%; min-height: 40px; padding: 0 12px;
+    border: 1px solid var(--border-strong); border-radius: var(--radius-sm);
+    background-color: var(--surface); color: var(--text);
+    font-size: var(--text-base);
+    transition: border-color var(--fast), box-shadow var(--fast);
+}
+.input::placeholder { color: var(--text-muted); opacity: 1; }
+.input:focus-visible, .select:focus-visible {
+    outline: none; border-color: var(--focus-ring);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus-ring) 25%, transparent);
+}
+.select {
+    appearance: none; -webkit-appearance: none; cursor: pointer;
+    padding-right: 34px; text-overflow: ellipsis;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23566070' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 10px center;
+}
+body.dark-mode .select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239ba6b5' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+
+/* =====================================================================
+   4. HEADER
+   A quiet surface bar: the map and the prices carry the colour.
+   ===================================================================== */
+.app-header {
+    display: flex; align-items: center; gap: 16px;
+    min-height: var(--header-h); padding: 10px 20px;
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    position: relative; z-index: 1000; flex-shrink: 0;
+}
+.header-title { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.brand-mark { flex-shrink: 0; border-radius: 9px; }
+.brand-text { min-width: 0; }
 .header-title h1 {
-    margin: 0;
-    font-size: 24px;
-    font-weight: 700;
-    letter-spacing: -0.5px;
-    white-space: nowrap;
+    font-size: var(--text-md); font-weight: 700; letter-spacing: -0.01em;
+    line-height: 1.2; white-space: nowrap;
 }
 .last-updated {
-    display: inline-block;
-    background: rgba(255,255,255,0.2);
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: 12px;
-    margin-top: 5px;
-    font-weight: 500;
-    white-space: nowrap;
+    display: flex; align-items: center; gap: 6px;
+    font-size: var(--text-xs); color: var(--text-muted); white-space: nowrap; line-height: 1.3;
+}
+.last-updated::before {
+    content: ''; width: 6px; height: 6px; border-radius: 50%;
+    background: var(--tier-low); flex-shrink: 0;
 }
 
 .header-controls {
-    display: flex;
-    gap: 12px;
-    align-items: center;
-    flex: 1;
-    justify-content: flex-end;
-    min-width: 0;
+    display: flex; align-items: center; justify-content: flex-end; gap: 8px;
+    flex: 1; min-width: 0;
 }
 
-/* Search + Autocomplete */
+/* Search + autocomplete */
 .search-wrapper {
-    position: relative;
-    flex: 1 1 280px;
-    min-width: 220px;
-    max-width: 560px;
-    margin: 0 8px;
+    position: relative; flex: 1 1 280px; min-width: 200px; max-width: 520px;
+    margin-right: auto; margin-left: 8px;
 }
-
+.search-icon {
+    position: absolute; left: 13px; top: 50%; transform: translateY(-50%);
+    color: var(--text-muted); pointer-events: none;
+}
 .search-box {
-    padding: 10px 16px;
-    border-radius: 24px;
-    border: 1px solid transparent;
-    outline: none;
-    width: 100%;
-    font-size: 14px;
-    font-family: 'Inter', sans-serif;
-    box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
-    transition: all 0.2s;
-    background: white;
-    color: #1e293b;
+    width: 100%; height: 40px; padding: 0 14px 0 40px;
+    border: 1px solid transparent; border-radius: var(--radius-pill);
+    background: var(--surface-2); color: var(--text);
+    font-size: var(--text-base);
+    appearance: none; -webkit-appearance: none;
+    transition: background-color var(--fast), border-color var(--fast), box-shadow var(--fast);
 }
-.search-box:focus {
-    border-color: #60a5fa;
-    box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.3);
+.search-box::placeholder { color: var(--text-muted); opacity: 1; }
+.search-box::-webkit-search-decoration { -webkit-appearance: none; }
+@media (hover: hover) { .search-box:hover { background: var(--surface-3); } }
+.search-box:focus-visible {
+    outline: none; background: var(--surface); border-color: var(--focus-ring);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus-ring) 25%, transparent);
 }
 
 .autocomplete-dropdown {
     display: none;
-    position: absolute;
-    top: calc(100% + 8px);
-    left: 0;
-    right: 0;
-    background: var(--bg-sidebar);
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
-    box-shadow: var(--card-shadow);
-    max-height: 340px;
-    overflow-y: auto;
-    z-index: 1500;
+    position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 1500;
+    max-height: 340px; overflow-y: auto; padding: 6px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-md); box-shadow: var(--shadow-lg);
     text-align: left;
 }
 .autocomplete-dropdown.active { display: block; }
 .autocomplete-section-label {
-    font-size: 11px; font-weight: 700; text-transform: uppercase;
-    color: var(--text-muted); padding: 10px 14px 4px; letter-spacing: 0.5px;
+    padding: 8px 10px 4px;
+    font-size: var(--text-xs); font-weight: 600; color: var(--text-muted);
 }
 .autocomplete-item {
-    display: flex; align-items: center; gap: 10px; padding: 9px 14px;
-    cursor: pointer; transition: background-color 0.15s;
+    display: flex; align-items: center; gap: 10px; padding: 8px 10px;
+    border-radius: var(--radius-sm); cursor: pointer;
 }
-@media (hover: hover) { .autocomplete-item:hover, .autocomplete-item.active { background: var(--tag-bg); } }
-.ac-icon { font-size: 16px; flex-shrink: 0; }
+.autocomplete-item.active { background: var(--surface-2); }
+@media (hover: hover) { .autocomplete-item:hover { background: var(--surface-2); } }
+.ac-icon {
+    display: flex; align-items: center; justify-content: center;
+    width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
+    background: var(--surface-2); color: var(--text-muted);
+}
+.ac-icon-store { background: var(--accent-soft); color: var(--accent-text); }
 .ac-text { min-width: 0; flex: 1; }
-.ac-title {
-    font-size: 13px; font-weight: 600; color: var(--text-main);
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.ac-subtitle {
-    font-size: 11px; color: var(--text-muted);
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
+.ac-title, .ac-subtitle { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ac-title { font-size: var(--text-base); font-weight: 600; }
+.ac-subtitle { font-size: var(--text-xs); color: var(--text-muted); }
 .autocomplete-empty, .autocomplete-loading {
-    padding: 14px; text-align: center; font-size: 13px; color: var(--text-muted);
+    padding: 14px; text-align: center; font-size: var(--text-sm); color: var(--text-muted);
 }
 
-.btn-action {
-    background-color: var(--costco-red); color: white; border: none;
-    padding: 10px 16px; border-radius: 24px; cursor: pointer;
-    font-weight: 600; font-size: 14px; transition: all 0.2s;
-    box-shadow: 0 2px 4px rgba(227, 24, 55, 0.3);
-    display: flex; align-items: center; gap: 6px; justify-content: center;
-    white-space: nowrap; flex-shrink: 0;
+/* Fuel grade: segmented control */
+.gas-toggle, .segmented {
+    display: flex; gap: 2px; padding: 3px;
+    background: var(--surface-2); border-radius: var(--radius-pill);
 }
-@media (hover: hover) { .btn-action:hover { background-color: #c4122d; transform: translateY(-1px); } }
-
-.btn-outline-blue {
-    flex: 1;
-    background: transparent;
-    color: var(--link-blue);
-    border: 2px solid var(--link-blue);
-    box-shadow: none;
-}
-@media (hover: hover) { .btn-outline-blue:hover { background: var(--tag-bg); transform: none; } }
-
-.btn-icon {
-    background: rgba(255,255,255,0.2); border: none; color: white;
-    width: 40px; height: 40px; border-radius: 50%; font-size: 18px;
-    cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
-}
-@media (hover: hover) { .btn-icon:hover { background: rgba(255,255,255,0.3); } }
-
-/* Gas Preference Toggle */
-.gas-toggle {
-    display: flex; background: rgba(255,255,255,0.2); border-radius: 24px;
-    padding: 4px; gap: 4px; flex-shrink: 0;
-}
+.gas-toggle { flex-shrink: 0; }
 .gas-toggle-btn {
-    background: transparent; border: none; color: white; font-weight: 600;
-    padding: 6px 12px; border-radius: 20px; cursor: pointer; font-size: 13px;
-    transition: 0.2s; white-space: nowrap;
+    min-height: 34px; padding: 0 14px;
+    border: 0; border-radius: var(--radius-pill); background: transparent;
+    color: var(--text-muted); font-size: var(--text-base); font-weight: 600;
+    white-space: nowrap; cursor: pointer;
+    transition: background-color var(--fast), color var(--fast), box-shadow var(--fast);
 }
-.gas-toggle-btn.active { background: white; color: var(--costco-blue); }
+@media (hover: hover) { .gas-toggle-btn:hover:not(.active) { color: var(--text); } }
+.gas-toggle-btn.active { background: var(--surface); color: var(--text); box-shadow: var(--shadow-sm); }
+body.dark-mode .gas-toggle-btn.active { background: var(--surface-3); }
 
-/* --- MAIN LAYOUT --- */
+.app-header .btn-icon { width: 40px; min-width: 40px; height: 40px; }
+.app-header .btn-near-me { min-height: 40px; }
+.theme-icon-sun { display: none; }
+body.dark-mode .theme-icon-sun { display: block; }
+body.dark-mode .theme-icon-moon { display: none; }
+
+/* =====================================================================
+   5. SIDEBAR & LISTS
+   ===================================================================== */
 .app-container {
-    display: flex;
-    flex: 1;
-    overflow: hidden;
-    position: relative;
-    min-height: 0;
+    display: flex; flex: 1; min-height: 0;
+    position: relative; overflow: hidden;
 }
 
-/* --- SIDEBAR --- */
 .sidebar {
-    width: 390px;
-    flex-shrink: 0;
-    background: var(--bg-sidebar);
-    display: flex;
-    flex-direction: column;
-    border-right: 1px solid var(--border-color);
-    z-index: 500;
-    box-shadow: 2px 0 8px rgba(0,0,0,0.05);
-    transition: background-color 0.3s;
+    display: flex; flex-direction: column;
+    width: 400px; flex-shrink: 0; z-index: 500;
+    background: var(--surface); border-right: 1px solid var(--border);
+    container-type: inline-size; container-name: sidebar;
 }
+.sheet-grabber { display: none; }
+
+/* Tabs */
 .tabs {
-    position: relative;
-    display: flex;
-    border-bottom: 1px solid var(--border-color);
-    background: var(--bg-main);
-    transition: 0.3s;
-    flex-shrink: 0;
+    display: flex; flex-shrink: 0; position: relative;
+    padding: 0 8px; gap: 2px;
+    background: var(--surface); border-bottom: 1px solid var(--border);
 }
 .tab {
-    flex: 1;
-    appearance: none;
-    -webkit-appearance: none;
-    background: transparent;
-    border: 0;
-    border-bottom: 3px solid transparent;
-    font-family: inherit;
-    text-align: center;
-    padding: 13px 8px;
-    cursor: pointer;
-    font-weight: 600;
-    color: var(--text-muted);
-    transition: 0.2s;
-    font-size: 12.5px;
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
+    flex: 1; position: relative;
+    appearance: none; -webkit-appearance: none;
+    min-height: 46px; padding: 0 6px;
+    background: transparent; border: 0;
+    color: var(--text-muted); font-size: var(--text-base); font-weight: 600;
+    text-align: center; white-space: nowrap; cursor: pointer;
+    transition: color var(--fast);
 }
-.tab.active {
-    color: var(--link-blue);
-    background: var(--bg-sidebar);
-    border-bottom: 3px solid var(--link-blue);
+.tab::after {
+    content: ''; position: absolute; left: 8px; right: 8px; bottom: -1px; height: 2px;
+    border-radius: 2px 2px 0 0; background: transparent;
+    transition: background-color var(--fast);
 }
-@media (hover: hover) { .tab:hover:not(.active) { background: var(--bg-card); color: var(--text-main); } }
+.tab.active { color: var(--accent-text); }
+.tab.active::after { background: var(--accent-text); }
+@media (hover: hover) { .tab:hover:not(.active) { color: var(--text); } }
+.tab:focus-visible { outline-offset: -4px; border-radius: var(--radius-sm); }
+
+/* Short tab labels whenever the sidebar is too narrow for the full ones */
+.tab-short { display: none; }
+@container sidebar (max-width: 479px) {
+    .tab-full { display: none; }
+    .tab-short { display: inline; }
+}
 
 .sidebar-content {
-    flex: 1;
-    overflow-y: auto;
-    padding: 16px;
-    background: var(--bg-main);
-    transition: 0.3s;
+    flex: 1; overflow-y: auto; padding: 14px;
+    background: var(--bg);
+    scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent;
     -webkit-overflow-scrolling: touch;
 }
-.sidebar-content::-webkit-scrollbar { width: 8px; }
-.sidebar-content::-webkit-scrollbar-track { background: transparent; }
-.sidebar-content::-webkit-scrollbar-thumb { background-color: var(--border-color); border-radius: 10px; }
+.sheet-detail { display: none; }
 
-.empty-msg { text-align: center; color: var(--text-muted); margin-top: 40px; }
-.empty-state { text-align: center; margin-top: 50px; }
+/* Section label above a list */
+.leaderboard-header {
+    margin: 18px 2px 10px;
+    font-size: var(--text-sm); font-weight: 600; color: var(--text-muted);
+}
+.sidebar-content > .leaderboard-header:first-child { margin-top: 2px; }
 
-/* Store Cards */
-.store-card {
-    background: var(--bg-card); border: 1px solid var(--border-color);
-    border-radius: 12px; padding: 16px; margin-bottom: 14px;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.03); cursor: pointer;
-    transition: all 0.2s; position: relative; overflow: hidden;
+/* Empty, loading and error states */
+.empty-msg {
+    margin: 28px 12px; text-align: center;
+    font-size: var(--text-base); color: var(--text-muted);
 }
-.store-card::before {
-    content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
-    background: transparent; transition: 0.2s;
+.empty-msg.is-error { color: var(--danger); }
+.empty-state {
+    display: flex; flex-direction: column; align-items: center;
+    margin: 48px auto 0; padding: 0 16px; max-width: 320px; text-align: center;
 }
-@media (hover: hover) { .store-card:hover { transform: translateY(-2px); box-shadow: var(--card-shadow); border-color: #cbd5e1; } }
-@media (hover: hover) { .store-card:hover::before { background: var(--costco-blue); } }
+.empty-state-icon {
+    display: flex; align-items: center; justify-content: center;
+    width: 56px; height: 56px; margin-bottom: 14px; border-radius: 50%;
+    background: var(--accent-soft); color: var(--accent-text);
+}
+.empty-state-icon.is-danger { background: var(--danger-soft); color: var(--danger); }
+.empty-state h3 { font-size: var(--text-md); font-weight: 700; margin-bottom: 6px; }
+.empty-state p { color: var(--text-muted); line-height: 1.5; margin-bottom: 18px; }
+.chart-container .empty-state { margin-top: 24px; }
 
-.store-card h3 {
-    margin: 0 0 6px 0; font-size: 16px; color: var(--text-main);
-    font-weight: 700; display: flex; justify-content: space-between; align-items: center; gap: 8px;
+.skeleton {
+    border-radius: var(--radius-sm);
+    background: linear-gradient(90deg, var(--surface-2) 25%, var(--surface-3) 50%, var(--surface-2) 75%);
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.4s ease-in-out infinite;
 }
-.medal { font-size: 18px; flex-shrink: 0; }
-.distance-badge {
-    background: var(--bg-main); color: var(--text-main); font-size: 11px;
-    padding: 4px 8px; border-radius: 12px; font-weight: 700;
-    letter-spacing: 0.5px; border: 1px solid var(--border-color);
-    white-space: nowrap; flex-shrink: 0;
+@keyframes skeleton-shimmer {
+    from { background-position: 200% 0; }
+    to { background-position: -200% 0; }
 }
+.skeleton-card { cursor: default; pointer-events: none; }
+.skeleton-row { display: flex; gap: 12px; }
+.skeleton-row + .skeleton-row { margin-top: 12px; }
+.skeleton-col { flex: 1; min-width: 0; }
+.skeleton-line { height: 12px; width: 85%; margin-bottom: 10px; }
+.skeleton-title { height: 16px; width: 55%; }
+.skeleton-short { width: 40%; margin-bottom: 0; }
+.skeleton-box { width: 76px; height: 56px; flex-shrink: 0; }
+.skeleton-btn { flex: 1; height: var(--control-h); border-radius: var(--radius-pill); }
+.chart-skeleton { width: 100%; height: 100%; border-radius: var(--radius-md); }
 
-.store-card .address { font-size: 13px; color: var(--text-muted); margin-bottom: 12px; line-height: 1.4; }
-.prices { display: flex; gap: 10px; margin-bottom: 10px; }
-.price-tag {
-    flex: 1; background: var(--tag-bg); padding: 8px 12px; border-radius: 8px;
-    font-size: 12px; font-weight: 600; color: var(--text-muted);
-    display: flex; flex-direction: column; align-items: flex-start; transition: 0.3s;
-    min-width: 0;
-}
-.price-tag .val { font-size: 18px; color: var(--price-color); font-weight: 700; margin-top: 2px; white-space: nowrap; }
-.price-tag .val .trend-up, .price-tag .val .trend-down, .price-tag .val .trend-flat {
-    font-size: 12px; margin-left: 2px; vertical-align: middle;
-}
-.trend-up { color: var(--costco-red); }
-.trend-down { color: var(--price-color); }
-.trend-flat { color: var(--text-muted); }
+/* Nearby filters, state picker, route form */
+.nearby-controls { display: flex; gap: 10px; margin-bottom: 4px; }
+.nearby-control-group { flex: 1; min-width: 0; }
+.state-selector-box { margin-bottom: 4px; }
 
-.card-actions { display: flex; gap: 8px; }
-.share-btn {
-    flex: 0 0 auto; width: 44px; background: transparent;
-    color: var(--link-blue); border: 2px solid var(--link-blue);
-    box-shadow: none; padding: 10px 0;
-}
-@media (hover: hover) { .share-btn:hover { background: var(--tag-bg); transform: none; } }
-
-.favorite-btn {
-    flex: 0 0 auto; width: 44px; background: transparent;
-    color: var(--text-muted); border: 2px solid var(--border-color);
-    box-shadow: none; padding: 10px 0; font-size: 16px;
-}
-@media (hover: hover) { .favorite-btn:hover { background: var(--tag-bg); transform: none; } }
-.favorite-btn.active { color: var(--star-color); border-color: var(--star-color); }
-
-.pin-favorite-badge {
-    position: absolute; top: -6px; left: -6px;
-    color: var(--star-color); font-size: 16px;
-    text-shadow: 0 0 2px #000, 0 0 2px #000;
-}
-
-.save-route-btn, .cancel-edit-btn {
-    width: 100%; justify-content: center; margin-top: 8px;
-    background: transparent; box-shadow: none;
-}
-.save-route-btn { color: var(--star-text); border: 2px solid var(--star-text); }
-.cancel-edit-btn { color: var(--text-muted); border: 2px solid var(--border-color); }
-@media (hover: hover) { .save-route-btn:hover, .cancel-edit-btn:hover { background: var(--tag-bg); transform: none; } }
-
-.view-route-map-btn {
-    display: none;
-    width: 100%;
-    justify-content: center;
-    margin-top: 8px;
-}
-
-.store-card.route-editing {
-    border-color: var(--costco-blue);
-    box-shadow: 0 0 0 2px rgba(0, 93, 170, 0.15);
-}
-@media (hover: hover) { .store-card.route-editing:hover { border-color: var(--costco-blue); } }
-
-.app-toast {
-    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
-    background: var(--bg-sidebar); color: var(--text-main); border: 1px solid var(--border-color);
-    padding: 12px 20px; border-radius: 24px; box-shadow: var(--card-shadow);
-    font-size: 14px; font-weight: 600; z-index: 3000; opacity: 0;
-    transition: opacity 0.25s ease, transform 0.25s ease; pointer-events: none;
-    width: max-content; max-width: min(90vw, 420px); text-align: center; line-height: 1.4;
-}
-.app-toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
-.price-tag.highlight { background: var(--tag-highlight-bg); border: 1px solid var(--tag-highlight-border); }
-
-/* State Dropdown */
-.state-selector-box {
-    background: var(--bg-card); padding: 12px; border-radius: 12px;
-    border: 1px solid var(--border-color); margin-bottom: 20px;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
-}
-.state-selector-box label, .route-panel label {
-    font-size: 12px; font-weight: 700; color: var(--text-muted);
-    text-transform: uppercase; margin-bottom: 6px; display: block;
-}
-.state-selector-box select {
-    width: 100%; padding: 8px 12px; border-radius: 8px; color: var(--text-main);
-    border: 1px solid var(--border-color); font-family: 'Inter', sans-serif;
-    font-size: 14px; outline: none; cursor: pointer; background: var(--bg-input);
-}
-
-/* Route Panel ("Find Gas Along Route") */
 .route-panel {
-    background: var(--bg-card); padding: 14px; border-radius: 12px;
-    border: 1px solid var(--border-color); margin-bottom: 16px;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+    padding: 14px; margin-bottom: 4px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
 }
-.route-input-row { display: flex; gap: 6px; margin-bottom: 12px; position: relative; }
-.route-input {
-    flex: 1; min-width: 0; padding: 9px 12px; border-radius: 8px; color: var(--text-main);
-    border: 1px solid var(--border-color); font-family: 'Inter', sans-serif;
-    font-size: 14px; outline: none; background: var(--bg-input);
-}
-.route-input:focus { border-color: var(--costco-blue); }
-.route-locate-btn {
-    flex-shrink: 0; width: 38px; border-radius: 8px; border: 1px solid var(--border-color);
-    background: var(--bg-input); cursor: pointer; font-size: 15px; transition: 0.2s;
-}
-@media (hover: hover) { .route-locate-btn:hover { background: var(--tag-bg); } }
+.route-input-row { display: flex; gap: 8px; margin-bottom: 12px; position: relative; }
+.route-input { flex: 1; min-width: 0; }
+.route-locate-btn { width: 40px; min-width: 40px; height: 40px; border-radius: var(--radius-sm); color: var(--accent-text); }
+.route-panel .btn-block + .btn-block { margin-top: 8px; }
+.save-route-btn .icon { color: var(--star); }
 .route-summary {
-    font-size: 12px; color: var(--text-muted); text-align: center;
-    margin: 14px 0 6px;
+    margin: 16px 0 8px; text-align: center;
+    font-size: var(--text-sm); color: var(--text-muted);
 }
 .route-warning {
-    font-size: 12px; color: var(--text-main); text-align: center;
-    background: var(--tag-bg); border: 1px solid var(--border-color);
-    border-radius: 8px; padding: 8px 10px; margin-top: 12px;
+    display: flex; align-items: flex-start; gap: 8px;
+    margin-top: 12px; padding: 10px 12px;
+    background: var(--warning-soft); color: var(--warning);
+    border-radius: var(--radius-sm); font-size: var(--text-sm); line-height: 1.4;
 }
-.route-error {
-    color: var(--costco-red); font-size: 13px; text-align: center; margin-top: 14px;
+.route-warning span { color: var(--text); }
+.route-error { margin: 14px 0 10px; text-align: center; font-size: var(--text-sm); color: var(--danger); }
+.view-route-map-btn { display: none; }
+.show-more-btn { width: 100%; margin: 2px 0 12px; }
+
+/* Toast */
+.app-toast {
+    position: fixed; bottom: 24px; left: 50%; z-index: 3000;
+    transform: translateX(-50%) translateY(16px);
+    width: max-content; max-width: min(90vw, 420px);
+    padding: 11px 18px; border-radius: var(--radius-pill);
+    background: var(--text); color: var(--surface);
+    box-shadow: var(--shadow-lg);
+    font-size: var(--text-base); font-weight: 500; line-height: 1.4; text-align: center;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.25s ease, transform 0.25s var(--ease);
+}
+.app-toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* =====================================================================
+   6. STATION CARDS
+   The selected grade's price is the hero; everything else is secondary.
+   ===================================================================== */
+.store-card {
+    position: relative; margin-bottom: 10px; padding: 14px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: border-color var(--fast), box-shadow var(--fast);
+}
+@media (hover: hover) { .store-card:hover { border-color: var(--border-strong); box-shadow: var(--shadow-sm); } }
+.store-card:focus-visible { outline-offset: 0; }
+.store-card.route-editing,
+.store-card.pin-hover {
+    border-color: var(--accent-text);
+    box-shadow: 0 0 0 1px var(--accent-text);
 }
 
-.leaderboard-header {
-    font-size: 13px; font-weight: 700; text-transform: uppercase;
-    color: var(--text-muted); margin: 20px 0 12px 0; letter-spacing: 0.5px;
-    display: flex; align-items: center; gap: 8px;
+.card-top { display: flex; align-items: flex-start; gap: 12px; }
+.card-id { flex: 1; min-width: 0; }
+.store-card h3 {
+    font-size: var(--text-md); font-weight: 650; line-height: 1.3; letter-spacing: -0.005em;
+    overflow-wrap: anywhere;
 }
-.leaderboard-header::after { content: ''; flex: 1; height: 1px; background: var(--border-color); }
+.store-card .address {
+    margin-top: 2px; font-size: var(--text-sm); color: var(--text-muted); line-height: 1.4;
+}
+.card-meta {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 2px 12px;
+    margin-top: 6px; font-size: var(--text-sm);
+}
+.card-meta:empty { display: none; }
+.distance-badge { color: var(--text-muted); font-weight: 500; white-space: nowrap; }
 
-.nearby-controls { display: flex; gap: 10px; margin-bottom: 6px; }
-.nearby-control-group { flex: 1; min-width: 0; }
-.nearby-control-group label {
-    font-size: 11px; font-weight: 700; color: var(--text-muted);
-    text-transform: uppercase; margin-bottom: 4px; display: block;
+.rank {
+    display: flex; align-items: center; justify-content: center;
+    width: 24px; height: 24px; margin-top: -1px; border-radius: 50%; flex-shrink: 0;
+    background: var(--surface-2); color: var(--text-muted);
+    font-size: var(--text-xs); font-weight: 700;
 }
-.nearby-control-group select {
-    width: 100%; padding: 8px 10px; border-radius: 8px; color: var(--text-main);
-    border: 1px solid var(--border-color); font-family: 'Inter', sans-serif;
-    font-size: 13px; outline: none; cursor: pointer; background: var(--bg-input);
-}
+.rank-top { background: var(--accent-soft); color: var(--accent-text); }
 
-/* --- MAP & POPUPS --- */
-#map { flex: 1; position: relative; z-index: 0; background-color: #e5e7eb; transition: 0.3s; min-width: 0; min-height: 0; }
-.leaflet-popup-content-wrapper, .leaflet-popup-tip {
-    background-color: var(--bg-sidebar); color: var(--text-main);
-    border-radius: 12px; box-shadow: var(--card-shadow); border: 1px solid var(--border-color);
+.card-price {
+    display: flex; flex-direction: column; align-items: flex-end; flex-shrink: 0;
+    text-align: right; line-height: 1.2;
 }
-.leaflet-popup-content { margin: 14px 16px; width: 252px !important; }
-.popup-store-name { font-size: 16px; font-weight: 700; color: var(--link-blue); margin-bottom: 4px; font-family: 'Inter', sans-serif; padding-right: 14px; }
-.popup-address { font-size: 12px; color: var(--text-muted); margin-bottom: 10px; line-height: 1.4; font-family: 'Inter', sans-serif; }
-.popup-prices-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
-    gap: 6px;
-    margin-bottom: 10px;
+.card-price-label { font-size: var(--text-xs); font-weight: 500; color: var(--text-muted); }
+.card-price-val { font-size: var(--text-xl); font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; }
+.card-price.is-missing .card-price-val { color: var(--text-muted); font-weight: 500; }
+.card-price .trend { margin-top: 2px; }
+
+/* Price movement since the previous snapshot */
+.trend {
+    display: inline-flex; align-items: center; gap: 3px;
+    font-size: var(--text-xs); font-weight: 600; white-space: nowrap;
 }
-.popup-price-box { background: var(--tag-bg); padding: 6px 4px; border-radius: 6px; text-align: center; border: 1px solid transparent; }
-.popup-price-box.highlight { background: var(--tag-highlight-bg); border-color: var(--tag-highlight-border); }
-.popup-price-box span { display: block; font-size: 10.5px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; }
-.popup-price-box strong { font-size: 14px; color: var(--price-color); font-family: 'Inter', sans-serif; white-space: nowrap; }
-.popup-btn {
-    display: inline-flex; align-items: center; justify-content: center; gap: 4px;
-    text-align: center; background: var(--costco-blue); color: white !important;
-    padding: 9px 10px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 12.5px;
-    transition: 0.2s; font-family: 'Inter', sans-serif; border: none; width: 100%; cursor: pointer;
+.trend-arrow { font-size: 0.7em; line-height: 1; }
+.trend-up { color: var(--danger); }
+.trend-down { color: var(--positive); }
+.trend-flat { color: var(--text-muted); }
+
+.card-grades {
+    display: flex; flex-wrap: wrap; gap: 4px 16px;
+    margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border);
+    font-size: var(--text-sm);
 }
-@media (hover: hover) { .popup-btn:hover { background: #004785; } }
-.popup-btn-outline { background: transparent; border: 1.5px solid var(--link-blue); color: var(--link-blue) !important; margin-top: 6px; }
-@media (hover: hover) { .popup-btn-outline:hover { background: var(--tag-bg); } }
-.popup-actions-row {
-    display: flex;
-    gap: 6px;
-    margin-top: 6px;
-}
-.popup-actions-row .popup-btn-outline {
-    margin-top: 0;
-}
-.popup-btn-icon {
-    flex: 0 0 38px;
-    width: 38px;
-    padding: 8px 0;
-    font-size: 14px;
-}
-.popup-btn-icon.active {
-    color: var(--star-color) !important;
-    border-color: var(--star-color);
+.grade-chip { display: inline-flex; align-items: baseline; gap: 6px; }
+.grade-chip-label { color: var(--text-muted); }
+.grade-chip-val { font-weight: 600; }
+
+.card-actions { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
+.card-actions-spacer { flex: 1; }
+.card-actions .btn-icon { margin-inline: -2px; }
+.btn-directions { text-decoration: none; }
+/* Narrow lists (tablet sidebar, small phones): History shrinks to its icon */
+@container sidebar (max-width: 359px) {
+    .card-actions .btn-card-history { width: var(--control-h); min-width: var(--control-h); padding: 0; }
+    .card-actions .btn-card-history .btn-label { display: none; }
 }
 
-/* --- GAS HOURS / OPEN-NOW STATUS --- */
-.gas-status { font-size: 12px; font-weight: 600; font-family: 'Inter', sans-serif; margin: 4px 0 8px; }
-.gas-status.open { color: var(--price-color); }
-.gas-status.closing-soon { color: #b45309; }
-body.dark-mode .gas-status.closing-soon { color: #fbbf24; }
-.gas-status.closed { color: var(--costco-red); }
-.store-card .address + .gas-status { margin-top: -6px; margin-bottom: 10px; }
-.popup-address + .gas-status { margin-top: -6px; }
-.gas-hours { margin: 0 0 8px 0; font-size: 12px; font-family: 'Inter', sans-serif; }
-.gas-hours summary { cursor: pointer; color: var(--link-blue); font-weight: 600; }
-.gas-hours-row { display: flex; justify-content: space-between; gap: 12px; padding: 2px 0; color: var(--text-main); }
+.route-card h3 { display: flex; flex-wrap: wrap; gap: 0 6px; }
+.route-arrow { color: var(--text-muted); }
+
+/* Open / closing soon / closed */
+.gas-status {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: var(--text-sm); font-weight: 500;
+}
+.status-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+.gas-status.open { color: var(--positive); }
+.gas-status.closing-soon { color: var(--warning); }
+.gas-status.closed { color: var(--danger); }
+
+/* Station details: shared by the map popup, the tablet card and the phone sheet */
+.gas-hours { margin: 8px 0 0; font-size: var(--text-sm); }
+.gas-hours summary { cursor: pointer; color: var(--accent-text); font-weight: 600; width: fit-content; }
+.gas-hours[open] summary { margin-bottom: 4px; }
+.gas-hours-row { display: flex; justify-content: space-between; gap: 12px; padding: 2px 0; }
 .gas-hours-row span:first-child { color: var(--text-muted); }
-.popup-phone { margin: 0 0 8px 0; font-size: 12px; font-family: 'Inter', sans-serif; }
-.popup-phone a { color: var(--link-blue); text-decoration: none; }
-.costco-custom-icon { background: none; border: none; }
+.popup-phone a {
+    display: inline-flex; align-items: center; gap: 5px;
+    color: var(--accent-text); font-size: var(--text-sm); font-weight: 500; text-decoration: none;
+}
+@media (hover: hover) { .popup-phone a:hover { text-decoration: underline; } }
 
-/* --- DYNAMIC MAP PRICE BADGES --- */
+.price-tag {
+    flex: 1; min-width: 0; padding: 8px 10px;
+    display: flex; flex-direction: column; gap: 1px;
+    background: var(--surface-2); border: 1px solid transparent; border-radius: var(--radius-sm);
+}
+.price-tag-label { font-size: var(--text-xs); font-weight: 500; color: var(--text-muted); }
+.price-tag .val {
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 6px;
+    font-size: var(--text-md); font-weight: 700; letter-spacing: -0.01em;
+}
+.price-tag.highlight { background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent-text) 35%, transparent); }
+.price-tag.highlight .price-tag-label { color: var(--accent-text); }
+
+/* =====================================================================
+   7. MAP
+   ===================================================================== */
+#map {
+    flex: 1; min-width: 0; min-height: 0; position: relative; z-index: 0;
+    background: var(--surface-2);
+}
+.leaflet-container { font-family: var(--font); font-size: var(--text-sm); }
+.leaflet-container a { color: var(--accent-text); }
+
+/* Leaflet chrome, restyled to match */
+.leaflet-touch .leaflet-bar, .leaflet-bar {
+    border: 1px solid var(--border); border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md); overflow: hidden;
+}
+.leaflet-bar a, .leaflet-touch .leaflet-bar a {
+    width: 36px; height: 36px; line-height: 36px;
+    background: var(--surface); color: var(--text); border-bottom-color: var(--border);
+}
+.leaflet-bar a:hover, .leaflet-bar a:focus { background: var(--surface-2); color: var(--text); }
+.leaflet-bar a.leaflet-disabled { background: var(--surface); color: var(--tier-none); }
+.leaflet-container .leaflet-control-attribution {
+    background: color-mix(in srgb, var(--surface) 80%, transparent);
+    color: var(--text-muted); font-size: 11px; border-radius: var(--radius-sm) 0 0 0;
+}
+.leaflet-container a:focus-visible, .leaflet-container button:focus-visible {
+    outline: 2px solid var(--focus-ring);
+}
+
+/* Popup (desktop) */
+.leaflet-popup-content-wrapper {
+    padding: 16px; background: var(--surface); color: var(--text);
+    border-radius: var(--radius-lg); box-shadow: var(--shadow-lg);
+}
+.leaflet-popup-tip { background: var(--surface); box-shadow: none; }
+.leaflet-popup-content { margin: 0; width: 272px !important; font-size: var(--text-base); line-height: 1.45; }
+.leaflet-container a.leaflet-popup-close-button {
+    top: 8px; right: 8px; width: 28px; height: 28px;
+    font: 20px/26px var(--font); color: var(--text-muted); border-radius: 50%;
+}
+.leaflet-container a.leaflet-popup-close-button:hover { background: var(--surface-2); color: var(--text); }
+.popup-store-name { padding-right: 24px; font-size: var(--text-md); font-weight: 650; line-height: 1.3; }
+.popup-address { margin-top: 2px; font-size: var(--text-sm); color: var(--text-muted); line-height: 1.4; }
+.popup-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 12px; margin-top: 6px; }
+.popup-prices-grid { display: flex; gap: 6px; margin: 12px 0; }
+.popup-actions-row { display: flex; gap: 6px; margin-top: 6px; }
+.popup-actions-row .btn:not(.btn-icon) { flex: 1; }
+.leaflet-container a.btn-primary { color: var(--on-accent); }
+.leaflet-container a.btn-secondary { color: var(--text); }
+
+/* Station pins. Zoomed out: a pin coloured by relative price. Zoomed in: a price pill.
+   Tiers come from where the price sits among the stations in view. */
+.costco-custom-icon { background: none; border: none; --pin-fill: var(--brand-blue); }
+.costco-custom-icon.price-low { --pin-fill: var(--tier-low); }
+.costco-custom-icon.price-mid { --pin-fill: var(--tier-mid); }
+.costco-custom-icon.price-high { --pin-fill: var(--tier-high); }
+.costco-custom-icon.price-none { --pin-fill: var(--tier-none); }
+
+.pin { position: relative; width: 36px; height: 36px; transform-origin: bottom center; transition: transform var(--fast); }
+.pin svg { display: block; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.35)); }
+.pin-body { fill: var(--pin-fill); stroke: #fff; stroke-width: 2; }
+.pin-dot { fill: #fff; }
+.pin-favorite-badge {
+    position: absolute; top: -7px; left: -5px;
+    color: var(--star); font-size: 15px; line-height: 1;
+    text-shadow: 0 0 2px #000, 0 0 1px #000;
+}
+
 .pin-price-badge {
     display: none;
-    position: absolute;
-    top: 34px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: var(--bg-card);
-    border: 2px solid;
-    border-radius: 12px;
-    padding: 2px 6px;
-    font-size: 11px;
-    font-weight: 800;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-    white-space: nowrap;
-    font-family: 'Inter', sans-serif;
-    z-index: 500;
+    position: absolute; left: 50%; bottom: 6px; transform: translateX(-50%);
+    align-items: center; gap: 5px;
+    padding: 4px 9px 4px 7px; border-radius: var(--radius-pill);
+    background: var(--surface); color: var(--text);
+    font-size: var(--text-sm); font-weight: 700; line-height: 1.2; white-space: nowrap;
+    filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.35));
 }
+.pin-price-badge::before {
+    content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--pin-fill); flex-shrink: 0;
+}
+.pin-price-badge::after {
+    content: ''; position: absolute; left: 50%; bottom: -4px; width: 9px; height: 9px;
+    background: inherit; transform: translateX(-50%) rotate(45deg); border-radius: 0 0 2px 0; z-index: -1;
+}
+.pin-fav { color: var(--star); font-size: 0.85em; margin-right: -2px; }
 
-/* Pins and their price badges are coloured by where the price sits among the
-   stations in view: cheapest third green, middle amber, top third red. */
-.costco-custom-icon { --pin-fill: var(--costco-blue); --pin-text: var(--link-blue); }
-.costco-custom-icon.price-low  { --pin-fill: var(--tier-low);  --pin-text: var(--tier-low-text); }
-.costco-custom-icon.price-mid  { --pin-fill: var(--tier-mid);  --pin-text: var(--tier-mid-text); }
-.costco-custom-icon.price-high { --pin-fill: var(--tier-high); --pin-text: var(--tier-high-text); }
-.costco-custom-icon.price-none { --pin-fill: #94a3b8; --pin-text: var(--text-muted); }
-.pin-body { fill: var(--pin-fill); }
-.pin-price-badge { color: var(--pin-text); border-color: var(--pin-fill); }
-
+.map-show-prices .pin svg,
+.map-show-prices .pin-favorite-badge { display: none; }
 .map-show-prices .pin-price-badge {
-    display: block;
-    animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    display: flex;
+    animation: pin-pop 0.2s var(--ease) both;
+}
+@keyframes pin-pop {
+    from { opacity: 0; transform: translateX(-50%) scale(0.6); }
+    to { opacity: 1; transform: translateX(-50%) scale(1); }
 }
 
-@keyframes popIn {
-    0% { opacity: 0; transform: translateX(-50%) scale(0.5); }
-    100% { opacity: 1; transform: translateX(-50%) scale(1); }
+/* Pin linked to the hovered list card */
+.leaflet-marker-icon.pin-linked { z-index: 10000 !important; }
+.leaflet-marker-icon.pin-linked .pin { transform: scale(1.18); }
+.leaflet-marker-icon.pin-linked .pin-price-badge { background: var(--text); color: var(--surface); }
+
+/* Cluster bubbles */
+.station-cluster { background: none; border: none; }
+.cluster-bubble {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    width: var(--size, 46px); height: var(--size, 46px); border-radius: 50%;
+    background: var(--brand-blue); color: #fff; line-height: 1.1;
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--brand-blue) 25%, transparent), 0 2px 6px rgba(0, 0, 0, 0.3);
+    transition: transform var(--fast);
+}
+.cluster-count { font-size: var(--text-base); font-weight: 700; }
+.cluster-price { font-size: 10px; font-weight: 600; opacity: 0.92; }
+@media (hover: hover) { .station-cluster:hover .cluster-bubble { transform: scale(1.08); } }
+.station-cluster:focus-visible { outline: none; }
+.station-cluster:focus-visible .cluster-bubble { outline: 2px solid var(--focus-ring); outline-offset: 5px; }
+
+/* Pin colour legend */
+.price-legend {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 12px; border-radius: var(--radius-pill);
+    background: var(--surface); color: var(--text); border: 1px solid var(--border);
+    box-shadow: var(--shadow-md);
+    font-size: var(--text-xs); font-weight: 600;
+}
+.price-legend.no-compare { display: none; }
+.price-legend .legend-title { color: var(--text-muted); font-weight: 500; }
+.price-legend .legend-scale { display: flex; align-items: center; gap: 4px; }
+.legend-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.legend-dot.price-low { background: var(--tier-low); }
+.legend-dot.price-mid { background: var(--tier-mid); }
+.legend-dot.price-high { background: var(--tier-high); }
+
+/* Floating map buttons */
+.sidebar-toggle, .search-area-btn, .map-locate-fab { display: none; }
+.sidebar-toggle, .search-area-btn {
+    position: absolute; top: 12px; z-index: 640;
+    align-items: center; gap: 6px;
+    min-height: 38px; padding: 0 16px;
+    border: 1px solid var(--border); border-radius: var(--radius-pill);
+    background: var(--surface); color: var(--text);
+    box-shadow: var(--shadow-md);
+    font-size: var(--text-base); font-weight: 600; white-space: nowrap; cursor: pointer;
+    transition: background-color var(--fast);
+}
+@media (hover: hover) {
+    .sidebar-toggle:hover, .search-area-btn:hover { background: var(--surface-2); }
+}
+@media (min-width: 600px) {
+    .search-area-btn:not([hidden]) {
+        display: inline-flex; left: 50%; transform: translateX(-50%);
+        color: var(--accent-text);
+    }
 }
 
-/* --- CHART MODAL OVERLAY --- */
+/* =====================================================================
+   8. OVERLAYS
+   ===================================================================== */
 .modal-overlay {
-    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0,0,0,0.6); z-index: 2000;
-    display: none; align-items: center; justify-content: center;
-    backdrop-filter: blur(4px);
-    padding: 16px;
+    position: fixed; inset: 0; z-index: 2000;
+    display: none; align-items: center; justify-content: center; padding: 16px;
+    background: var(--scrim);
+    -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
 }
-.modal-overlay.active { display: flex; }
+.modal-overlay.active { display: flex; animation: fade-in 0.18s ease both; }
 .modal-content {
-    background: var(--bg-card); padding: 24px; border-radius: 16px;
-    width: 100%; max-width: 700px; position: relative;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.2); border: 1px solid var(--border-color);
-    max-height: 90dvh; overflow-y: auto;
+    position: relative; width: 100%; max-width: 720px; max-height: 90dvh; overflow-y: auto;
+    padding: 24px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-lg);
+    animation: rise-in 0.24s var(--ease) both;
 }
-.modal-close {
-    position: absolute; top: 16px; right: 20px;
-    cursor: pointer; font-size: 24px; border: none; background: none;
-    color: var(--text-muted); transition: 0.2s; line-height: 1;
+@keyframes fade-in { from { opacity: 0; } }
+@keyframes rise-in { from { opacity: 0; transform: translateY(12px); } }
+.modal-close { position: absolute; top: 16px; right: 16px; }
+.modal-title {
+    margin: 0 0 18px; padding-right: 44px;
+    font-size: var(--text-lg); font-weight: 700; letter-spacing: -0.01em; line-height: 1.4;
 }
-@media (hover: hover) { .modal-close:hover { color: var(--costco-red); } }
-.modal-title { font-size: 20px; font-weight: 700; color: var(--link-blue); margin: 0 0 20px 0; padding-right: 28px; }
 
+/* Price history */
 .history-range-controls {
-    display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 12px;
+    display: inline-flex; gap: 2px; padding: 3px; margin-bottom: 14px;
+    background: var(--surface-2); border-radius: var(--radius-pill);
 }
 .history-range-btn {
-    padding: 4px 12px; border-radius: 16px; border: 1px solid var(--border-color, #cbd5e1);
-    background: transparent; color: var(--text-muted); font-size: 13px; cursor: pointer;
+    min-width: 44px; min-height: 30px; padding: 0 12px;
+    border: 0; border-radius: var(--radius-pill); background: transparent;
+    color: var(--text-muted); font-size: var(--text-sm); font-weight: 600; cursor: pointer;
+    transition: background-color var(--fast), color var(--fast);
 }
-.history-range-btn.active {
-    border-color: var(--costco-red); background: var(--costco-red); color: #fff;
-}
-
+.history-range-btn.active { background: var(--surface); color: var(--text); box-shadow: var(--shadow-sm); }
+body.dark-mode .history-range-btn.active { background: var(--surface-3); }
 .chart-container { position: relative; height: 350px; width: 100%; }
 
-/* --- MOBILE-ONLY CONTROLS (Hidden on Tablet / Laptop / Desktop) --- */
-.map-locate-fab,
-.mobile-view-toggle,
-.mobile-store-sheet {
-    display: none;
-}
+/* Settings */
+.settings-content { max-width: 480px; }
+.settings-form { display: flex; flex-direction: column; gap: 20px; }
+.settings-section { display: flex; flex-direction: column; gap: 14px; }
+.settings-section + .settings-section { border-top: 1px solid var(--border); padding-top: 18px; }
+.settings-heading { font-size: var(--text-sm); font-weight: 600; color: var(--text-muted); }
+.settings-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; cursor: pointer; }
+.settings-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.settings-label { font-size: var(--text-base); font-weight: 600; color: var(--text); }
+.settings-hint { font-size: var(--text-sm); color: var(--text-muted); line-height: 1.45; }
+.settings-footnote { font-size: var(--text-xs); color: var(--text-muted); text-align: center; }
+.settings-select { width: auto; flex-shrink: 0; }
 
-/* --- ULTRA-WIDE DESKTOP (>= 1440px) --- */
+/* Switch: a styled checkbox (keeps native keyboard + screen-reader behaviour) */
+.settings-switch {
+    appearance: none; -webkit-appearance: none; flex-shrink: 0; margin: 0;
+    width: 44px; height: 26px; border-radius: 13px; position: relative; cursor: pointer;
+    background: var(--border-strong); transition: background-color 0.2s;
+}
+.settings-switch::after {
+    content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px;
+    border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    transition: transform 0.2s var(--ease);
+}
+.settings-switch:checked { background: var(--accent); }
+.settings-switch:checked::after { transform: translateX(18px); }
+
+/* Segmented choice: radios styled as a pill group */
+.settings-choice { border: none; margin: 0; padding: 0; min-width: 0; }
+.settings-choice legend { padding: 0; margin-bottom: 8px; }
+.segmented label { flex: 1; min-width: 0; position: relative; }
+.segmented input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.segmented span {
+    display: flex; align-items: center; justify-content: center; text-align: center;
+    min-height: 34px; padding: 4px 8px; border-radius: var(--radius-pill);
+    font-size: var(--text-sm); font-weight: 600; color: var(--text-muted);
+    transition: background-color var(--fast), color var(--fast);
+}
+.segmented input:checked + span { background: var(--surface); color: var(--text); box-shadow: var(--shadow-sm); }
+body.dark-mode .segmented input:checked + span { background: var(--surface-3); }
+.segmented input:focus-visible + span { outline: 2px solid var(--focus-ring); outline-offset: 1px; }
+
+/* Station details card (tablet: floats over the map; phone: lives in the list sheet) */
+.mobile-store-sheet { display: none; }
+.mobile-sheet-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.mobile-sheet-title { font-size: var(--text-lg); font-weight: 700; letter-spacing: -0.01em; line-height: 1.3; padding-top: 4px; }
+.mobile-sheet-close { background: var(--surface-2); }
+.mobile-sheet-address { font-size: var(--text-sm); color: var(--text-muted); line-height: 1.4; }
+.mobile-sheet-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; margin-top: 8px; }
+.mobile-sheet-prices { display: flex; gap: 8px; margin: 14px 0; }
+.mobile-sheet-prices .price-tag { padding: 10px 12px; }
+.mobile-sheet-prices .price-tag .val { font-size: var(--text-lg); }
+.mobile-sheet-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.mobile-sheet-actions .btn-directions { flex: 1 1 100%; min-height: 44px; }
+.mobile-sheet-actions .btn-history,
+.mobile-sheet-actions .btn-store-link { flex: 1; }
+
+/* =====================================================================
+   9. RESPONSIVE TIERS
+   phone <= 599px | tablet 600-1099px | desktop >= 1100px
+   ===================================================================== */
+
 @media (min-width: 1440px) {
-    .sidebar {
-        width: 420px;
-    }
-    .search-wrapper {
-        max-width: 640px;
-    }
+    .sidebar { width: 420px; }
 }
 
-/* --- TABLET & SMALL LAPTOP (600px – 1099px) --- */
+/* --- Tablet & small laptop --- */
 @media (min-width: 600px) and (max-width: 1099px) {
-    header {
-        padding: 12px 16px;
-        gap: 10px;
+    .app-header { padding: 10px 16px; gap: 12px; }
+    .sidebar { width: 340px; }
+    .sidebar-content { padding: 12px; }
+    .search-wrapper { min-width: 150px; margin-left: 0; }
+    .btn-near-me { width: 40px; min-width: 40px; padding: 0; font-size: 0; gap: 0; } /* icon only */
+
+    /* Details float over the map area, not the list */
+    .mobile-store-sheet {
+        display: block;
+        position: absolute; right: 12px; bottom: 12px; z-index: 750;
+        width: min(400px, calc(100% - 24px)); max-height: 70%; overflow-y: auto;
+        padding: 16px;
+        background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-xl);
+        box-shadow: var(--shadow-lg);
+        transform: translateY(calc(100% + 24px)); pointer-events: none;
+        transition: transform 0.26s var(--ease);
     }
-    .header-title h1 {
-        font-size: 20px;
+    .mobile-store-sheet.active { transform: translateY(0); pointer-events: auto; }
+    .app-container:not(.sidebar-collapsed) .mobile-store-sheet {
+        width: min(400px, calc(100% - var(--sidebar-w, 340px) - 24px));
     }
-    .last-updated {
-        font-size: 11px;
-        padding: 3px 10px;
-        margin-top: 4px;
-    }
-    .header-controls {
-        gap: 8px;
-    }
-    .search-wrapper {
-        flex: 1 1 180px;
-        min-width: 150px;
-        margin: 0 4px;
-    }
-    .search-box {
-        padding: 8px 14px;
-        font-size: 13px;
-    }
-    .gas-toggle-btn {
-        padding: 5px 10px;
-        font-size: 12px;
-    }
-    .btn-action {
-        padding: 8px 12px;
-        font-size: 13px;
-    }
-    .btn-icon {
-        width: 36px;
-        height: 36px;
-        font-size: 16px;
-    }
-    .sidebar {
-        width: 330px;
-    }
-    .tab {
-        padding: 12px 6px;
-        font-size: 11.5px;
-        letter-spacing: 0.2px;
-    }
-    .sidebar-content {
-        padding: 12px;
-    }
+    .mobile-sheet-handle { display: none; }
+}
+@media (min-width: 600px) and (max-width: 760px) {
+    .brand-text { display: none; }
 }
 
-/* --- PHONE (<= 599px) --- */
+/* Tablet portrait: the station list can be tucked away to give the map the full width */
+@media (min-width: 600px) and (max-width: 1099px) and (orientation: portrait) {
+    .sidebar { transition: margin-left 0.25s var(--ease); }
+    .app-container.sidebar-collapsed .sidebar { margin-left: calc(-1 * var(--sidebar-w, 340px) - 2px); }
+    .sidebar-toggle {
+        display: inline-flex;
+        left: calc(var(--sidebar-w, 340px) + 12px);
+        transition: left 0.25s var(--ease), background-color var(--fast);
+    }
+    .app-container.sidebar-collapsed .sidebar-toggle { left: 12px; }
+    /* keep "Search this area" clear of the list toggle */
+    .search-area-btn:not([hidden]) { left: calc(50% + 40px); }
+}
+
+/* --- Phone: full-height map with the list as a draggable bottom sheet --- */
 @media (max-width: 599px) {
-    /* Condensed 2-Row Mobile Header */
-    header {
-        position: relative;
-        flex-direction: column;
-        align-items: stretch;
-        padding: 8px 12px;
-        gap: 8px;
-        width: 100%;
-        border-bottom-width: 3px;
+    /* Two rows: [mark] [search] [settings] / [grade toggle] */
+    .app-header {
+        display: grid; grid-template-columns: auto 1fr auto; align-items: center;
+        gap: 8px; min-height: 0; padding: 8px 12px;
     }
-
-    .header-title {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        flex-wrap: wrap;
-        padding-right: 40px;
-        min-height: 30px;
-    }
-
+    .header-title, .header-controls, .brand-text { display: contents; }
     .header-title h1 {
-        font-size: 17px;
-        line-height: 1.2;
+        position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0);
     }
+    .brand-mark { grid-column: 1; grid-row: 1; width: 36px; height: 36px; }
+    .search-wrapper { grid-column: 2; grid-row: 1; min-width: 0; max-width: none; margin: 0; position: static; }
+    .search-wrapper .search-icon { display: none; }
+    .search-box { height: 44px; padding-left: 16px; font-size: 1rem; /* 16px stops iOS zooming on focus */ }
+    #settingsBtn { grid-column: 3; grid-row: 1; }
+    #themeToggle, .btn-near-me { display: none; } /* theme lives in Settings; locate is the map button */
+    .gas-toggle { grid-column: 1 / -1; grid-row: 2; }
+    .gas-toggle-btn { flex: 1; padding: 0 8px; }
 
+    /* Freshness chip floats over the top of the map */
     .last-updated {
-        margin-top: 0;
-        font-size: 11px;
-        padding: 2px 8px;
+        position: absolute; top: calc(100% + 10px); left: 10px; z-index: 1;
+        padding: 5px 10px; border-radius: var(--radius-pill);
+        background: color-mix(in srgb, var(--surface) 92%, transparent);
+        box-shadow: var(--shadow-sm);
+        font-weight: 500;
+        transition: opacity 0.2s ease;
     }
+    /* the fully open list covers the map, so the chip steps aside */
+    .app-header:has(+ .app-container.sheet-full) .last-updated { opacity: 0; pointer-events: none; }
+    .price-legend .legend-title { display: none; } /* leaves room for the map attribution */
+    .app-header .autocomplete-dropdown { top: calc(100% + 4px); left: 10px; right: 10px; max-height: 60dvh; }
 
-    #themeToggle {
-        position: absolute;
-        top: 7px;
-        right: 12px;
-        width: 32px;
-        height: 32px;
-        font-size: 15px;
-    }
-
-    .header-controls {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        width: 100%;
-        align-items: center;
-    }
-
-    .search-wrapper {
-        position: static;
-        flex: 1 1 100%; /* search gets a full row */
-        min-width: 0;
-        width: auto;
-        max-width: none;
-        margin: 0 !important;
-        order: 1;
-    }
-
-    .search-box {
-        padding: 7px 14px;
-        height: 38px;
-        font-size: 16px; /* Prevents iOS Safari zoom on input focus */
-        border-radius: 19px;
-    }
-
-    /* Full-width dropdown below mobile header */
-    header .autocomplete-dropdown {
-        top: calc(100% + 4px);
-        left: 10px;
-        right: 10px;
-        max-height: 60dvh;
-    }
-
-    /* Grade chips on their own row beneath the search box */
-    .gas-toggle {
-        order: 2;
-        flex: 1 1 100%;
-        padding: 3px;
-        gap: 2px;
-        border-radius: 18px;
-    }
-
-    .gas-toggle-btn {
-        flex: 1;
-        padding: 5px 8px;
-        font-size: 12px;
-        border-radius: 15px;
-    }
-
-    .btn-near-me {
-        display: none;
-    }
-
-    /* Full-height map with the station list as a draggable bottom sheet (peek / half / full) */
-    .app-container {
-        flex-direction: column;
-        position: relative;
-    }
-
-    #map {
-        width: 100%;
-        height: 100%;
-        flex: 1;
-    }
+    .app-container { flex-direction: column; }
+    #map { width: 100%; height: 100%; }
 
     .sidebar {
-        --peek-h: 66px; /* grabber + tab strip; refined in JS if the tabs wrap */
-        position: absolute;
-        left: 0; right: 0; bottom: 0;
-        width: 100%;
-        height: calc(100% - 12px);
-        border-right: none;
-        border-radius: 18px 18px 0 0;
-        border-top: 1px solid var(--border-color);
-        box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.22);
-        z-index: 600;
+        --peek-h: 70px; /* grabber (22) + tab strip (48) */
+        position: absolute; left: 0; right: 0; bottom: 0; z-index: 600;
+        width: 100%; height: calc(100% - 12px); overflow: hidden;
+        border-right: none; border-top: 1px solid var(--border);
+        border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+        box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.18);
         transform: translateY(calc(100% - var(--peek-h) - env(safe-area-inset-bottom, 0px)));
-        transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
-        overflow: hidden;
+        transition: transform 0.28s var(--ease);
     }
     .sidebar.dragging { transition: none; }
     .app-container.sheet-half .sidebar { transform: translateY(var(--half-y, 50%)); }
@@ -791,666 +969,120 @@ body.dark-mode .gas-status.closing-soon { color: #fbbf24; }
     .app-container.mobile-sheet-open .sidebar { transform: translateY(105%); pointer-events: none; }
 
     .sheet-grabber {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 100%;
-        height: 26px;
-        flex-shrink: 0;
-        padding: 0;
-        border: 0;
-        background: var(--bg-main);
-        cursor: grab;
+        display: flex; align-items: center; justify-content: center;
+        width: 100%; height: 22px; flex-shrink: 0; padding: 0; border: 0;
+        background: var(--surface); cursor: grab;
         touch-action: none; /* we handle the vertical drag ourselves */
     }
-    .sheet-grabber-bar {
-        width: 38px; height: 4px; border-radius: 4px; background: var(--border-color);
-    }
+    .sheet-grabber-bar { width: 36px; height: 4px; border-radius: 4px; background: var(--border-strong); }
 
-    .tabs {
-        overflow-x: auto;
-        scrollbar-width: none;
-    }
-    .tabs::-webkit-scrollbar {
-        display: none;
-    }
-
-    .tab {
-        padding: 11px 6px;
-        font-size: 12px;
-        letter-spacing: 0.2px;
-        white-space: nowrap;
-    }
+    .tabs { padding: 0 4px; gap: 0; overflow-x: auto; scrollbar-width: none; }
+    .tabs::-webkit-scrollbar { display: none; }
+    .tab { min-height: 48px; padding: 0 4px; }
 
     .sidebar-content {
-        padding: 12px 12px max(24px, env(safe-area-inset-bottom, 24px)) 12px;
+        padding: 12px 12px max(24px, env(safe-area-inset-bottom, 24px));
         overscroll-behavior: contain;
     }
 
-    .mobile-store-sheet { display: none; }
     .sidebar.has-detail .tabs,
     .sidebar.has-detail .sidebar-content { display: none; }
     .sheet-detail {
-        flex: 1;
-        overflow-y: auto;
-        padding: 4px 16px max(20px, env(safe-area-inset-bottom, 20px));
-        background: var(--bg-sidebar);
-        overscroll-behavior: contain;
+        display: block; flex: 1; overflow-y: auto; overscroll-behavior: contain;
+        padding: 2px 16px max(20px, env(safe-area-inset-bottom, 20px));
+        background: var(--surface);
     }
     .sheet-detail[hidden] { display: none; }
     .app-container.sheet-half .sheet-detail { margin-bottom: var(--sheet-hidden, 50%); }
-    .store-card {
-        padding: 14px;
-        margin-bottom: 12px;
-    }
 
-    .view-route-map-btn {
-        display: flex;
-    }
+    .view-route-map-btn { display: inline-flex; }
 
     /* Map controls ride above the collapsed sheet and hide once it opens */
-    .leaflet-bottom.leaflet-right {
-        bottom: calc(var(--peek-h, 66px) + env(safe-area-inset-bottom, 0px));
-        transition: bottom 0.28s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.2s ease;
+    .leaflet-bottom.leaflet-right,
+    .leaflet-bottom.leaflet-left {
+        bottom: calc(var(--peek-h, 70px) + env(safe-area-inset-bottom, 0px));
+        transition: bottom 0.28s var(--ease), opacity 0.2s ease;
     }
     .map-locate-fab {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        position: absolute;
-        right: 10px;
-        bottom: calc(var(--peek-h, 66px) + env(safe-area-inset-bottom, 0px) + 130px);
-        width: 44px;
-        height: 44px;
-        border-radius: 50%;
-        background: var(--bg-sidebar);
-        color: var(--text-main);
-        border: 1px solid var(--border-color);
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22);
-        font-size: 17px;
+        display: flex; align-items: center; justify-content: center;
+        position: absolute; right: 10px; z-index: 550;
+        bottom: calc(var(--peek-h, 70px) + env(safe-area-inset-bottom, 0px) + 124px);
+        width: 48px; height: 48px; border-radius: 50%;
+        background: var(--surface); color: var(--accent-text);
+        border: 1px solid var(--border); box-shadow: var(--shadow-md);
         cursor: pointer;
-        z-index: 550;
-        transition: opacity 0.2s ease, transform 0.2s ease;
+        transition: opacity 0.2s ease, transform var(--fast);
     }
-    .map-locate-fab:active {
-        transform: scale(0.95);
-    }
+    .map-locate-fab:active { transform: scale(0.94); }
     .app-container.sheet-half .map-locate-fab,
     .app-container.sheet-full .map-locate-fab,
     .app-container.mobile-sheet-open .map-locate-fab,
-    .app-container.mobile-sheet-open .leaflet-bottom.leaflet-right {
-        opacity: 0;
-        pointer-events: none;
+    .app-container.mobile-sheet-open .leaflet-bottom.leaflet-right,
+    .app-container.mobile-sheet-open .leaflet-bottom.leaflet-left {
+        opacity: 0; pointer-events: none;
     }
     .app-container.mobile-sheet-open .leaflet-bottom.leaflet-right { bottom: 0; }
+    /* Nothing from the map may sit on top of the open list */
+    .app-container.sheet-half .leaflet-control-container,
+    .app-container.sheet-full .leaflet-control-container { visibility: hidden; }
 
-    /* Chart Modal on Mobile */
+    /* Dialogs become bottom sheets */
+    .modal-overlay { align-items: flex-end; padding: 0; }
     .modal-content {
-        padding: 16px;
-        border-radius: 14px;
+        max-width: none; max-height: 92dvh;
+        padding: 20px 16px calc(20px + env(safe-area-inset-bottom, 0px));
+        border: 0; border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+        animation-name: sheet-in;
     }
-    .modal-title {
-        font-size: 16px;
-        margin-bottom: 12px;
-    }
-    .modal-close {
-        top: 12px;
-        right: 14px;
-    }
-    .chart-container {
-        height: 250px;
-    }
+    .modal-close { top: 12px; right: 12px; }
+    .chart-container { height: 260px; }
+    .settings-row:has(.settings-select) { flex-wrap: wrap; }
 
-    .app-toast {
-        bottom: 74px;
-        font-size: 13px;
-        padding: 10px 16px;
-    }
+    .app-toast { bottom: calc(84px + env(safe-area-inset-bottom, 0px)); }
 }
+@keyframes sheet-in { from { transform: translateY(100%); } }
 
-@media (max-width: 400px) {
-    .tab {
-        padding-left: 4px;
-        padding-right: 4px;
-        font-size: 11px;
-        letter-spacing: 0;
-    }
-}
-
-@media (max-width: 380px) {
-    .gas-toggle-btn {
-        padding: 5px 6px;
-        font-size: 11px;
-    }
-    .header-title h1 {
-        font-size: 16px;
-    }
-}
-
-
-/* =====================================================================
-   RESPONSIVE TIERS
-   phone <= 599px | tablet 600-1099px | desktop >= 1100px
-   ===================================================================== */
-
-/* Short tab labels whenever the sidebar is too narrow for the full ones */
-.tab-short { display: none; }
-.sidebar { container-type: inline-size; container-name: sidebar; }
-@container sidebar (max-width: 459px) {
-    .tab-full { display: none; }
-    .tab-short { display: inline; }
-}
-
-/* Chrome that only exists on some tiers is hidden elsewhere */
-.sidebar-toggle { display: none; }
-.search-area-btn { display: none; }
-@media (min-width: 600px) { .sheet-grabber { display: none; } }
-
-/* Store details sheet (phone + tablet) */
-@media (max-width: 1099px) {
-    /* Slide-Up Bottom Store Detail Card */
-    .mobile-store-sheet {
-        position: absolute;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        z-index: 750;
-        background: var(--bg-sidebar);
-        border-top: 1px solid var(--border-color);
-        border-radius: 18px 18px 0 0;
-        box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.22);
-        padding: 8px 16px max(16px, env(safe-area-inset-bottom, 16px));
-        max-height: 60dvh;
-        overflow-y: auto;
-        transform: translateY(105%);
-        transition: transform 0.26s cubic-bezier(0.22, 1, 0.36, 1);
-        pointer-events: none;
-    }
-
-    .mobile-store-sheet.active {
-        transform: translateY(0);
-        pointer-events: auto;
-    }
-
-    .mobile-sheet-handle {
-        width: 38px;
-        height: 4px;
-        background: var(--border-color);
-        border-radius: 4px;
-        margin: 2px auto 10px;
-        cursor: pointer;
-    }
-
-    .mobile-sheet-header {
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        gap: 10px;
-        margin-bottom: 4px;
-    }
-
-    .mobile-sheet-title {
-        font-size: 17px;
-        font-weight: 700;
-        color: var(--link-blue);
-        margin: 0;
-        line-height: 1.25;
-    }
-
-    .mobile-sheet-close {
-        border: none;
-        background: var(--tag-bg);
-        color: var(--text-muted);
-        width: 28px;
-        height: 28px;
-        border-radius: 50%;
-        font-size: 18px;
-        line-height: 1;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        flex-shrink: 0;
-    }
-
-    .mobile-sheet-address {
-        font-size: 12.5px;
-        color: var(--text-muted);
-        margin-bottom: 6px;
-        line-height: 1.35;
-    }
-
-    .mobile-sheet-meta {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 6px 12px;
-        margin-bottom: 8px;
-        font-size: 12px;
-    }
-
-    .mobile-sheet-meta .gas-status {
-        margin: 0;
-    }
-
-    .mobile-sheet-meta .popup-phone {
-        margin: 0;
-    }
-
-    .mobile-sheet-prices {
-        display: flex;
-        gap: 8px;
-        margin: 8px 0 12px;
-    }
-
-    .mobile-sheet-prices .price-tag {
-        padding: 7px 10px;
-    }
-
-    .mobile-sheet-prices .price-tag .val {
-        font-size: 16px;
-    }
-
-    .mobile-sheet-actions {
-        display: flex;
-        gap: 8px;
-        align-items: center;
-    }
-
-    .mobile-sheet-actions .btn-action {
-        padding: 9px 12px;
-        font-size: 13px;
-        border-radius: 10px;
-    }
-
-    .mobile-sheet-actions .btn-store-link {
-        flex: 1;
-        text-decoration: none;
-    }
-
-    .mobile-sheet-actions .btn-history {
-        flex: 1;
-    }
-
-    .mobile-sheet-actions .favorite-btn,
-    .mobile-sheet-actions .share-btn {
-        width: 40px;
-        flex: 0 0 40px;
-        padding: 8px 0;
-    }
-
-}
-
-/* --- Tablet: sheet floats over the map area, not the list --- */
-@media (min-width: 600px) and (max-width: 1099px) {
-    .mobile-store-sheet {
-        display: block;
-        left: auto;
-        right: 12px;
-        bottom: 12px;
-        width: min(420px, calc(100% - 24px));
-        border: 1px solid var(--border-color);
-        border-radius: 16px;
-        max-height: 70%;
-        z-index: 750;
-        transform: translateY(calc(100% + 24px));
-    }
-    .mobile-store-sheet.active { transform: translateY(0); }
-    .app-container:not(.sidebar-collapsed) .mobile-store-sheet {
-        right: 12px;
-        width: min(420px, calc(100% - var(--sidebar-w, 330px) - 24px));
-    }
-    .map-locate-fab { display: none; }
-}
-
-/* Tablet header: title row, then search + controls (wide enough for one row from 900px) */
-@media (min-width: 600px) and (max-width: 899px) {
-    header { flex-wrap: wrap; }
-    .header-title { flex: 1 1 100%; display: flex; align-items: center; gap: 10px; }
-    .last-updated { margin-top: 0; }
-    .header-controls { flex: 1 1 100%; justify-content: stretch; }
-    .search-wrapper { margin: 0; }
-}
-
-/* Tablet portrait: the station list can be tucked away to give the map the full width */
-@media (min-width: 600px) and (max-width: 1099px) and (orientation: portrait) {
-    .sidebar { transition: margin-left 0.25s cubic-bezier(0.22, 1, 0.36, 1); }
-    .app-container.sidebar-collapsed .sidebar {
-        margin-left: calc(-1 * var(--sidebar-w, 330px) - 2px);
-        box-shadow: none;
-    }
-    .sidebar-toggle {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        position: absolute;
-        top: 12px;
-        left: calc(var(--sidebar-w, 330px) + 12px);
-        z-index: 640;
-        padding: 9px 14px;
-        border-radius: 999px;
-        border: 1px solid var(--border-color);
-        background: var(--bg-sidebar);
-        color: var(--link-blue);
-        font: 700 13px 'Inter', sans-serif;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-        cursor: pointer;
-        transition: left 0.25s cubic-bezier(0.22, 1, 0.36, 1);
-        min-height: 40px;
-    }
-    .app-container.sidebar-collapsed .sidebar-toggle { left: 12px; }
+@media (max-width: 359px) {
+    .tab { font-size: var(--text-sm); }
+    .gas-toggle-btn { font-size: var(--text-sm); }
 }
 
 /* Short landscape screens (phones turned sideways): reclaim vertical space */
 @media (max-height: 500px) and (orientation: landscape) {
-    header { padding: 6px 14px; gap: 10px; flex-wrap: nowrap; border-bottom-width: 3px; }
-    header .header-title { flex: 0 0 auto; }
-    header .header-title h1 { font-size: 16px; }
-    .last-updated { display: none; }
-    .header-controls { gap: 8px; flex-wrap: nowrap; }
-    .search-box { padding-top: 5px; padding-bottom: 5px; }
+    .app-header { min-height: 0; padding-top: 6px; padding-bottom: 6px; }
+    .brand-text { display: none; }
     .btn-near-me { display: none; }
-    .tab { padding-top: 8px; padding-bottom: 8px; }
+    .tab { min-height: 40px; }
     .sidebar-content { padding: 10px; }
 }
 
-/* --- Desktop (>= 1100px): wider list, linked list <-> map, "search this area" --- */
-@media (min-width: 1100px) {
-    .sidebar { width: 400px; }
-}
-@media (min-width: 600px) {
-    .search-area-btn:not([hidden]) {
-        display: inline-block;
-        position: absolute;
-        top: 12px;
-        left: 50%;
-        transform: translateX(-50%);
-        z-index: 640;
-        padding: 9px 18px;
-        border-radius: 999px;
-        border: 1px solid var(--border-color);
-        background: var(--bg-sidebar);
-        color: var(--link-blue);
-        font: 700 13px 'Inter', sans-serif;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.25);
-        cursor: pointer;
-    }
-    .sidebar-collapsed ~ .search-area-btn,
-    .app-container .search-area-btn { white-space: nowrap; }
-    .store-card.pin-hover {
-        border-color: var(--costco-blue);
-        box-shadow: var(--card-shadow);
-    }
-    .store-card.pin-hover::before { background: var(--costco-blue); }
-}
-@media (min-width: 600px) and (max-width: 1099px) and (orientation: portrait) {
-    /* keep the button clear of the list toggle */
-    .search-area-btn:not([hidden]) { left: calc(50% + 40px); }
-}
-.leaflet-marker-icon.pin-linked { filter: drop-shadow(0 0 6px rgba(0, 93, 170, 0.9)); transform-origin: bottom center; }
-.leaflet-marker-icon.pin-linked .pin-price-badge { outline: 3px solid var(--costco-blue); }
-@media (hover: hover) { .search-area-btn:hover { background: var(--tag-bg); } }
-
 /* =====================================================================
-   ACCESSIBILITY & TOUCH
+   10. TOUCH TARGETS
+   At least 44px on coarse pointers (WCAG 2.5.5 / platform guidelines).
    ===================================================================== */
-
-/* --- Phone list view: nothing from the map may sit on top of the list --- */
-@media (max-width: 599px) {
-    .app-container.sheet-half .leaflet-control-container,
-    .app-container.sheet-full .leaflet-control-container {
-        visibility: hidden;
-    }
-}
-
-/* --- Visible keyboard focus ---
-   Specificity (0,1,1) deliberately beats the `outline: none` on individual inputs. */
-button:focus-visible,
-a:focus-visible,
-select:focus-visible,
-input:focus-visible,
-summary:focus-visible,
-[tabindex]:focus-visible {
-    outline: 3px solid var(--focus-ring);
-    outline-offset: 2px;
-}
-header button:focus-visible,
-header input:focus-visible {
-    outline-color: #ffffff;
-}
-.tab:focus-visible {
-    outline-offset: -3px;
-}
-.store-card:focus-visible {
-    outline-offset: 0;
-    border-color: var(--link-blue);
-}
-.popup-btn:focus-visible,
-.btn-action:focus-visible {
-    outline-offset: 2px;
-}
-.leaflet-container a:focus-visible,
-.leaflet-container button:focus-visible {
-    outline: 3px solid var(--focus-ring);
-}
-
-/* --- Touch targets (44px) on coarse pointers --- */
 @media (pointer: coarse) {
-    .gas-toggle-btn { min-height: 40px; padding-left: 12px; padding-right: 12px; }
-    .btn-icon,
-    #themeToggle { width: 40px; height: 40px; }
-    .search-box { min-height: 44px; }
-    .btn-action { min-height: 44px; }
-    .favorite-btn, .share-btn { width: 44px; min-height: 44px; }
-    .mobile-sheet-actions .favorite-btn,
-    .mobile-sheet-actions .share-btn { width: 44px; flex: 0 0 44px; }
-    .mobile-sheet-actions .btn-action { min-height: 44px; }
-    .tab { min-height: 44px; display: flex; align-items: center; justify-content: center; }
-    .route-input, .route-locate-btn { min-height: 44px; }
-    .route-locate-btn { width: 44px; }
-    .state-selector-box select,
-    .nearby-control-group select { min-height: 44px; }
-    .autocomplete-item { min-height: 44px; }
-    .history-range-btn { min-height: 44px; min-width: 44px; }
-    .modal-close {
-        top: 8px; right: 10px; width: 44px; height: 44px;
-        display: flex; align-items: center; justify-content: center;
-    }
-    .popup-btn { min-height: 44px; }
-    .popup-btn-icon { flex: 0 0 44px; width: 44px; }
-    .popup-store-name { padding-right: 28px; }
+    :root { --control-h: 44px; }
+    .app-header .btn-icon, .app-header .btn-near-me { min-height: 44px; }
+    .app-header .btn-icon { width: 44px; min-width: 44px; height: 44px; }
+    .search-box { height: 44px; }
+    .gas-toggle-btn { min-height: 40px; }
+    .input, .select { min-height: 44px; }
+    .route-locate-btn { width: 44px; min-width: 44px; height: 44px; }
+    .autocomplete-item { min-height: 48px; }
+    .history-range-btn { min-height: 40px; }
+    .segmented span { min-height: 40px; }
+    .sidebar-toggle, .search-area-btn { min-height: 44px; }
     /* 44px hit area without the visual gap: padding grows the tap target, matching negative margin cancels it */
-    .gas-hours summary { display: list-item; padding: 15px 0; margin: -15px 0 -7px; box-sizing: border-box; position: relative; }
-    .gas-status + .gas-hours { margin-top: -4px; margin-bottom: 2px; }
-    .popup-phone a { display: inline-flex; align-items: center; padding: 14px 0; margin: -14px 0; }
-    .mobile-sheet-close {
-        width: 44px; height: 44px;
-        margin: -8px -10px -8px 0; /* bigger hit area without growing the sheet header */
-    }
-    .mobile-sheet-handle {
-        height: 4px; margin-bottom: 10px; position: relative;
-    }
-    .mobile-sheet-handle::after { content: ''; position: absolute; inset: -20px -40px; } /* ~44px tall grab area */
-    .leaflet-touch .leaflet-bar a {
-        width: 44px; height: 44px; line-height: 44px;
-    }
-    .leaflet-touch .leaflet-control-zoom-in,
-    .leaflet-touch .leaflet-control-zoom-out { font-size: 24px; }
-    .leaflet-container a.leaflet-popup-close-button {
-        width: 44px; height: 44px; font: 28px/44px Tahoma, Verdana, sans-serif;
-    }
-}
-
-@media (pointer: coarse) and (max-width: 599px) {
-    #themeToggle { top: 3px; right: 8px; }
-    .map-locate-fab { width: 44px; height: 44px; }
+    .gas-hours summary { display: list-item; padding: 13px 0; margin: -13px 0 -9px; position: relative; }
+    .popup-phone a { padding: 13px 0; margin: -13px 0; }
+    .leaflet-touch .leaflet-bar a { width: 44px; height: 44px; line-height: 44px; font-size: 22px; }
+    .leaflet-container a.leaflet-popup-close-button { width: 44px; height: 44px; font: 24px/42px var(--font); top: 2px; right: 2px; }
+    .popup-store-name { padding-right: 32px; }
 }
 
 /* =====================================================================
-   FEATURE UX: directions, clusters, legend, show more, skeletons, errors
+   11. MOTION PREFERENCES
    ===================================================================== */
-
-.sr-only {
-    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
-    overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
-}
-
-/* --- Directions --- */
-.btn-directions { flex: 1; text-decoration: none; background-color: var(--costco-blue); box-shadow: none; }
-@media (hover: hover) { .btn-directions:hover { background-color: #004785; transform: none; } }
-.icon-directions { flex-shrink: 0; }
-.card-actions .btn-action { padding-left: 8px; padding-right: 8px; font-size: 13px; min-width: 0; }
-.card-actions .btn-directions, .card-actions .btn-outline-blue { flex: 1 1 0; }
-/* Narrow lists (tablet sidebar, small phones): History shrinks to its icon so Directions fits */
-@container sidebar (max-width: 374px) {
-    .card-actions .btn-card-history { flex: 0 0 44px; padding-left: 0; padding-right: 0; }
-    .card-actions .btn-card-history .btn-label { display: none; }
-}
-.popup-btn-directions { flex: 1; }
-.popup-actions-row .popup-btn { width: auto; }
-.popup-actions-row .popup-btn:not(.popup-btn-icon) { flex: 1; }
-@media (max-width: 1099px) {
-    .mobile-sheet-actions { flex-wrap: wrap; }
-    .mobile-sheet-actions .btn-directions { flex: 1 1 100%; }
-}
-
-/* --- Cluster bubbles --- */
-.station-cluster { background: none; border: none; }
-.cluster-bubble {
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    border-radius: 50%; background: var(--costco-blue); color: #fff;
-    border: 3px solid #fff; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
-    font-family: 'Inter', sans-serif; line-height: 1.1; transition: transform 0.15s;
-}
-.cluster-count { font-size: 14px; font-weight: 700; }
-/* cheapest price inside the bubble */
-.cluster-price { font-size: 10px; font-weight: 600; opacity: 0.92; font-variant-numeric: tabular-nums; }
-@media (hover: hover) { .station-cluster:hover .cluster-bubble { transform: scale(1.08); } }
-.station-cluster:focus-visible .cluster-bubble { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
-
-/* --- Pin colour legend --- */
-.price-legend {
-    display: flex; align-items: center; gap: 8px;
-    background: var(--bg-sidebar); color: var(--text-main);
-    border: 1px solid var(--border-color); border-radius: 10px;
-    padding: 5px 10px; box-shadow: var(--card-shadow);
-    font: 600 11px 'Inter', sans-serif;
-}
-.price-legend .legend-title { color: var(--text-muted); }
-.price-legend .legend-scale { display: flex; align-items: center; gap: 4px; font-variant-numeric: tabular-nums; }
-.legend-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
-.legend-dot.price-low { background: var(--tier-low); }
-.legend-dot.price-mid { background: var(--tier-mid); }
-.legend-dot.price-high { background: var(--tier-high); }
-.price-legend.no-compare { display: none; }
-
-@media (max-width: 599px) {
-    /* rides above the collapsed sheet, like the zoom buttons */
-    .leaflet-bottom.leaflet-left { bottom: calc(var(--peek-h, 66px) + env(safe-area-inset-bottom, 0px)); }
-    .app-container.mobile-sheet-open .leaflet-bottom.leaflet-left { opacity: 0; pointer-events: none; }
-}
-
-/* --- Show more --- */
-.show-more-btn { width: 100%; margin: 2px 0 14px; }
-
-/* --- Skeleton loading --- */
-.skeleton {
-    border-radius: 8px;
-    background: linear-gradient(90deg, var(--skeleton-base) 25%, var(--skeleton-shine) 50%, var(--skeleton-base) 75%);
-    background-size: 200% 100%;
-    animation: skeleton-shimmer 1.4s ease-in-out infinite;
-}
-@keyframes skeleton-shimmer {
-    from { background-position: 200% 0; }
-    to { background-position: -200% 0; }
-}
-.skeleton-card { cursor: default; pointer-events: none; }
-.skeleton-line { height: 12px; margin-bottom: 10px; }
-.skeleton-row { display: flex; gap: 10px; margin-top: 4px; margin-bottom: 10px; }
-.skeleton-row:last-child { margin-bottom: 0; }
-.skeleton-box { flex: 1; height: 52px; }
-.skeleton-btn { flex: 1; height: 40px; border-radius: 24px; }
-.chart-skeleton { width: 100%; height: 100%; border-radius: 12px; }
-
-/* --- Error state --- */
-.error-state { margin-top: 36px; padding: 0 12px; }
-.error-state-icon { font-size: 36px; margin-bottom: 8px; }
-.error-state h3 { margin: 0 0 6px; color: var(--text-main); }
-.error-state p { margin: 0 0 16px; color: var(--text-muted); font-size: 14px; line-height: 1.5; }
-.error-state .btn-action { margin: 0 auto; }
-
-/* =====================================================================
-   SETTINGS PANEL
-   ===================================================================== */
-
-.settings-content { max-width: 480px; }
-.settings-form { display: flex; flex-direction: column; gap: 18px; }
-.settings-section { display: flex; flex-direction: column; gap: 12px; }
-.settings-section + .settings-section { border-top: 1px solid var(--border-color); padding-top: 16px; }
-.settings-heading {
-    margin: 0; font-size: 12px; font-weight: 700; letter-spacing: 0.6px;
-    text-transform: uppercase; color: var(--text-muted);
-}
-.settings-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; cursor: pointer; }
-.settings-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-.settings-label { font-size: 15px; font-weight: 600; color: var(--text-main); }
-.settings-hint { font-size: 12.5px; color: var(--text-muted); line-height: 1.45; }
-.settings-footnote { margin: 0; font-size: 12px; color: var(--text-muted); text-align: center; }
-
-/* Switch: a styled checkbox (keeps native keyboard + screen-reader behaviour) */
-.settings-switch {
-    appearance: none; -webkit-appearance: none; flex-shrink: 0; margin: 0;
-    width: 46px; height: 28px; border-radius: 14px; position: relative; cursor: pointer;
-    background: var(--border-color); transition: background 0.2s;
-}
-.settings-switch::after {
-    content: ''; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px;
-    border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-    transition: transform 0.2s;
-}
-.settings-switch:checked { background: var(--costco-blue); }
-body.dark-mode .settings-switch:checked { background: #3b82f6; }
-.settings-switch:checked::after { transform: translateX(18px); }
-
-/* Segmented choice: radios styled as a pill group */
-.settings-choice { border: none; margin: 0; padding: 0; min-width: 0; }
-.settings-choice legend { padding: 0; margin-bottom: 8px; }
-.segmented { display: flex; background: var(--tag-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 3px; gap: 3px; }
-.segmented label { flex: 1; min-width: 0; position: relative; }
-.segmented input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
-.segmented span {
-    display: flex; align-items: center; justify-content: center; text-align: center;
-    min-height: 38px; padding: 6px 8px; border-radius: 9px;
-    font-size: 13px; font-weight: 600; color: var(--text-muted); transition: background 0.15s, color 0.15s;
-}
-.segmented input:checked + span { background: var(--bg-card); color: var(--link-blue); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15); }
-body.dark-mode .segmented input:checked + span { background: var(--bg-input); color: #fff; }
-.segmented input:focus-visible + span { outline: 3px solid var(--focus-ring); outline-offset: 1px; }
-.settings-select {
-    flex-shrink: 0; min-height: 40px; padding: 6px 10px; border-radius: 8px;
-    border: 1px solid var(--border-color); background: var(--bg-input); color: var(--text-main);
-    font: 500 14px 'Inter', sans-serif;
-}
-@media (pointer: coarse) { .settings-select { min-height: 44px; } .segmented span { min-height: 44px; } }
-
-@media (max-width: 599px) {
-    /* Bottom sheet on phones */
-    #settingsModal { align-items: flex-end; padding: 0; }
-    .settings-content {
-        max-width: none; border-radius: 18px 18px 0 0; max-height: 88dvh;
-        padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
-    }
-    .settings-row:has(.settings-select) { flex-wrap: wrap; }
-    /* settings button sits left of the theme button in the condensed header */
-    #settingsBtn { position: absolute; top: 7px; right: 52px; width: 32px; height: 32px; font-size: 15px; }
-    .header-title { padding-right: 84px; }
-}
-@media (pointer: coarse) and (max-width: 599px) {
-    #settingsBtn { top: 3px; right: 54px; width: 40px; height: 40px; }
-    .header-title { padding-right: 96px; }
-}
-
-/* --- Reduced motion --- */
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
         animation-duration: 0.01ms !important;

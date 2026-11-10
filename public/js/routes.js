@@ -19,6 +19,7 @@ import {
 } from './state.js';
 import { createStoreCard, renderSavedRoutesHtml, appendPagedCards, skeletonCardsHtml } from './components.js';
 import { geocodeAddress, setupInputAutocomplete } from './search.js';
+import { icon } from './icons.js';
 
 let routesContext = {
     getMap: () => null,
@@ -70,39 +71,41 @@ export function renderRoutePanel() {
     let saveButtonHtml = '';
     if (state.editingRouteId !== null) {
         const updateBtn = state.lastRouteState
-            ? `<button type="button" class="btn-action save-route-btn" data-action="route-save">💾 Update Route</button>`
+            ? `<button type="button" class="btn btn-secondary btn-block save-route-btn" data-action="route-save">${icon('save', 16)} Update route</button>`
             : '';
         saveButtonHtml = `
             ${updateBtn}
-            <button type="button" class="btn-action cancel-edit-btn" data-action="route-cancel-edit">✕ Cancel Editing</button>
+            <button type="button" class="btn btn-ghost btn-block cancel-edit-btn" data-action="route-cancel-edit">Cancel editing</button>
         `;
     } else if (state.lastRouteState) {
-        saveButtonHtml = `<button type="button" class="btn-action save-route-btn" data-action="route-save">☆ Save This Route</button>`;
+        saveButtonHtml = `<button type="button" class="btn btn-secondary btn-block save-route-btn" data-action="route-save">${icon('star', 16)} Save this route</button>`;
     }
 
     const savedRoutesHtml = state.favoriteRoutes.length > 0
-        ? `<div style="margin-top:16px;">${renderSavedRoutesHtml({ fromFavorites: false })}</div>`
+        ? `<div>${renderSavedRoutesHtml({ fromFavorites: false })}</div>`
         : '';
 
     container.innerHTML = `
         <div class="route-panel">
-            <label>From</label>
+            <label for="routeOrigin">From</label>
             <div class="route-input-row">
-                <input type="text" id="routeOrigin" class="route-input" placeholder="Address or city" autocomplete="off" value="${originVal}">
-                <button type="button" class="route-locate-btn" data-action="route-locate" title="Use my location">📍</button>
+                <input type="text" id="routeOrigin" class="input route-input" placeholder="Address or city" autocomplete="off" value="${originVal}">
+                <button type="button" class="btn btn-icon btn-bordered route-locate-btn" data-action="route-locate" title="Use my location" aria-label="Use my location">${icon('locate', 16)}</button>
                 <div id="routeOriginDropdown" class="autocomplete-dropdown"></div>
             </div>
 
-            <label>To</label>
+            <label for="routeDestination">To</label>
             <div class="route-input-row">
-                <input type="text" id="routeDestination" class="route-input" placeholder="Address or city" autocomplete="off" value="${destVal}">
+                <input type="text" id="routeDestination" class="input route-input" placeholder="Address or city" autocomplete="off" value="${destVal}">
                 <div id="routeDestDropdown" class="autocomplete-dropdown"></div>
             </div>
 
-            <label>Search within (miles of the route)</label>
-            <input type="number" id="routeBuffer" class="route-input" style="width:100%; margin-bottom:12px;"
-                   min="1" max="25" step="1" value="${buffer}">
-            <button type="button" class="btn-action" style="width:100%; justify-content:center;" data-action="route-find">🛣️ Find Cheapest Along Route</button>
+            <label for="routeBuffer">Detour limit (miles from the route)</label>
+            <div class="route-input-row">
+                <input type="number" id="routeBuffer" class="input route-input" inputmode="numeric"
+                       min="1" max="25" step="1" value="${buffer}">
+            </div>
+            <button type="button" class="btn btn-primary btn-block" data-action="route-find">${icon('route', 16)} Find cheapest along route</button>
             ${saveButtonHtml}
         </div>
         ${savedRoutesHtml}
@@ -244,22 +247,22 @@ export function renderRouteResults(routeState) {
 
     let html = '';
     if (route.isApproximate) {
-        html += `<p class="route-warning">⚠️ Live routing was unavailable, so this is an approximate straight-line path, not a real driving route.</p>`;
+        html += `<p class="route-warning">${icon('alert', 16)} <span>Live routing was unavailable, so this is an approximate straight-line path, not a real driving route.</span></p>`;
     }
     html += `
         <div class="route-summary">${Math.round(route.distanceMiles)} mi route &middot; ${sorted.length} station${sorted.length === 1 ? '' : 's'} found</div>
-        <button type="button" class="btn-action btn-outline-blue view-route-map-btn" data-action="view-route-map">
-            🗺️ View Route on Map
+        <button type="button" class="btn btn-secondary btn-block view-route-map-btn" data-action="view-route-map">
+            ${icon('map', 16)} View route on map
         </button>
     `;
     el.innerHTML = html;
 
     if (sorted.length === 0) {
-        el.innerHTML += `<p class="empty-msg" style="margin-top:20px;">No Costco gas stations found within ${bufferMiles} miles of this route.</p>`;
+        el.innerHTML += `<p class="empty-msg">No Costco gas stations found within ${bufferMiles} miles of this route.</p>`;
         return;
     }
 
-    el.innerHTML += `<div class="leaderboard-header">Cheapest ${gradeLabel} Along the Way</div>`;
+    el.innerHTML += `<div class="leaderboard-header">Cheapest ${gradeLabel} along the way</div>`;
     appendPagedCards(el, sorted,
         (store, index) => createStoreCard(store, { highlight: state.gasPref, index, showDistance: true, distanceSuffix: ' off route' }),
         { key: `route|${routeState.originText}|${routeState.destText}|${bufferMiles}|${state.gasPref}` });
@@ -347,6 +350,6 @@ export async function findGasAlongRoute() {
         console.error('Route search failed:', err);
         resultsEl.innerHTML = `
             <p class="route-error">${escapeHtml(err.message || "Couldn't calculate that route. Please try again.")}</p>
-            <button type="button" class="btn-action btn-outline-blue" style="width:100%;" data-action="route-find">↻ Try again</button>`;
+            <button type="button" class="btn btn-secondary btn-block" data-action="route-find">${icon('refresh', 16)} Try again</button>`;
     }
 }

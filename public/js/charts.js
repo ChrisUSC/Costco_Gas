@@ -9,6 +9,7 @@ import {
     GRADE_INFO,
     escapeHtml
 } from './utils.js';
+import { icon } from './icons.js';
 import { state, setHistoryRangeDays } from './state.js';
 
 let globalHistory = {};
@@ -73,8 +74,7 @@ export function ensureHistoryLoaded() {
 function showChartMessage(msg, isError = false) {
     const chartContainer = document.querySelector('.chart-container');
     if (!chartContainer) return;
-    const color = isError ? 'var(--costco-red)' : 'var(--text-muted)';
-    chartContainer.innerHTML = `<p class="empty-msg" style="color:${color};">${msg}</p>`;
+    chartContainer.innerHTML = `<p class="empty-msg${isError ? ' is-error' : ''}">${msg}</p>`;
 }
 
 function showChartSkeleton() {
@@ -88,10 +88,10 @@ function showChartError(stateCode, city) {
     if (!chartContainer) return;
     chartContainer.innerHTML = `
         <div class="empty-state error-state" role="alert">
-            <div class="error-state-icon" aria-hidden="true">⚠️</div>
+            <div class="empty-state-icon is-danger">${icon('alert', 26)}</div>
             <h3>Couldn't load price history</h3>
             <p>${navigator.onLine === false ? 'You appear to be offline.' : 'Something went wrong.'} Please try again.</p>
-            <button type="button" class="btn-action" data-action="history" data-state="${escapeHtml(stateCode)}" data-city="${escapeHtml(city)}">↻ Try again</button>
+            <button type="button" class="btn btn-primary" data-action="history" data-state="${escapeHtml(stateCode)}" data-city="${escapeHtml(city)}">${icon('refresh', 16)} Try again</button>
         </div>`;
     chartContainer.querySelector('button')?.focus();
 }
@@ -180,7 +180,7 @@ export async function openHistoryModal(stateCode, city) {
         lastFocusedBeforeModal = document.activeElement;
     }
     if (modal) modal.classList.add('active');
-    if (title) title.innerText = `Price History: ${city}, ${stateCode}`;
+    if (title) title.innerText = `Price history: ${city}, ${stateCode}`;
 
     renderRangeControls();
     document.querySelector('#chartModal .modal-close')?.focus();
@@ -240,7 +240,10 @@ export function renderPriceChart(stateCode, city) {
     }
 
     const showAllDots = dedupedHistory.length <= SHOW_ALL_DOTS_MAX_POINTS;
-    const surfaceColor = state.isDarkMode ? '#1e293b' : '#ffffff';
+    // Chart.js draws on a canvas, so it reads the design tokens instead of inheriting CSS.
+    const css = getComputedStyle(document.body);
+    const token = name => css.getPropertyValue(name).trim();
+    const surfaceColor = token('--surface');
 
     const labels = dedupedHistory.map(h => h.rawDate);
     const datasets = GRADE_KEYS
@@ -269,8 +272,8 @@ export function renderPriceChart(stateCode, city) {
         })
         .filter(ds => ds.grade !== 'diesel' || ds.data.some(v => v !== null));
 
-    const textColor = state.isDarkMode ? '#f8fafc' : '#1e293b';
-    const gridColor = state.isDarkMode ? '#334155' : '#e2e8f0';
+    const textColor = token('--text-muted');
+    const gridColor = token('--border');
 
     const ctx = document.getElementById('priceChart').getContext('2d');
     if (priceChartInstance) priceChartInstance.destroy();
@@ -285,7 +288,7 @@ export function renderPriceChart(stateCode, city) {
             // Hover anywhere along the x-axis to see every grade's price for that day
             interaction: { mode: 'index', intersect: false },
             plugins: {
-                legend: { labels: { color: textColor } },
+                legend: { labels: { color: textColor, boxWidth: 10, boxHeight: 10, useBorderRadius: true, borderRadius: 5, padding: 16 } },
                 tooltip: {
                     callbacks: {
                         label: context => {
