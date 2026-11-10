@@ -1123,8 +1123,10 @@ header input:focus-visible {
     .popup-btn { min-height: 44px; }
     .popup-btn-icon { flex: 0 0 44px; width: 44px; }
     .popup-store-name { padding-right: 28px; }
-    .gas-hours summary { min-height: 44px; display: list-item; padding: 14px 0; box-sizing: border-box; }
-    .popup-phone a { display: inline-flex; align-items: center; min-height: 44px; }
+    /* 44px hit area without the visual gap: padding grows the tap target, matching negative margin cancels it */
+    .gas-hours summary { display: list-item; padding: 15px 0; margin: -15px 0 -7px; box-sizing: border-box; position: relative; }
+    .gas-status + .gas-hours { margin-top: -4px; margin-bottom: 2px; }
+    .popup-phone a { display: inline-flex; align-items: center; padding: 14px 0; margin: -14px 0; }
     .mobile-view-btn { min-height: 44px; }
     .mobile-sheet-close {
         width: 44px; height: 44px;
