@@ -4,9 +4,11 @@ import {
     escapeHtml,
     debounce,
     getDistanceMiles,
+    formatAddress,
     showToast
 } from './utils.js';
 import { state } from './state.js';
+import { icon } from './icons.js';
 
 let autocompleteItems = [];
 let activeAutocompleteIndex = -1;
@@ -27,26 +29,26 @@ export function initSearch(context) {
 }
 
 export const GEO_META_MAP = {
-    postcode: { icon: '📮', label: 'Zip Code' },
-    city: { icon: '🏙️', label: 'City' },
-    town: { icon: '🏙️', label: 'Town' },
-    village: { icon: '🏙️', label: 'Village' },
-    hamlet: { icon: '🏙️', label: 'Town' },
-    county: { icon: '📍', label: 'County' },
-    state: { icon: '📍', label: 'State' },
-    suburb: { icon: '📍', label: 'Neighborhood' },
-    neighbourhood: { icon: '📍', label: 'Neighborhood' },
-    administrative: { icon: '📍', label: 'Area' },
-    house: { icon: '🏠', label: 'Address' },
-    building: { icon: '🏢', label: 'Building' },
-    amenity: { icon: '🏢', label: 'Place' },
-    road: { icon: '🛣️', label: 'Street' },
-    yes: { icon: '🏠', label: 'Address' }
+    postcode: { label: 'Zip Code' },
+    city: { label: 'City' },
+    town: { label: 'Town' },
+    village: { label: 'Village' },
+    hamlet: { label: 'Town' },
+    county: { label: 'County' },
+    state: { label: 'State' },
+    suburb: { label: 'Neighborhood' },
+    neighbourhood: { label: 'Neighborhood' },
+    administrative: { label: 'Area' },
+    house: { label: 'Address' },
+    building: { label: 'Building' },
+    amenity: { label: 'Place' },
+    road: { label: 'Street' },
+    yes: { label: 'Address' }
 };
 
 export function getGeoMeta(result) {
     const type = result.addresstype || result.type || 'place';
-    return GEO_META_MAP[type] || { icon: '📍', label: 'Location' };
+    return GEO_META_MAP[type] || { label: 'Location' };
 }
 
 export function shortGeoName(result) {
@@ -153,16 +155,16 @@ export function renderAutocompleteDropdown(storeMatches, geoMatches, query, isLo
     let html = '';
 
     if (storeMatches.length > 0) {
-        html += `<div class="autocomplete-section-label">Costco Stores</div>`;
+        html += `<div class="autocomplete-section-label">Costco stations</div>`;
         storeMatches.forEach(store => {
             const idx = autocompleteItems.length;
             autocompleteItems.push({ type: 'store', data: store });
             html += `
                 <div class="autocomplete-item" data-action="select-autocomplete" data-index="${idx}">
-                    <span class="ac-icon">🛒</span>
+                    <span class="ac-icon ac-icon-store">${icon('fuel', 16)}</span>
                     <div class="ac-text">
                         <div class="ac-title">${escapeHtml(store.city)}, ${escapeHtml(store.state)}</div>
-                        <div class="ac-subtitle">${escapeHtml(store.address)}</div>
+                        <div class="ac-subtitle">${escapeHtml(formatAddress(store.address))}</div>
                     </div>
                 </div>`;
         });
@@ -176,7 +178,7 @@ export function renderAutocompleteDropdown(storeMatches, geoMatches, query, isLo
             const meta = getGeoMeta(result);
             html += `
                 <div class="autocomplete-item" data-action="select-autocomplete" data-index="${idx}">
-                    <span class="ac-icon">${meta.icon}</span>
+                    <span class="ac-icon">${icon('pin', 16)}</span>
                     <div class="ac-text">
                         <div class="ac-title">${escapeHtml(shortGeoName(result))}</div>
                         <div class="ac-subtitle">${escapeHtml(meta.label)}</div>

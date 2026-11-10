@@ -11,11 +11,9 @@ import {
     getRelativeTimeLabel,
     formatLastUpdatedLabel,
     getDistanceMiles,
-    getTrendArrow,
-    getVisibleStoreGrades,
     gradeVal,
-    gradePrevVal,
     gradeStr,
+    formatAddress,
     hasGradeData,
     shouldFilterStoresByGrade,
     gasStatusHtml,
@@ -49,10 +47,13 @@ import {
     appendPagedCards,
     skeletonCardsHtml,
     errorStateHtml,
+    emptyStateHtml,
+    priceTilesHtml,
     DIRECTIONS_ICON,
     renderSavedRoutesHtml,
     renderMobileStoreCardContent
 } from './js/components.js';
+import { icon } from './js/icons.js';
 import {
     initNav,
     readUrlParams,
@@ -563,15 +564,15 @@ function applyTheme(isDark) {
     state.isDarkMode = isDark;
     document.body.classList.toggle('dark-mode', isDark);
     const themeBtn = document.getElementById('themeToggle');
-    if (themeBtn) {
-        themeBtn.innerText = isDark ? '☀️' : '🌙';
-        themeBtn.setAttribute('aria-pressed', String(isDark));
-    }
+    if (themeBtn) themeBtn.setAttribute('aria-pressed', String(isDark)); // sun / moon swap is CSS
+    // Browser chrome (address bar, status bar) follows the header surface.
+    const surface = getComputedStyle(document.body).getPropertyValue('--surface').trim();
+    if (surface) document.querySelector('meta[name="theme-color"]')?.setAttribute('content', surface);
 }
 
 // On narrow phones the search box shares its row with the grade toggle, so the
 // full placeholder is cut off ("Search city or z…"). Use a short one there.
-const SEARCH_PLACEHOLDER_FULL = 'Search city or zip code...';
+const SEARCH_PLACEHOLDER_FULL = 'Search city or zip';
 const SEARCH_PLACEHOLDER_SHORT = 'City or zip';
 
 function initSearchPlaceholder() {
@@ -915,7 +916,7 @@ function createMarkersLayer() {
             const label = `${children.length} stations${prices.length ? `, from ${formatPriceDisplay(Math.min(...prices))}` : ''}`;
             return L.divIcon({
                 className: 'station-cluster',
-                html: `<div class="cluster-bubble" style="width:${size}px;height:${size}px;" title="${label}. Click to zoom in."><span class="cluster-count">${children.length}</span>${from}</div>`,
+                html: `<div class="cluster-bubble" style="--size:${size}px" title="${label}. Click to zoom in."><span class="cluster-count">${children.length}</span>${from}</div>`,
                 iconSize: [size, size]
             });
         }
@@ -1003,28 +1004,26 @@ function addPriceLegend() {
 
 function storePopupHtml(store) {
     const currentIsFav = isFavoriteStore(store.state, store.city);
-    const priceBoxesHtml = getVisibleStoreGrades(store).map(g => {
-        const cls = state.gasPref === g ? 'highlight' : '';
-        const trend = getTrendArrow(gradeVal(store, g), gradePrevVal(store, g), state.trendBaselineLabel);
-        return `<div class="popup-price-box ${cls}"><span>${GRADE_INFO[g].label}</span><strong>${escapeHtml(gradeStr(store, g)) || 'N/A'} ${trend}</strong></div>`;
-    }).join('');
     const where = `data-state="${escapeHtml(store.state)}" data-city="${escapeHtml(store.city)}"`;
+    const favLabel = currentIsFav ? 'Remove from favorites' : 'Add to favorites';
 
     return `
         <div class="popup-store-name">${escapeHtml(store.city)}, ${escapeHtml(store.state)}</div>
-        <div class="popup-address">${escapeHtml(store.address)}</div>
-        ${gasStatusHtml(store)}
+        <div class="popup-address">${escapeHtml(formatAddress(store.address))}</div>
+        <div class="popup-meta">
+            ${gasStatusHtml(store)}
+            ${store.phone ? `<div class="popup-phone"><a href="tel:${escapeHtml(store.phone.replace(/[^0-9+]/g, ''))}">${icon('phone', 13)} ${escapeHtml(store.phone)}</a></div>` : ''}
+        </div>
         ${gasHoursDetailsHtml(store)}
-        ${store.phone ? `<div class="popup-phone"><a href="tel:${escapeHtml(store.phone.replace(/[^0-9+]/g, ''))}">${escapeHtml(store.phone)}</a></div>` : ''}
-        <div class="popup-prices-grid">${priceBoxesHtml}</div>
+        <div class="popup-prices-grid">${priceTilesHtml(store, state.gasPref)}</div>
         <div class="popup-actions-row">
-            <a href="${escapeHtml(directionsUrl(store, state.directionsApp))}" title="Open in ${DIRECTIONS_APP_LABELS[state.directionsApp]}" target="_blank" rel="noopener noreferrer" class="popup-btn popup-btn-directions">${DIRECTIONS_ICON} Directions</a>
-            <button type="button" class="popup-btn popup-btn-outline" data-action="history" ${where}>📈 History</button>
+            <a href="${escapeHtml(directionsUrl(store, state.directionsApp))}" title="Open in ${DIRECTIONS_APP_LABELS[state.directionsApp]}" target="_blank" rel="noopener noreferrer" class="btn btn-primary popup-btn-directions">${DIRECTIONS_ICON} Directions</a>
+            <button type="button" class="btn btn-secondary" data-action="history" ${where}>${icon('chart', 16)} History</button>
         </div>
         <div class="popup-actions-row">
-            <a href="${escapeHtml(store.url)}" target="_blank" rel="noopener noreferrer" class="popup-btn popup-btn-outline" style="flex:1;">Store Page ↗</a>
-            <button type="button" class="popup-btn popup-btn-outline popup-btn-icon ${currentIsFav ? 'active' : ''}" data-action="toggle-favorite" ${where} title="${currentIsFav ? 'Remove Favorite' : 'Add to Favorites'}">${currentIsFav ? '★' : '☆'}</button>
-            <button type="button" class="popup-btn popup-btn-outline popup-btn-icon" data-action="share" ${where} title="Share This Station">🔗</button>
+            <a href="${escapeHtml(store.url)}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary popup-btn-wide">Store page ${icon('external', 14)}</a>
+            <button type="button" class="btn btn-icon favorite-btn ${currentIsFav ? 'active' : ''}" data-action="toggle-favorite" ${where} title="${favLabel}" aria-label="${favLabel}" aria-pressed="${currentIsFav}">${icon('star', 18)}</button>
+            <button type="button" class="btn btn-icon share-btn" data-action="share" ${where} title="Share this station" aria-label="Share this station">${icon('share', 18)}</button>
         </div>
     `;
 }
@@ -1040,20 +1039,18 @@ function renderMap(dataArray) {
         const price = hasGradeData(store, state.gasPref) ? gradeVal(store, state.gasPref) : NaN;
         const tier = Number.isFinite(price) ? 'flat' : 'none';
         const isFav = isFavoriteStore(store.state, store.city);
-        const favBadge = isFav ? `<div class="pin-favorite-badge">★</div>` : '';
+        const favBadge = isFav ? `<div class="pin-favorite-badge" aria-hidden="true">★</div>` : '';
 
         const dynamicPin = L.divIcon({
             className: `costco-custom-icon price-${tier}`,
             html: `
-                <div style="position:relative;">
+                <div class="pin">
                     ${favBadge}
-                    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path class="pin-body" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" stroke="#ffffff" stroke-width="2"/>
-                        <circle cx="12" cy="9" r="3.5" fill="#ffffff"/>
+                    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path class="pin-body" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+                        <circle class="pin-dot" cx="12" cy="9" r="3.5"/>
                     </svg>
-                    <div class="pin-price-badge">
-                        ${escapeHtml(displayPrice) || 'N/A'}
-                    </div>
+                    <div class="pin-price-badge">${isFav ? '<span class="pin-fav" aria-hidden="true">★</span>' : ''}${escapeHtml(displayPrice) || 'N/A'}</div>
                 </div>
             `,
             iconSize: [36, 36],
@@ -1356,10 +1353,10 @@ function renderLowestPrices(stateOverride = null) {
     }
 
     container.innerHTML = `
-        <div class="state-selector-box">
-            <label>State Leaderboard:</label>
-            <select id="stateLeaderboardSelect" class="state-select">
-                ${availableStates.map(s => `<option value="${s}" ${s === state.currentStateContext ? 'selected' : ''}>${s} - ${getStoreCount(s)} stores</option>`).join('')}
+        <div class="field state-selector-box">
+            <label for="stateLeaderboardSelect">State</label>
+            <select id="stateLeaderboardSelect" class="select state-select">
+                ${availableStates.map(s => `<option value="${s}" ${s === state.currentStateContext ? 'selected' : ''}>${s} · ${getStoreCount(s)} station${getStoreCount(s) === 1 ? '' : 's'}</option>`).join('')}
             </select>
         </div>
     `;
@@ -1372,7 +1369,7 @@ function renderLowestPrices(stateOverride = null) {
     container.innerHTML += `<div class="leaderboard-header">Cheapest ${gradeLabel} in ${escapeHtml(state.currentStateContext)}</div>`;
     syncUrl(); // the selected state is part of the URL
     if (sortedData.length === 0) {
-        container.innerHTML += `<p class="empty-msg" style="font-size:13px;">No pricing data found for this state.</p>`;
+        container.innerHTML += `<p class="empty-msg">No pricing data found for this state.</p>`;
         return;
     }
     appendPagedCards(container, sortedData,
@@ -1395,31 +1392,27 @@ function renderNearbyPrices() {
     if (!container) return;
 
     if (!state.userLocation) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--costco-blue)" stroke-width="2" style="margin-bottom:15px;">
-                    <polygon points="3 11 22 2 13 21 11 13 3 11"></polygon>
-                </svg>
-                <h3 style="margin-bottom: 5px;">Find Local Gas</h3>
-                <p style="color:var(--text-muted); font-size:14px; padding: 0 10px;">We need your location to find the cheapest Costco gas near you.</p>
-                <button type="button" class="btn-action" data-action="find-me" style="margin:15px auto 0;">📍 Detect Location</button>
-            </div>
-        `;
+        container.innerHTML = emptyStateHtml({
+            iconName: 'locate',
+            title: 'Find gas near you',
+            message: 'Share your location, or search for a city or zip code, to see the cheapest Costco gas nearby.',
+            actionHtml: `<button type="button" class="btn btn-primary" data-action="find-me">${icon('locate', 16)} Use my location</button>`
+        });
         return;
     }
 
     const gradeLabel = GRADE_INFO[state.gasPref].label;
     const controlsHtml = `
         <div class="nearby-controls">
-            <div class="nearby-control-group">
-                <label>Radius</label>
-                <select id="nearbyRadiusSelect">
+            <div class="field nearby-control-group">
+                <label for="nearbyRadiusSelect">Radius</label>
+                <select id="nearbyRadiusSelect" class="select">
                     ${[5, 10, 25, 50, 100].map(m => `<option value="${m}" ${m === state.nearbyRadiusMiles ? 'selected' : ''}>${m} mi</option>`).join('')}
                 </select>
             </div>
-            <div class="nearby-control-group">
-                <label>Sort by</label>
-                <select id="nearbySortSelect">
+            <div class="field nearby-control-group">
+                <label for="nearbySortSelect">Sort by</label>
+                <select id="nearbySortSelect" class="select">
                     <option value="price" ${state.nearbySortMode === 'price' ? 'selected' : ''}>Price</option>
                     <option value="distance" ${state.nearbySortMode === 'distance' ? 'selected' : ''}>Distance</option>
                 </select>
@@ -1449,13 +1442,13 @@ function renderNearbyPrices() {
         });
 
     const headerLabel = state.nearbySortMode === 'distance'
-        ? `Closest Stations &middot; ${gradeLabel} (Within ${state.nearbyRadiusMiles} Miles)`
-        : `Cheapest ${gradeLabel} (Within ${state.nearbyRadiusMiles} Miles)`;
+        ? `Closest stations &middot; ${gradeLabel}, within ${state.nearbyRadiusMiles} mi`
+        : `Cheapest ${gradeLabel} within ${state.nearbyRadiusMiles} mi`;
 
     container.innerHTML = controlsHtml + `<div class="leaderboard-header">${headerLabel}</div>`;
 
     if (sortedData.length === 0) {
-        container.innerHTML += `<p class="empty-msg" style="margin-top:20px;">No stations within ${state.nearbyRadiusMiles} miles have a ${gradeLabel.toLowerCase()} price right now.</p>`;
+        container.innerHTML += `<p class="empty-msg">No stations within ${state.nearbyRadiusMiles} miles have a ${gradeLabel.toLowerCase()} price right now.</p>`;
         return;
     }
 
@@ -1475,20 +1468,18 @@ function renderFavoriteStores() {
         .sort((a, b) => a.city.localeCompare(b.city));
 
     if (favorites.length === 0 && state.favoriteRoutes.length === 0) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <div style="font-size:40px; margin-bottom:10px;">☆</div>
-                <h3 style="margin-bottom: 5px;">No Favorites Yet</h3>
-                <p style="color:var(--text-muted); font-size:14px; padding: 0 10px;">Tap the ☆ on any store card or map popup to save it here, or save a route from the Route tab.</p>
-            </div>
-        `;
+        container.innerHTML = emptyStateHtml({
+            iconName: 'star',
+            title: 'No favorites yet',
+            message: 'Tap the star on any station to save it here, or save a route from the Route tab.'
+        });
         return;
     }
 
     if (favorites.length > 0) {
         const header = document.createElement('div');
         header.className = 'leaderboard-header';
-        header.textContent = `★ Favorite Stores (${favorites.length})`;
+        header.textContent = `Favorite stations (${favorites.length})`;
         container.appendChild(header);
         // Inside its own wrapper so "Show more" stays above the saved routes.
         const list = document.createElement('div');
@@ -1500,7 +1491,6 @@ function renderFavoriteStores() {
 
     if (state.favoriteRoutes.length > 0) {
         const routesWrap = document.createElement('div');
-        routesWrap.style.marginTop = favorites.length > 0 ? '16px' : '0';
         routesWrap.innerHTML = renderSavedRoutesHtml({ fromFavorites: true });
         container.appendChild(routesWrap);
     }
