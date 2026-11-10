@@ -2,6 +2,18 @@
 
 import { loadJsonPref } from './utils.js';
 
+function initialDarkMode() {
+    const saved = localStorage.getItem('theme');
+    if (saved === 'dark') return true;
+    if (saved === 'light') return false;
+    return Boolean(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+}
+
+export function hasExplicitThemePref() {
+    const saved = localStorage.getItem('theme');
+    return saved === 'dark' || saved === 'light';
+}
+
 export const state = {
     // Master data
     stores: [],
@@ -16,7 +28,7 @@ export const state = {
     activeMobileStore: null,
 
     // User preferences (synced to localStorage)
-    isDarkMode: localStorage.getItem('theme') === 'dark',
+    isDarkMode: initialDarkMode(),
     gasPref: localStorage.getItem('gasPref') || 'regular',
     nearbyRadiusMiles: parseFloat(localStorage.getItem('nearbyRadius')) || 50,
     nearbySortMode: localStorage.getItem('nearbySort') || 'price', // 'price' | 'distance'

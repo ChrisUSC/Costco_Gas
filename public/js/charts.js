@@ -2,6 +2,7 @@
 
 import {
     parseScraperTimestamp,
+    prefersReducedMotion,
     extractGradePrices,
     getValidPrice,
     GRADE_KEYS,
@@ -15,6 +16,7 @@ let historyLoaded = false;
 let historyLoadPromise = null;
 let currentModalState = null;
 let currentModalCity = null;
+let lastFocusedBeforeModal = null;
 
 // Show a dot on every day (including unchanged ones) when the range has this many points or fewer.
 const SHOW_ALL_DOTS_MAX_POINTS = 45;
@@ -154,10 +156,14 @@ export async function openHistoryModal(stateCode, city) {
 
     const modal = document.getElementById('chartModal');
     const title = document.getElementById('chartTitle');
+    if (modal && !modal.classList.contains('active')) {
+        lastFocusedBeforeModal = document.activeElement;
+    }
     if (modal) modal.classList.add('active');
     if (title) title.innerText = `Price History: ${city}, ${stateCode}`;
 
     renderRangeControls();
+    document.querySelector('#chartModal .modal-close')?.focus();
 
     if (!historyLoaded) {
         showChartMessage('Loading price history…');
@@ -255,6 +261,7 @@ export function renderPriceChart(stateCode, city) {
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            animation: prefersReducedMotion() ? false : undefined,
             // Hover anywhere along the x-axis to see every grade's price for that day
             interaction: { mode: 'index', intersect: false },
             plugins: {
@@ -302,5 +309,33 @@ export function closeHistoryModal(event) {
     if (event && event.target !== document.getElementById('chartModal') && !event.target.closest('.modal-close')) {
         return;
     }
-    document.getElementById('chartModal')?.classList.remove('active');
+    const modal = document.getElementById('chartModal');
+    const wasOpen = modal?.classList.contains('active');
+    modal?.classList.remove('active');
+    if (wasOpen && lastFocusedBeforeModal && document.contains(lastFocusedBeforeModal)) {
+        lastFocusedBeforeModal.focus();
+    }
+    lastFocusedBeforeModal = null;
+}
+
+// Keeps Tab / Shift+Tab inside the open modal. Returns true if the event was handled.
+export function trapModalFocus(e) {
+    if (e.key !== 'Tab' || !isChartModalOpen()) return false;
+    const focusable = [...document.querySelectorAll('#chartModal button, #chartModal [href], #chartModal [tabindex]:not([tabindex="-1"])')]
+        .filter(el => el.offsetParent !== null);
+    if (focusable.length === 0) return false;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    const active = document.activeElement;
+    if (!document.getElementById('chartModal').contains(active)) {
+        e.preventDefault();
+        first.focus();
+    } else if (e.shiftKey && active === first) {
+        e.preventDefault();
+        last.focus();
+    } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
+    }
+    return true;
 }

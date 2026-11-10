@@ -23,6 +23,7 @@ import {
     escapeHtml,
     debounce,
     showToast,
+    prefersReducedMotion,
     requestBrowserLocation
 } from './js/utils.js';
 import {
@@ -30,6 +31,7 @@ import {
     isFavoriteStore,
     toggleFavoriteStore,
     findStore,
+    hasExplicitThemePref,
     setGasPref as saveGasPref,
     setDarkMode as saveDarkMode,
     setNearbyRadius as saveNearbyRadius,
@@ -44,7 +46,9 @@ import {
     openHistoryModal,
     closeHistoryModal,
     setHistoryRange,
-    refreshChartTheme
+    refreshChartTheme,
+    isChartModalOpen,
+    trapModalFocus
 } from './js/charts.js';
 import {
     initSearch,
@@ -82,8 +86,12 @@ function setMobileView(mode) {
     if (container) {
         container.classList.toggle('mobile-view-list', state.mobileViewMode === 'list');
     }
-    document.getElementById('btnMobileMap')?.classList.toggle('active', state.mobileViewMode === 'map');
-    document.getElementById('btnMobileList')?.classList.toggle('active', state.mobileViewMode === 'list');
+    [['btnMobileMap', 'map'], ['btnMobileList', 'list']].forEach(([id, mode]) => {
+        const btn = document.getElementById(id);
+        if (!btn) return;
+        btn.classList.toggle('active', state.mobileViewMode === mode);
+        btn.setAttribute('aria-pressed', String(state.mobileViewMode === mode));
+    });
 
     if (state.mobileViewMode === 'list') {
         closeMobileStoreCard();
@@ -105,6 +113,7 @@ function openMobileStoreCard(store) {
     if (sheet) {
         sheet.classList.add('active');
         sheet.setAttribute('aria-hidden', 'false');
+        sheet.removeAttribute('inert');
     }
     if (container) {
         container.classList.add('mobile-sheet-open');
@@ -118,6 +127,7 @@ function closeMobileStoreCard() {
     if (sheet) {
         sheet.classList.remove('active');
         sheet.setAttribute('aria-hidden', 'true');
+        sheet.setAttribute('inert', '');
     }
     if (container) {
         container.classList.remove('mobile-sheet-open');
@@ -175,8 +185,31 @@ async function shareStore(stateCode, city, label) {
         await navigator.clipboard.writeText(url);
         showToast('Link copied to clipboard!');
     } catch (e) {
-        window.prompt('Copy this link:', url);
+        if (copyTextFallback(url)) {
+            showToast('Link copied to clipboard!');
+        } else {
+            showToast(`Couldn't copy automatically. Link: ${url}`, 9000);
+        }
     }
+}
+
+// For browsers/contexts without the async Clipboard API (e.g. non-secure origins).
+function copyTextFallback(text) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;';
+    document.body.appendChild(ta);
+    ta.select();
+    ta.setSelectionRange(0, text.length);
+    let ok = false;
+    try {
+        ok = document.execCommand('copy');
+    } catch (e) {
+        ok = false;
+    }
+    ta.remove();
+    return ok;
 }
 
 function openSharedStoreIfPresent() {
@@ -204,12 +237,42 @@ function openSharedStoreIfPresent() {
 
 // --- Preferences ---
 
-function initPreferences() {
-    if (state.isDarkMode) {
-        document.body.classList.add('dark-mode');
-        const themeBtn = document.getElementById('themeToggle');
-        if (themeBtn) themeBtn.innerText = '☀️';
+function applyTheme(isDark) {
+    state.isDarkMode = isDark;
+    document.body.classList.toggle('dark-mode', isDark);
+    const themeBtn = document.getElementById('themeToggle');
+    if (themeBtn) {
+        themeBtn.innerText = isDark ? '☀️' : '🌙';
+        themeBtn.setAttribute('aria-pressed', String(isDark));
     }
+}
+
+// On narrow phones the search box shares its row with the grade toggle, so the
+// full placeholder is cut off ("Search city or z…"). Use a short one there.
+const SEARCH_PLACEHOLDER_FULL = 'Search city or zip code...';
+const SEARCH_PLACEHOLDER_SHORT = 'City or zip';
+
+function initSearchPlaceholder() {
+    const input = document.getElementById('searchInput');
+    const narrow = window.matchMedia?.('(max-width: 480px)');
+    if (!input || !narrow) return;
+    const apply = () => {
+        input.placeholder = narrow.matches ? SEARCH_PLACEHOLDER_SHORT : SEARCH_PLACEHOLDER_FULL;
+    };
+    apply();
+    narrow.addEventListener?.('change', apply);
+}
+
+function initPreferences() {
+    applyTheme(state.isDarkMode);
+    // Follow the OS light/dark setting until the user picks a theme explicitly.
+    const systemTheme = window.matchMedia?.('(prefers-color-scheme: dark)');
+    systemTheme?.addEventListener?.('change', (e) => {
+        if (hasExplicitThemePref()) return;
+        applyTheme(e.matches);
+        setMapTiles();
+        refreshChartTheme();
+    });
     GRADE_KEYS.forEach(g => document.getElementById(`btn-${g}`)?.classList.remove('active'));
     document.getElementById(`btn-${state.gasPref}`)?.classList.add('active');
 }
@@ -217,9 +280,7 @@ function initPreferences() {
 function toggleTheme() {
     const newTheme = !state.isDarkMode;
     saveDarkMode(newTheme);
-    document.body.classList.toggle('dark-mode', newTheme);
-    const themeBtn = document.getElementById('themeToggle');
-    if (themeBtn) themeBtn.innerText = newTheme ? '☀️' : '🌙';
+    applyTheme(newTheme);
     setMapTiles();
     refreshChartTheme();
 }
@@ -321,7 +382,6 @@ function renderMap(dataArray) {
         if (!store.lat || !store.lng) return;
 
         const displayPrice = gradeStr(store, state.gasPref);
-        const priceColor = GRADE_INFO[state.gasPref].color;
         const isFav = isFavoriteStore(store.state, store.city);
         const favBadge = isFav ? `<div class="pin-favorite-badge">★</div>` : '';
 
@@ -334,7 +394,7 @@ function renderMap(dataArray) {
                         <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="#E31837" stroke="#ffffff" stroke-width="2"/>
                         <circle cx="12" cy="9" r="3.5" fill="#ffffff"/>
                     </svg>
-                    <div class="pin-price-badge" style="color: ${priceColor}; border-color: ${priceColor};">
+                    <div class="pin-price-badge grade-${state.gasPref}">
                         ${escapeHtml(displayPrice) || 'N/A'}
                     </div>
                 </div>
@@ -374,7 +434,7 @@ function renderMap(dataArray) {
         marker.openPopup = function(...args) {
             if (isMobileViewport()) {
                 openMobileStoreCard(store);
-                map.panTo([store.lat, store.lng], { animate: true });
+                map.panTo([store.lat, store.lng], { animate: !prefersReducedMotion() });
                 return this;
             }
             return origOpenPopup(...args);
@@ -385,15 +445,25 @@ function renderMap(dataArray) {
     });
 }
 
+// Animated fly-to, or an instant jump when the user prefers reduced motion.
+function moveMapTo(latlng, zoom, duration) {
+    if (prefersReducedMotion()) {
+        map.setView(latlng, zoom, { animate: false });
+    } else {
+        map.flyTo(latlng, zoom, { duration });
+    }
+}
+
 function flyToStore(store) {
     if (isMobileViewport()) {
         setMobileView('map');
-        map.flyTo([store.lat, store.lng], 14, { duration: 1.2 });
+        moveMapTo([store.lat, store.lng], 14, 1.2);
         openMobileStoreCard(store);
         return;
     }
-    map.flyTo([store.lat, store.lng], 14, { duration: 1.5 });
+    // Register first: with reduced motion the move (and its moveend) completes synchronously.
     map.once('moveend', () => store.leafletMarker && store.leafletMarker.openPopup());
+    moveMapTo([store.lat, store.lng], 14, 1.5);
 }
 
 function flyToGeoResult(result) {
@@ -403,7 +473,6 @@ function flyToGeoResult(result) {
     }
 
     const [south, north, west, east] = result.boundingbox.map(parseFloat);
-    map.flyToBounds([[south, west], [north, east]], { duration: 1.5, maxZoom: 13, padding: [40, 40] });
 
     state.userLocation = { lat: parseFloat(result.lat), lng: parseFloat(result.lon) };
 
@@ -412,7 +481,15 @@ function flyToGeoResult(result) {
         radius: 8, fillColor: "#f59e0b", color: "#ffffff", weight: 3, opacity: 1, fillOpacity: 1
     }).addTo(map).bindPopup(`<b>${escapeHtml(result.display_name.split(',')[0])}</b>`);
 
+    // Location and marker are set above, so the tab can render as soon as the move ends
+    // (which is immediate when animation is off).
     map.once('moveend', () => switchTab('nearby'));
+    const bounds = [[south, west], [north, east]];
+    if (prefersReducedMotion()) {
+        map.fitBounds(bounds, { animate: false, maxZoom: 13, padding: [40, 40] });
+    } else {
+        map.flyToBounds(bounds, { duration: 1.5, maxZoom: 13, padding: [40, 40] });
+    }
 }
 
 // --- Geolocation & Data Loading ---
@@ -761,12 +838,34 @@ function refreshCurrentDisplay() {
     switchTab(state.currentTab);
 }
 
+// The tab strip scrolls horizontally on narrow phones; keep the active tab in view.
+// (Adjusts the strip's own scrollLeft: scrollIntoView() would also scroll the
+// overflow:hidden app container when the sidebar is parked off-screen.)
+function keepActiveTabVisible(tabName) {
+    const strip = document.getElementById('sidebarTabs');
+    const tab = document.getElementById(`tab-${tabName}`);
+    if (!strip || !tab || strip.scrollWidth <= strip.clientWidth) return;
+    const left = tab.offsetLeft;
+    const right = left + tab.offsetWidth;
+    if (left < strip.scrollLeft) {
+        strip.scrollLeft = left;
+    } else if (right > strip.scrollLeft + strip.clientWidth) {
+        strip.scrollLeft = right - strip.clientWidth;
+    }
+}
+
 function switchTab(tabName) {
     state.currentTab = tabName;
 
     Object.keys(TAB_RENDERERS).forEach(t => {
-        document.getElementById(`tab-${t}`)?.classList.toggle('active', t === tabName);
+        const el = document.getElementById(`tab-${t}`);
+        if (!el) return;
+        const isActive = t === tabName;
+        el.classList.toggle('active', isActive);
+        el.setAttribute('aria-selected', String(isActive));
+        el.tabIndex = isActive ? 0 : -1; // roving tabindex: arrow keys move between tabs
     });
+    keepActiveTabVisible(tabName);
 
     if (tabName !== 'route') {
         clearRouteVisuals();
@@ -786,9 +885,48 @@ function triggerFindMe() {
         };
         closeMobileStoreCard();
         placeUserLocationMarker(state.userLocation, { openPopup: true });
-        map.flyTo([state.userLocation.lat, state.userLocation.lng], 10, { duration: 2 });
+        moveMapTo([state.userLocation.lat, state.userLocation.lng], 10, 2);
         updateClosestStoreState(state.userLocation);
         switchTab('nearby');
+    });
+}
+
+// --- Keyboard support ---
+
+function setupKeyboardSupport() {
+    // Tabs: arrow keys / Home / End move between tabs (automatic activation)
+    document.getElementById('sidebarTabs')?.addEventListener('keydown', (e) => {
+        const tabNames = [...document.querySelectorAll('#sidebarTabs [data-tab]')].map(el => el.dataset.tab);
+        const current = tabNames.indexOf(state.currentTab);
+        let next = null;
+        if (e.key === 'ArrowRight') next = (current + 1) % tabNames.length;
+        else if (e.key === 'ArrowLeft') next = (current - 1 + tabNames.length) % tabNames.length;
+        else if (e.key === 'Home') next = 0;
+        else if (e.key === 'End') next = tabNames.length - 1;
+        if (next === null) return;
+        e.preventDefault();
+        switchTab(tabNames[next]);
+        document.getElementById(`tab-${tabNames[next]}`)?.focus();
+    });
+
+    document.addEventListener('keydown', (e) => {
+        if (trapModalFocus(e)) return;
+
+        if (e.key === 'Escape') {
+            if (isChartModalOpen()) {
+                e.preventDefault();
+                closeHistoryModal();
+            } else if (state.activeMobileStore && !e.target.closest?.('input, select')) {
+                closeMobileStoreCard();
+            }
+            return;
+        }
+
+        // Cards and the sheet handle behave like buttons for Enter / Space.
+        if ((e.key === 'Enter' || e.key === ' ') && e.target.matches?.('.store-card, .mobile-sheet-handle')) {
+            e.preventDefault();
+            e.target.click();
+        }
     });
 }
 
@@ -936,6 +1074,7 @@ function setupEventListeners() {
 // --- Initialization ---
 
 initPreferences();
+initSearchPlaceholder();
 initMap();
 
 initSearch({
@@ -957,5 +1096,6 @@ initRoutes({
 });
 
 setupEventListeners();
+setupKeyboardSupport();
 loadData();
 setInterval(refreshLastUpdatedLabel, 60000);

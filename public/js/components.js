@@ -18,6 +18,11 @@ export function createStoreCard(store, { highlight = null, index = null, showDis
     const div = document.createElement('div');
     div.className = 'store-card';
     div.dataset.action = 'fly-to-store';
+    // A focusable group (not role="button"): the card has its own nested buttons, which a
+    // button role would hide from assistive tech. Enter/Space on the card itself = show on map.
+    div.setAttribute('role', 'group');
+    div.tabIndex = 0;
+    div.setAttribute('aria-label', `${store.city}, ${store.state}`);
     div.dataset.state = store.state;
     div.dataset.city = store.city;
 
@@ -69,7 +74,7 @@ export function renderSavedRoutesHtml({ fromFavorites = false } = {}) {
         ${state.favoriteRoutes.map(r => {
             const isEditing = !fromFavorites && r.id === state.editingRouteId;
             return `
-                <div class="store-card ${isEditing ? 'route-editing' : ''}" data-action="load-favorite-route" data-route-id="${r.id}">
+                <div class="store-card ${isEditing ? 'route-editing' : ''}" role="group" tabindex="0" aria-label="${escapeHtml(r.origin.label)} to ${escapeHtml(r.destination.label)}" data-action="load-favorite-route" data-route-id="${r.id}">
                     <h3><span>${escapeHtml(r.origin.label)} → ${escapeHtml(r.destination.label)}</span></h3>
                     <div class="address">Within ${r.bufferMiles} mi of route${isEditing ? ' &middot; <strong>Editing…</strong>' : ''}</div>
                     <div class="card-actions">

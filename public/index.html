@@ -4,6 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Costco Gas Prices Dashboard</title>
+    <meta name="description" content="Live Costco gas prices on a map: find the cheapest Regular, Premium and Diesel near you or along a route.">
+    <meta name="theme-color" content="#005DAA">
+    <meta name="color-scheme" content="light dark">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Costco Gas Prices">
+    <meta property="og:description" content="Live Costco gas prices on a map: find the cheapest Regular, Premium and Diesel near you or along a route.">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23005DAA'/%3E%3Cpath d='M50 14C34 14 22 26 22 41c0 21 28 45 28 45s28-24 28-45C78 26 66 14 50 14z' fill='%23E31837' stroke='%23fff' stroke-width='5'/%3E%3Ccircle cx='50' cy='41' r='11' fill='%23fff'/%3E%3C/svg%3E">
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -11,15 +18,28 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- Leaflet & Chart.js -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Versions are pinned so a CDN release can't change the app unexpectedly.
+         `defer` keeps the scripts off the critical rendering path and preserves order. -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.6.1/dist/chart.umd.js"></script>
     <!-- Chart.js Time Adapter (Fixes the X-Axis Spacing) -->
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+<script>
+    // Apply the saved (or system) theme before first paint to avoid a light flash.
+    (function () {
+        try {
+            var t = localStorage.getItem('theme');
+            if (t === 'dark' || (t !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.body.classList.add('dark-mode');
+            }
+        } catch (e) {}
+    })();
+</script>
 
 <header>
     <div class="header-title">
@@ -40,20 +60,20 @@
         </div>
 
         <button type="button" class="btn-action btn-near-me" data-action="find-me">📍 Near Me</button>
-        <button type="button" class="btn-icon" id="themeToggle" data-action="toggle-theme" title="Toggle Dark Mode">🌙</button>
+        <button type="button" class="btn-icon" id="themeToggle" data-action="toggle-theme" title="Toggle dark mode" aria-label="Toggle dark mode" aria-pressed="false">🌙</button>
     </div>
 </header>
 
 <div class="app-container" id="appContainer">
     <aside class="sidebar" id="sidebar">
-        <div class="tabs" id="sidebarTabs">
-            <div class="tab active" id="tab-nearby" data-tab="nearby" role="tab" tabindex="0">Near Me</div>
-            <div class="tab" id="tab-lowest" data-tab="lowest" role="tab" tabindex="0">State Lowest</div>
-            <div class="tab" id="tab-route" data-tab="route" role="tab" tabindex="0">Route</div>
-            <div class="tab" id="tab-search" data-tab="search" role="tab" tabindex="0">All Stores</div>
-            <div class="tab" id="tab-favorites" data-tab="favorites" role="tab" tabindex="0">Favorites</div>
+        <div class="tabs" id="sidebarTabs" role="tablist" aria-label="Station lists">
+            <button type="button" class="tab active" id="tab-nearby" data-tab="nearby" role="tab" aria-selected="true" aria-controls="sidebarContent">Near Me</button>
+            <button type="button" class="tab" id="tab-lowest" data-tab="lowest" role="tab" aria-selected="false" aria-controls="sidebarContent" tabindex="-1">State Lowest</button>
+            <button type="button" class="tab" id="tab-route" data-tab="route" role="tab" aria-selected="false" aria-controls="sidebarContent" tabindex="-1">Route</button>
+            <button type="button" class="tab" id="tab-search" data-tab="search" role="tab" aria-selected="false" aria-controls="sidebarContent" tabindex="-1">All Stores</button>
+            <button type="button" class="tab" id="tab-favorites" data-tab="favorites" role="tab" aria-selected="false" aria-controls="sidebarContent" tabindex="-1">Favorites</button>
         </div>
-        <div class="sidebar-content" id="sidebarContent"></div>
+        <div class="sidebar-content" id="sidebarContent" role="tabpanel"></div>
     </aside>
     <div id="map"></div>
 
@@ -63,25 +83,25 @@
     </button>
 
     <!-- Mobile Map / List View Toggle Pill -->
-    <div class="mobile-view-toggle" id="mobileViewToggle" role="tablist" aria-label="View mode">
-        <button type="button" class="mobile-view-btn active" id="btnMobileMap" data-mobile-view="map">
+    <div class="mobile-view-toggle" id="mobileViewToggle" role="group" aria-label="View mode">
+        <button type="button" class="mobile-view-btn active" id="btnMobileMap" data-mobile-view="map" aria-pressed="true">
             🗺️ Map
         </button>
-        <button type="button" class="mobile-view-btn" id="btnMobileList" data-mobile-view="list">
+        <button type="button" class="mobile-view-btn" id="btnMobileList" data-mobile-view="list" aria-pressed="false">
             📋 List
         </button>
     </div>
 
     <!-- Mobile Slide-Up Store Detail Card -->
-    <div class="mobile-store-sheet" id="mobileStoreSheet" aria-hidden="true">
-        <div class="mobile-sheet-handle" data-action="close-mobile-sheet"></div>
+    <div class="mobile-store-sheet" id="mobileStoreSheet" role="dialog" aria-label="Station details" aria-hidden="true" inert>
+        <div class="mobile-sheet-handle" data-action="close-mobile-sheet" role="button" aria-label="Close station details" tabindex="0"></div>
         <div id="mobileStoreSheetContent"></div>
     </div>
 </div>
 
 <!-- Chart Modal -->
 <div class="modal-overlay" id="chartModal">
-    <div class="modal-content">
+    <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="chartTitle">
         <button type="button" class="modal-close" data-action="close-modal" aria-label="Close price history modal">×</button>
         <h2 class="modal-title" id="chartTitle">Price History</h2>
         <div class="chart-container">
