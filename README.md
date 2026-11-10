@@ -9,7 +9,9 @@ A live-updating map of Costco gas prices across the US. A scheduled scraper coll
 
 ## Features
 
-- 📍 Interactive Leaflet map of every Costco warehouse with a gas station; price badges appear as you zoom in
+- 📍 Interactive Leaflet map of every Costco warehouse with a gas station; stations cluster when zoomed out and show price badges as you zoom in
+- 🎨 Pins coloured by relative price: green, amber and red for the cheapest, middle and most expensive third of the prices in view
+- 🧭 One-tap **Directions** to any station (opens Google Maps)
 - ⛽ Regular / Premium / Diesel toggle (Diesel shows only stations that sell it)
 - 🕒 Live "Open / Closing soon / Closed" status in each station's local time zone, plus 7-day gas hours
 - 🛣️ **Route Finder**: cheapest stations within a set distance of a driving route (OSRM, with a straight-line fallback)
@@ -18,7 +20,8 @@ A live-updating map of Costco gas prices across the US. A scheduled scraper coll
 - 📈 Price-history chart per station with 7D / 30D / 90D / 1Y / All ranges
 - 🥇 "State Lowest" leaderboard with 72-hour trend arrows (`▲` / `▼` / `–`)
 - 📍 "Near Me" with a 5–100 mi radius and price or distance sorting
-- 🔗 Shareable links (`?store=STATE_City`) that open a specific station
+- 🔗 Shareable links: `?store=STATE_City` opens a station, and `?tab=`, `?grade=` and `?state=` restore the view
+- 📲 Installable to a phone or desktop home screen (web app manifest)
 - 🌙 Dark mode with matching map tiles
 
 ## How it works
@@ -56,7 +59,10 @@ public/ (HTML, JS, CSS, us_stores.json) ──► Cloudflare Pages static hostin
 │   │   ├── components.js       # Store cards, mobile sheet, saved-route cards
 │   │   ├── search.js           # Autocomplete and Nominatim geocoding
 │   │   ├── charts.js           # Price-history loading and Chart.js modal
-│   │   └── routes.js           # OSRM routing, corridor filtering, saved routes
+│   │   ├── routes.js           # OSRM routing, corridor filtering, saved routes
+│   │   └── nav.js              # URL query state and Back-button handling for the sheet and modal
+│   ├── manifest.webmanifest    # Web app manifest (install to home screen)
+│   ├── icons/                  # App icons referenced by the manifest
 │   └── us_stores.json          # Master store list: address, coordinates, hours, phone, time zone
 │
 ├── functions/

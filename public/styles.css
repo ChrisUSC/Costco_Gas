@@ -19,10 +19,15 @@
     --focus-ring: #005DAA;
     --star-color: #d97706;
     --star-text: #b45309;
-    /* Per-grade colours for map price badges (theme-aware for contrast) */
-    --grade-regular: #047857;
-    --grade-premium: #c4122d;
-    --grade-diesel: #6d28d9;
+    /* Relative-price pin colours (fill) and their badge text (>= 4.5:1 on the card colour) */
+    --tier-low: #059669;
+    --tier-mid: #d97706;
+    --tier-high: #dc2626;
+    --tier-low-text: #047857;
+    --tier-mid-text: #b45309;
+    --tier-high-text: #b91c1c;
+    --skeleton-base: #e2e8f0;
+    --skeleton-shine: #f1f5f9;
 }
 
 body.dark-mode {
@@ -43,9 +48,11 @@ body.dark-mode {
     --focus-ring: #93c5fd;
     --star-color: #fbbf24;
     --star-text: #fbbf24;
-    --grade-regular: #34d399;
-    --grade-premium: #f87171;
-    --grade-diesel: #a78bfa;
+    --tier-low-text: #34d399;
+    --tier-mid-text: #fbbf24;
+    --tier-high-text: #f87171;
+    --skeleton-base: #1e293b;
+    --skeleton-shine: #334155;
 }
 
 *, *::before, *::after {
@@ -529,9 +536,15 @@ body.dark-mode .gas-status.closing-soon { color: #fbbf24; }
     z-index: 500;
 }
 
-.pin-price-badge.grade-regular { color: var(--grade-regular); border-color: var(--grade-regular); }
-.pin-price-badge.grade-premium { color: var(--grade-premium); border-color: var(--grade-premium); }
-.pin-price-badge.grade-diesel { color: var(--grade-diesel); border-color: var(--grade-diesel); }
+/* Pins and their price badges are coloured by where the price sits among the
+   stations in view: cheapest third green, middle amber, top third red. */
+.costco-custom-icon { --pin-fill: var(--costco-blue); --pin-text: var(--link-blue); }
+.costco-custom-icon.price-low  { --pin-fill: var(--tier-low);  --pin-text: var(--tier-low-text); }
+.costco-custom-icon.price-mid  { --pin-fill: var(--tier-mid);  --pin-text: var(--tier-mid-text); }
+.costco-custom-icon.price-high { --pin-fill: var(--tier-high); --pin-text: var(--tier-high-text); }
+.costco-custom-icon.price-none { --pin-fill: #94a3b8; --pin-text: var(--text-muted); }
+.pin-body { fill: var(--pin-fill); }
+.pin-price-badge { color: var(--pin-text); border-color: var(--pin-fill); }
 
 .map-show-prices .pin-price-badge {
     display: block;
@@ -1272,6 +1285,99 @@ header input:focus-visible {
     #themeToggle { top: 3px; right: 8px; }
     .map-locate-fab { width: 44px; height: 44px; }
 }
+
+/* =====================================================================
+   FEATURE UX: directions, clusters, legend, show more, skeletons, errors
+   ===================================================================== */
+
+.sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}
+
+/* --- Directions --- */
+.btn-directions { flex: 1; text-decoration: none; background-color: var(--costco-blue); box-shadow: none; }
+@media (hover: hover) { .btn-directions:hover { background-color: #004785; transform: none; } }
+.icon-directions { flex-shrink: 0; }
+.card-actions .btn-action { padding-left: 8px; padding-right: 8px; font-size: 13px; min-width: 0; }
+.card-actions .btn-directions, .card-actions .btn-outline-blue { flex: 1 1 0; }
+/* Narrow lists (tablet sidebar, small phones): History shrinks to its icon so Directions fits */
+@container sidebar (max-width: 374px) {
+    .card-actions .btn-card-history { flex: 0 0 44px; padding-left: 0; padding-right: 0; }
+    .card-actions .btn-card-history .btn-label { display: none; }
+}
+.popup-btn-directions { flex: 1; }
+.popup-actions-row .popup-btn { width: auto; }
+.popup-actions-row .popup-btn:not(.popup-btn-icon) { flex: 1; }
+@media (max-width: 1099px) {
+    .mobile-sheet-actions { flex-wrap: wrap; }
+    .mobile-sheet-actions .btn-directions { flex: 1 1 100%; }
+}
+
+/* --- Cluster bubbles --- */
+.station-cluster { background: none; border: none; }
+.cluster-bubble {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    border-radius: 50%; background: var(--costco-blue); color: #fff;
+    border: 3px solid #fff; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+    font-family: 'Inter', sans-serif; line-height: 1.1; transition: transform 0.15s;
+}
+.cluster-count { font-size: 14px; font-weight: 700; }
+/* cheapest price inside the bubble */
+.cluster-price { font-size: 10px; font-weight: 600; opacity: 0.92; font-variant-numeric: tabular-nums; }
+@media (hover: hover) { .station-cluster:hover .cluster-bubble { transform: scale(1.08); } }
+.station-cluster:focus-visible .cluster-bubble { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+
+/* --- Pin colour legend --- */
+.price-legend {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--bg-sidebar); color: var(--text-main);
+    border: 1px solid var(--border-color); border-radius: 10px;
+    padding: 5px 10px; box-shadow: var(--card-shadow);
+    font: 600 11px 'Inter', sans-serif;
+}
+.price-legend .legend-title { color: var(--text-muted); }
+.price-legend .legend-scale { display: flex; align-items: center; gap: 4px; font-variant-numeric: tabular-nums; }
+.legend-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.legend-dot.price-low { background: var(--tier-low); }
+.legend-dot.price-mid { background: var(--tier-mid); }
+.legend-dot.price-high { background: var(--tier-high); }
+.price-legend.no-compare { display: none; }
+
+@media (max-width: 599px) {
+    /* rides above the collapsed sheet, like the zoom buttons */
+    .leaflet-bottom.leaflet-left { bottom: calc(var(--peek-h, 66px) + env(safe-area-inset-bottom, 0px)); }
+    .app-container.mobile-sheet-open .leaflet-bottom.leaflet-left { opacity: 0; pointer-events: none; }
+}
+
+/* --- Show more --- */
+.show-more-btn { width: 100%; margin: 2px 0 14px; }
+
+/* --- Skeleton loading --- */
+.skeleton {
+    border-radius: 8px;
+    background: linear-gradient(90deg, var(--skeleton-base) 25%, var(--skeleton-shine) 50%, var(--skeleton-base) 75%);
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.4s ease-in-out infinite;
+}
+@keyframes skeleton-shimmer {
+    from { background-position: 200% 0; }
+    to { background-position: -200% 0; }
+}
+.skeleton-card { cursor: default; pointer-events: none; }
+.skeleton-line { height: 12px; margin-bottom: 10px; }
+.skeleton-row { display: flex; gap: 10px; margin-top: 4px; margin-bottom: 10px; }
+.skeleton-row:last-child { margin-bottom: 0; }
+.skeleton-box { flex: 1; height: 52px; }
+.skeleton-btn { flex: 1; height: 40px; border-radius: 24px; }
+.chart-skeleton { width: 100%; height: 100%; border-radius: 12px; }
+
+/* --- Error state --- */
+.error-state { margin-top: 36px; padding: 0 12px; }
+.error-state-icon { font-size: 36px; margin-bottom: 8px; }
+.error-state h3 { margin: 0 0 6px; color: var(--text-main); }
+.error-state p { margin: 0 0 16px; color: var(--text-muted); font-size: 14px; line-height: 1.5; }
+.error-state .btn-action { margin: 0 auto; }
 
 /* --- Reduced motion --- */
 @media (prefers-reduced-motion: reduce) {

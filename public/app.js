@@ -22,6 +22,7 @@ import {
     gasHoursDetailsHtml,
     escapeHtml,
     debounce,
+    directionsUrl,
     showToast,
     prefersReducedMotion,
     requestBrowserLocation
@@ -39,9 +40,22 @@ import {
 } from './js/state.js';
 import {
     createStoreCard,
+    appendPagedCards,
+    skeletonCardsHtml,
+    errorStateHtml,
+    DIRECTIONS_ICON,
     renderSavedRoutesHtml,
     renderMobileStoreCardContent
 } from './js/components.js';
+import {
+    initNav,
+    readUrlParams,
+    syncUrl,
+    currentOverlay,
+    pushOverlay,
+    replaceOverlay,
+    popOverlay
+} from './js/nav.js';
 import {
     openHistoryModal,
     closeHistoryModal,
@@ -75,6 +89,14 @@ let markersLayer;
 let routeLayer;
 let userLocationMarker = null;
 let searchLocationMarker = null;
+let storeMarkers = [];      // markers currently in markersLayer
+let popupStore = null;      // station whose desktop popup is open (for the URL)
+let loadStatus = 'loading'; // 'loading' | 'ready' | 'error'
+const initialUrl = readUrlParams();
+let sharedStoreKey = new URLSearchParams(window.location.search).get('store'); // ?store=CA_City link
+
+// Pins cluster below this zoom; from here on every station shows its own pin and price.
+const PIN_ZOOM = 9;
 
 // Layout tiers (keep in sync with the media queries in styles.css):
 //   phone   <= 599px   map + draggable bottom sheet for the list
@@ -295,7 +317,16 @@ function linkPinToCard(marker, store, on) {
     if (on) card.scrollIntoView({ block: 'nearest', behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
 }
 
-function openMobileStoreCard(store) {
+const storeKey = (store) => `${store.state}_${store.city}`;
+const sheetOverlay = (store) => ({ type: 'sheet', state: store.state, city: store.city });
+
+// Record the open sheet in history so Back closes it (swapping stations reuses the entry).
+function recordSheetOpen(store) {
+    if (currentOverlay()?.type === 'sheet') replaceOverlay(sheetOverlay(store));
+    else pushOverlay(sheetOverlay(store));
+}
+
+function openMobileStoreCard(store, { fromHistory = false } = {}) {
     if (!store) return;
     state.activeMobileStore = store;
     renderMobileStoreCardContent(store);
@@ -310,6 +341,7 @@ function openMobileStoreCard(store) {
         if (state.mobileViewMode === 'peek') setSheetState('half', { keepDetail: true });
         else syncSheetA11y();
         detail?.querySelector('.mobile-sheet-close')?.focus({ preventScroll: true });
+        if (!fromHistory) recordSheetOpen(store);
         return;
     }
 
@@ -320,9 +352,10 @@ function openMobileStoreCard(store) {
         sheet.removeAttribute('inert');
     }
     if (container) container.classList.add('mobile-sheet-open');
+    if (!fromHistory) recordSheetOpen(store);
 }
 
-function closeMobileStoreCard() {
+function closeMobileStoreCard({ fromHistory = false } = {}) {
     const hadStore = Boolean(state.activeMobileStore);
     state.activeMobileStore = null;
     const sheet = document.getElementById('mobileStoreSheet');
@@ -338,6 +371,38 @@ function closeMobileStoreCard() {
     if (sidebar) sidebar.classList.remove('has-detail');
     if (detail) detail.hidden = true;
     if (hadStore && isPhoneViewport()) document.getElementById('sheetGrabber')?.focus({ preventScroll: true });
+    if (hadStore && !fromHistory && !popOverlay('sheet')) syncUrl();
+}
+
+// --- Price-history modal + history entry ---
+function openHistory(stateCode, city) {
+    openHistoryModal(stateCode, city);
+    const active = state.activeMobileStore;
+    const overlay = { type: 'modal', state: stateCode, city, sheet: active ? sheetOverlay(active) : null };
+    if (currentOverlay()?.type === 'modal') replaceOverlay(overlay);
+    else pushOverlay(overlay);
+}
+
+function closeHistory() {
+    if (!isChartModalOpen()) return;
+    closeHistoryModal();
+    popOverlay('modal');
+}
+
+// Browser Back / Forward landed on an entry: make the sheet and modal match it.
+function applyOverlayFromHistory(overlay) {
+    const wantModal = overlay?.type === 'modal';
+    if (isChartModalOpen() && !wantModal) closeHistoryModal();
+    else if (wantModal && !isChartModalOpen()) openHistoryModal(overlay.state, overlay.city);
+
+    const want = overlay?.type === 'sheet' ? overlay : overlay?.sheet || null;
+    const cur = state.activeMobileStore;
+    if (cur && !want) {
+        closeMobileStoreCard({ fromHistory: true });
+    } else if (want && isMobileViewport() && !(cur && cur.state === want.state && cur.city === want.city)) {
+        const store = findStore(want.state, want.city);
+        if (store) openMobileStoreCard(store, { fromHistory: true });
+    }
 }
 
 // On phones the sheet covers the lower half, so aim the map at the visible upper part.
@@ -426,8 +491,8 @@ function copyTextFallback(text) {
 }
 
 function openSharedStoreIfPresent() {
-    const params = new URLSearchParams(window.location.search);
-    const storeKey = params.get('store');
+    const storeKey = sharedStoreKey;
+    sharedStoreKey = null; // only once, not again after a retry
     if (!storeKey) return false;
 
     const sepIndex = storeKey.indexOf('_');
@@ -486,8 +551,16 @@ function initPreferences() {
         setMapTiles();
         refreshChartTheme();
     });
-    GRADE_KEYS.forEach(g => document.getElementById(`btn-${g}`)?.classList.remove('active'));
-    document.getElementById(`btn-${state.gasPref}`)?.classList.add('active');
+    syncGradeButtons();
+}
+
+function syncGradeButtons() {
+    GRADE_KEYS.forEach(g => {
+        const btn = document.getElementById(`btn-${g}`);
+        if (!btn) return;
+        btn.classList.toggle('active', g === state.gasPref);
+        btn.setAttribute('aria-pressed', String(g === state.gasPref));
+    });
 }
 
 function toggleTheme() {
@@ -501,11 +574,12 @@ function toggleTheme() {
 function setGasPref(pref) {
     saveGasPref(pref);
 
-    GRADE_KEYS.forEach(g => document.getElementById(`btn-${g}`)?.classList.remove('active'));
-    document.getElementById(`btn-${pref}`)?.classList.add('active');
+    syncGradeButtons();
 
     if (state.stores.length > 0) {
-        renderMap(state.stores);
+        renderMap(state.currentTab === 'route' && state.lastRouteState?.along?.length > 0
+            ? state.lastRouteState.along
+            : state.stores);
     }
     refreshCurrentDisplay();
 
@@ -537,7 +611,7 @@ function setMapTiles() {
 function checkZoomLevel() {
     if (!map) return;
     const mapEl = document.getElementById('map');
-    if (mapEl) mapEl.classList.toggle('map-show-prices', map.getZoom() >= 9);
+    if (mapEl) mapEl.classList.toggle('map-show-prices', map.getZoom() >= PIN_ZOOM);
 }
 
 function setupMobileSheetGestures() {
@@ -567,10 +641,14 @@ function initMap() {
     map = L.map('map', { zoomControl: false }).setView([39.8283, -98.5795], 4);
     L.control.zoom({ position: 'bottomright' }).addTo(map);
     setMapTiles();
-    markersLayer = L.layerGroup().addTo(map);
+    markersLayer = createMarkersLayer().addTo(map);
     routeLayer = L.layerGroup().addTo(map);
+    addPriceLegend();
 
     map.on('zoomend', checkZoomLevel);
+    map.on('moveend', debounce(updatePinTiers, 80));
+    map.on('popupopen', (e) => { popupStore = e.popup._source?.options.store || null; syncUrl(); });
+    map.on('popupclose', () => { popupStore = null; syncUrl(); });
     map.on('click', () => {
         if (state.activeMobileStore) closeMobileStoreCard();
     });
@@ -596,26 +674,152 @@ function initMap() {
     }, 150));
 }
 
+// --- Clustering & price-coloured pins ---
+
+// Below PIN_ZOOM nearby stations merge into a bubble showing how many there are and the
+// cheapest price among them. Falls back to plain markers if the plugin failed to load.
+function createMarkersLayer() {
+    if (typeof L.markerClusterGroup !== 'function') return L.layerGroup();
+    return L.markerClusterGroup({
+        disableClusteringAtZoom: PIN_ZOOM,
+        maxClusterRadius: 56,
+        showCoverageOnHover: false,
+        spiderfyOnMaxZoom: false,
+        animate: !prefersReducedMotion(),
+        iconCreateFunction: (cluster) => {
+            const children = cluster.getAllChildMarkers();
+            const prices = children.map(m => m.options.price).filter(Number.isFinite);
+            const from = prices.length ? `<span class="cluster-price">${formatPriceDisplay(Math.min(...prices))}+</span>` : '';
+            const size = children.length >= 100 ? 58 : children.length >= 10 ? 52 : 46;
+            const label = `${children.length} stations${prices.length ? `, from ${formatPriceDisplay(Math.min(...prices))}` : ''}`;
+            return L.divIcon({
+                className: 'station-cluster',
+                html: `<div class="cluster-bubble" style="width:${size}px;height:${size}px;" title="${label}. Click to zoom in."><span class="cluster-count">${children.length}</span>${from}</div>`,
+                iconSize: [size, size]
+            });
+        }
+    });
+}
+
+const PRICE_TIERS = ['low', 'mid', 'high', 'flat', 'none'];
+const MIN_TIER_SPREAD = 0.03; // dollars; below this every station is effectively the same price
+
+// Colour each pin by where its price sits among the stations currently in view:
+// lowest third of the price range green, middle amber, top third red.
+function updatePinTiers() {
+    if (!map || storeMarkers.length === 0) return;
+    const bounds = map.getBounds();
+    const inView = storeMarkers.filter(m => Number.isFinite(m.options.price) && bounds.contains(m.getLatLng()));
+    const prices = inView.map(m => m.options.price);
+    const min = Math.min(...prices);
+    const max = Math.max(...prices);
+    const comparable = inView.length >= 3 && max - min >= MIN_TIER_SPREAD;
+    const inViewSet = new Set(inView);
+
+    storeMarkers.forEach(marker => {
+        let tier;
+        if (!Number.isFinite(marker.options.price)) tier = 'none';
+        else if (!inViewSet.has(marker)) return; // off-screen: recoloured when it comes into view
+        else if (!comparable) tier = 'flat';
+        else {
+            const t = (marker.options.price - min) / (max - min);
+            tier = t <= 1 / 3 ? 'low' : t >= 2 / 3 ? 'high' : 'mid';
+        }
+        setPinTier(marker, tier);
+    });
+
+    const legend = document.getElementById('priceLegend');
+    if (legend) {
+        legend.classList.toggle('no-compare', !comparable);
+        legend.querySelector('.legend-title').textContent = comparable
+            ? `${GRADE_INFO[state.gasPref].label} in view`
+            : `${GRADE_INFO[state.gasPref].label} prices`;
+        legend.querySelector('.legend-low').textContent = comparable ? formatPriceDisplay(min) : '';
+        legend.querySelector('.legend-high').textContent = comparable ? formatPriceDisplay(max) : '';
+    }
+}
+
+function setPinTier(marker, tier) {
+    if (marker.options.tier === tier) return;
+    marker.options.tier = tier;
+    // Update the icon definition too: clustering re-creates the element from it.
+    marker.options.icon.options.className = `costco-custom-icon price-${tier}`;
+    const el = marker.getElement();
+    if (el) {
+        PRICE_TIERS.forEach(t => el.classList.toggle(`price-${t}`, t === tier));
+    }
+}
+
+function addPriceLegend() {
+    const legend = L.control({ position: 'bottomleft' });
+    legend.onAdd = () => {
+        const div = L.DomUtil.create('div', 'price-legend no-compare'); // shown once prices can be compared
+        div.id = 'priceLegend';
+        div.setAttribute('aria-label', 'Pin colours: green is the cheapest third of the prices in view, red the most expensive');
+        div.innerHTML = `
+            <span class="legend-title">Prices in view</span>
+            <span class="legend-scale">
+                <span class="legend-low"></span>
+                <i class="legend-dot price-low"></i><i class="legend-dot price-mid"></i><i class="legend-dot price-high"></i>
+                <span class="legend-high"></span>
+            </span>`;
+        L.DomEvent.disableClickPropagation(div);
+        return div;
+    };
+    legend.addTo(map);
+}
+
+function storePopupHtml(store) {
+    const currentIsFav = isFavoriteStore(store.state, store.city);
+    const priceBoxesHtml = getVisibleStoreGrades(store).map(g => {
+        const cls = state.gasPref === g ? 'highlight' : '';
+        const trend = getTrendArrow(gradeVal(store, g), gradePrevVal(store, g), state.trendBaselineLabel);
+        return `<div class="popup-price-box ${cls}"><span>${GRADE_INFO[g].label}</span><strong>${escapeHtml(gradeStr(store, g)) || 'N/A'} ${trend}</strong></div>`;
+    }).join('');
+    const where = `data-state="${escapeHtml(store.state)}" data-city="${escapeHtml(store.city)}"`;
+
+    return `
+        <div class="popup-store-name">${escapeHtml(store.city)}, ${escapeHtml(store.state)}</div>
+        <div class="popup-address">${escapeHtml(store.address)}</div>
+        ${gasStatusHtml(store)}
+        ${gasHoursDetailsHtml(store)}
+        ${store.phone ? `<div class="popup-phone"><a href="tel:${escapeHtml(store.phone.replace(/[^0-9+]/g, ''))}">${escapeHtml(store.phone)}</a></div>` : ''}
+        <div class="popup-prices-grid">${priceBoxesHtml}</div>
+        <div class="popup-actions-row">
+            <a href="${escapeHtml(directionsUrl(store))}" target="_blank" rel="noopener noreferrer" class="popup-btn popup-btn-directions">${DIRECTIONS_ICON} Directions</a>
+            <button type="button" class="popup-btn popup-btn-outline" data-action="history" ${where}>📈 History</button>
+        </div>
+        <div class="popup-actions-row">
+            <a href="${escapeHtml(store.url)}" target="_blank" rel="noopener noreferrer" class="popup-btn popup-btn-outline" style="flex:1;">Store Page ↗</a>
+            <button type="button" class="popup-btn popup-btn-outline popup-btn-icon ${currentIsFav ? 'active' : ''}" data-action="toggle-favorite" ${where} title="${currentIsFav ? 'Remove Favorite' : 'Add to Favorites'}">${currentIsFav ? '★' : '☆'}</button>
+            <button type="button" class="popup-btn popup-btn-outline popup-btn-icon" data-action="share" ${where} title="Share This Station">🔗</button>
+        </div>
+    `;
+}
+
 function renderMap(dataArray) {
     if (!markersLayer) return;
     markersLayer.clearLayers();
+    storeMarkers = [];
     filterStoresForCurrentGrade(dataArray, state.gasPref).forEach(store => {
         if (!store.lat || !store.lng) return;
 
         const displayPrice = gradeStr(store, state.gasPref);
+        const price = hasGradeData(store, state.gasPref) ? gradeVal(store, state.gasPref) : NaN;
+        const tier = Number.isFinite(price) ? 'flat' : 'none';
         const isFav = isFavoriteStore(store.state, store.city);
         const favBadge = isFav ? `<div class="pin-favorite-badge">★</div>` : '';
 
         const dynamicPin = L.divIcon({
-            className: 'costco-custom-icon',
+            className: `costco-custom-icon price-${tier}`,
             html: `
                 <div style="position:relative;">
                     ${favBadge}
                     <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="#E31837" stroke="#ffffff" stroke-width="2"/>
+                        <path class="pin-body" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" stroke="#ffffff" stroke-width="2"/>
                         <circle cx="12" cy="9" r="3.5" fill="#ffffff"/>
                     </svg>
-                    <div class="pin-price-badge grade-${state.gasPref}">
+                    <div class="pin-price-badge">
                         ${escapeHtml(displayPrice) || 'N/A'}
                     </div>
                 </div>
@@ -625,37 +829,24 @@ function renderMap(dataArray) {
             popupAnchor: [0, -32]
         });
 
-        const marker = L.marker([store.lat, store.lng], { icon: dynamicPin });
-
-        marker.bindPopup(() => {
-            const currentIsFav = isFavoriteStore(store.state, store.city);
-            const priceBoxesHtml = getVisibleStoreGrades(store).map(g => {
-                const cls = state.gasPref === g ? 'highlight' : '';
-                const trend = getTrendArrow(gradeVal(store, g), gradePrevVal(store, g), state.trendBaselineLabel);
-                return `<div class="popup-price-box ${cls}"><span>${GRADE_INFO[g].label}</span><strong>${escapeHtml(gradeStr(store, g)) || 'N/A'} ${trend}</strong></div>`;
-            }).join('');
-
-            return `
-                <div class="popup-store-name">${escapeHtml(store.city)}, ${escapeHtml(store.state)}</div>
-                <div class="popup-address">${escapeHtml(store.address)}</div>
-                ${gasStatusHtml(store)}
-                ${gasHoursDetailsHtml(store)}
-                ${store.phone ? `<div class="popup-phone"><a href="tel:${escapeHtml(store.phone.replace(/[^0-9+]/g, ''))}">${escapeHtml(store.phone)}</a></div>` : ''}
-                <div class="popup-prices-grid">${priceBoxesHtml}</div>
-                <button type="button" class="popup-btn" data-action="history" data-state="${escapeHtml(store.state)}" data-city="${escapeHtml(store.city)}">📈 Price History</button>
-                <div class="popup-actions-row">
-                    <a href="${escapeHtml(store.url)}" target="_blank" rel="noopener noreferrer" class="popup-btn popup-btn-outline" style="flex:1;">Store Page ↗</a>
-                    <button type="button" class="popup-btn popup-btn-outline popup-btn-icon ${currentIsFav ? 'active' : ''}" data-action="toggle-favorite" data-state="${escapeHtml(store.state)}" data-city="${escapeHtml(store.city)}" title="${currentIsFav ? 'Remove Favorite' : 'Add to Favorites'}">${currentIsFav ? '★' : '☆'}</button>
-                    <button type="button" class="popup-btn popup-btn-outline popup-btn-icon" data-action="share" data-state="${escapeHtml(store.state)}" data-city="${escapeHtml(store.city)}" title="Share This Station">🔗</button>
-                </div>
-            `;
+        const marker = L.marker([store.lat, store.lng], {
+            icon: dynamicPin,
+            title: `${store.city}, ${store.state}${displayPrice ? ` — ${displayPrice}` : ''}`,
+            store, price, tier
         });
+
+        marker.bindPopup(() => storePopupHtml(store));
 
         const origOpenPopup = marker.openPopup.bind(marker);
         marker.openPopup = function(...args) {
             if (isMobileViewport()) {
                 openMobileStoreCard(store);
                 map.panTo(sheetAwareCenter(L.latLng(store.lat, store.lng), map.getZoom()), { animate: !prefersReducedMotion() });
+                return this;
+            }
+            // Still inside a cluster: zoom in until the pin exists, then open it.
+            if (!this._map && typeof markersLayer.zoomToShowLayer === 'function') {
+                markersLayer.zoomToShowLayer(this, () => origOpenPopup(...args));
                 return this;
             }
             return origOpenPopup(...args);
@@ -665,9 +856,13 @@ function renderMap(dataArray) {
             marker.on('mouseover', () => linkPinToCard(marker, store, true));
             marker.on('mouseout', () => linkPinToCard(marker, store, false));
         }
-        marker.addTo(markersLayer);
+        storeMarkers.push(marker);
         store.leafletMarker = marker;
     });
+
+    if (typeof markersLayer.addLayers === 'function') markersLayer.addLayers(storeMarkers);
+    else storeMarkers.forEach(m => m.addTo(markersLayer));
+    updatePinTiers();
 }
 
 // Animated fly-to, or an instant jump when the user prefers reduced motion.
@@ -771,7 +966,27 @@ function placeUserLocationMarker(loc, { openPopup = false } = {}) {
     return userLocationMarker;
 }
 
+function renderLoadState() {
+    const container = document.getElementById('sidebarContent');
+    if (!container) return;
+    if (loadStatus === 'loading') {
+        container.innerHTML = skeletonCardsHtml(4);
+    } else {
+        container.innerHTML = errorStateHtml({
+            title: "Couldn't load gas prices",
+            message: navigator.onLine === false
+                ? "You appear to be offline. Check your connection and try again."
+                : "Something went wrong fetching the latest prices. Please try again.",
+            action: 'retry-load'
+        });
+    }
+}
+
 async function loadData() {
+    loadStatus = 'loading';
+    renderLoadState();
+    const lastUpdatedEl = document.getElementById('lastUpdated');
+    if (lastUpdatedEl) lastUpdatedEl.innerText = 'Fetching latest data...';
     try {
         const cb = Date.now();
         const [latestRes, storesRes, _, autoLocation] = await Promise.all([
@@ -821,6 +1036,7 @@ async function loadData() {
             }
         }
         state.stores = loadedStores;
+        loadStatus = 'ready';
 
         renderMap(state.stores);
 
@@ -830,7 +1046,10 @@ async function loadData() {
             placeUserLocationMarker(autoLocation);
         }
 
-        switchTab('nearby');
+        // A shared link can pin the state leaderboard; it wins over the detected state.
+        if (initialUrl.state) state.currentStateContext = initialUrl.state;
+        initialUrl.state = null; // only on first load, not on a retry
+        switchTab(state.currentTab);
 
         if (!openSharedStoreIfPresent()) {
             if (autoLocation) {
@@ -844,10 +1063,9 @@ async function loadData() {
         }
     } catch (error) {
         console.error('Error fetching data:', error);
-        const container = document.getElementById("sidebarContent");
-        if (container) {
-            container.innerHTML = `<p class="empty-msg" style="color:var(--costco-red);">Error Loading Data.</p>`;
-        }
+        loadStatus = 'error';
+        renderLoadState();
+        if (lastUpdatedEl) lastUpdatedEl.innerText = "Couldn't load prices";
     }
 }
 
@@ -878,7 +1096,13 @@ function renderStoresList(searchTerm) {
         return;
     }
 
-    filtered.forEach(store => container.appendChild(createStoreCard(store, { highlight: state.gasPref })));
+    const header = document.createElement('div');
+    header.className = 'leaderboard-header';
+    header.textContent = `${filtered.length} station${filtered.length === 1 ? '' : 's'} · nearest to map centre first`;
+    container.appendChild(header);
+    appendPagedCards(container, filtered,
+        store => createStoreCard(store, { highlight: state.gasPref }),
+        { key: `search|${searchTerm}|${state.gasPref}`, pageSize: 20 });
 }
 
 function getStoreCount(stateCode) {
@@ -911,15 +1135,17 @@ function renderLowestPrices(stateOverride = null) {
     const gradeLabel = GRADE_INFO[state.gasPref].label;
     const sortedData = state.stores
         .filter(s => s.state === state.currentStateContext && hasGradeData(s, state.gasPref))
-        .sort((a, b) => gradeVal(a, state.gasPref) - gradeVal(b, state.gasPref))
-        .slice(0, 10);
+        .sort((a, b) => gradeVal(a, state.gasPref) - gradeVal(b, state.gasPref));
 
-    container.innerHTML += `<div class="leaderboard-header">Top 10 Cheapest ${gradeLabel}</div>`;
+    container.innerHTML += `<div class="leaderboard-header">Cheapest ${gradeLabel} in ${escapeHtml(state.currentStateContext)}</div>`;
+    syncUrl(); // the selected state is part of the URL
     if (sortedData.length === 0) {
         container.innerHTML += `<p class="empty-msg" style="font-size:13px;">No pricing data found for this state.</p>`;
         return;
     }
-    sortedData.forEach((store, index) => container.appendChild(createStoreCard(store, { highlight: state.gasPref, index })));
+    appendPagedCards(container, sortedData,
+        (store, index) => createStoreCard(store, { highlight: state.gasPref, index }),
+        { key: `lowest|${state.currentStateContext}|${state.gasPref}` });
 }
 
 function setNearbyRadius(val) {
@@ -988,8 +1214,7 @@ function renderNearbyPrices() {
                 return a.distance !== b.distance ? a.distance - b.distance : valA - valB;
             }
             return valA !== valB ? valA - valB : a.distance - b.distance;
-        })
-        .slice(0, 10);
+        });
 
     const headerLabel = state.nearbySortMode === 'distance'
         ? `Closest Stations &middot; ${gradeLabel} (Within ${state.nearbyRadiusMiles} Miles)`
@@ -1002,11 +1227,10 @@ function renderNearbyPrices() {
         return;
     }
 
-    sortedData.forEach((store, index) => container.appendChild(createStoreCard(store, {
-        highlight: state.gasPref,
-        index,
-        showDistance: true
-    })));
+    const loc = state.userLocation;
+    appendPagedCards(container, sortedData,
+        (store, index) => createStoreCard(store, { highlight: state.gasPref, index, showDistance: true }),
+        { key: `nearby|${loc.lat},${loc.lng}|${state.nearbyRadiusMiles}|${state.nearbySortMode}|${state.gasPref}` });
 }
 
 function renderFavoriteStores() {
@@ -1034,7 +1258,12 @@ function renderFavoriteStores() {
         header.className = 'leaderboard-header';
         header.textContent = `★ Favorite Stores (${favorites.length})`;
         container.appendChild(header);
-        favorites.forEach(store => container.appendChild(createStoreCard(store, { highlight: state.gasPref })));
+        // Inside its own wrapper so "Show more" stays above the saved routes.
+        const list = document.createElement('div');
+        container.appendChild(list);
+        appendPagedCards(list, favorites,
+            store => createStoreCard(store, { highlight: state.gasPref }),
+            { key: 'favorites' });
     }
 
     if (state.favoriteRoutes.length > 0) {
@@ -1056,6 +1285,10 @@ const TAB_RENDERERS = {
 };
 
 function renderCurrentTab() {
+    if (loadStatus !== 'ready') {
+        renderLoadState();
+        return;
+    }
     TAB_RENDERERS[state.currentTab]?.();
 }
 
@@ -1100,6 +1333,7 @@ function switchTab(tabName) {
     }
 
     renderCurrentTab();
+    syncUrl();
 }
 
 function triggerFindMe() {
@@ -1141,7 +1375,7 @@ function setupKeyboardSupport() {
         if (e.key === 'Escape') {
             if (isChartModalOpen()) {
                 e.preventDefault();
-                closeHistoryModal();
+                closeHistory();
             } else if (state.activeMobileStore && !e.target.closest?.('input, select')) {
                 closeMobileStoreCard();
             } else if (isPhoneViewport() && state.mobileViewMode !== 'peek' && !e.target.closest?.('input, select')) {
@@ -1170,7 +1404,7 @@ function setupEventListeners() {
 
         // Close modal when clicking backdrop
         if (e.target.id === 'chartModal') {
-            closeHistoryModal();
+            closeHistory();
             return;
         }
 
@@ -1209,8 +1443,13 @@ function setupEventListeners() {
                 toggleTheme();
                 break;
             case 'close-modal':
-                closeHistoryModal();
+                closeHistory();
                 break;
+            case 'retry-load':
+                loadData();
+                break;
+            case 'directions':
+                break; // a plain link; listed so the click doesn't also select the card
             case 'close-mobile-sheet':
                 closeMobileStoreCard();
                 break;
@@ -1221,7 +1460,7 @@ function setupEventListeners() {
                 searchThisArea();
                 break;
             case 'history':
-                if (stateCode && city) openHistoryModal(stateCode, city);
+                if (stateCode && city) openHistory(stateCode, city);
                 break;
             case 'toggle-favorite':
                 if (stateCode && city) toggleFavoriteStoreAndRefresh(stateCode, city);
@@ -1303,6 +1542,24 @@ function setupEventListeners() {
 
 // --- Initialization ---
 
+// A shared link's tab and grade win over the defaults (without overwriting the saved grade).
+if (initialUrl.grade) state.gasPref = initialUrl.grade;
+if (initialUrl.tab) state.currentTab = initialUrl.tab;
+
+initNav({
+    getView: () => {
+        const openStore = state.activeMobileStore || popupStore;
+        return {
+            tab: state.currentTab,
+            grade: state.gasPref,
+            state: state.currentTab === 'lowest' ? state.currentStateContext : null,
+            // Keep ?store= from a shared link until the data has loaded and it can be opened.
+            store: openStore ? storeKey(openStore) : sharedStoreKey
+        };
+    },
+    applyOverlay: applyOverlayFromHistory
+});
+
 initPreferences();
 initSearchPlaceholder();
 initMap();
@@ -1327,5 +1584,6 @@ initRoutes({
 
 setupEventListeners();
 setupKeyboardSupport();
+switchTab(state.currentTab); // highlight the tab from the URL while the data loads
 loadData();
 setInterval(refreshLastUpdatedLabel, 60000);

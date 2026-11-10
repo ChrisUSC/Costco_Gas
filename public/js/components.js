@@ -10,9 +10,76 @@ import {
     gradePrevVal,
     gradeStr,
     getTrendArrow,
+    directionsUrl,
     GRADE_INFO
 } from './utils.js';
 import { state, isFavoriteStore } from './state.js';
+
+export const DIRECTIONS_ICON = '<svg class="icon-directions" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21.7 11.3l-9-9a1 1 0 0 0-1.4 0l-9 9a1 1 0 0 0 0 1.4l9 9a1 1 0 0 0 1.4 0l9-9a1 1 0 0 0 0-1.4zM14 14.5V12h-4v3H8v-4a1 1 0 0 1 1-1h5V7.5l3.5 3.5-3.5 3.5z"/></svg>';
+
+// --- "Show more" paging ---
+// The number of cards shown survives re-renders of the same list (e.g. after starring a
+// station) and resets when the list itself changes (different tab, grade, radius, ...).
+const listPaging = { key: null, shown: 0 };
+
+export function appendPagedCards(container, items, makeCard, { key, pageSize = 10 } = {}) {
+    if (listPaging.key !== key) {
+        listPaging.key = key;
+        listPaging.shown = pageSize;
+    }
+    let shown = 0;
+    const moreBtn = document.createElement('button');
+    moreBtn.type = 'button';
+    moreBtn.className = 'btn-action btn-outline-blue show-more-btn';
+
+    const addUpTo = (limit) => {
+        const frag = document.createDocumentFragment();
+        let firstNew = null;
+        for (; shown < Math.min(limit, items.length); shown++) {
+            const card = makeCard(items[shown], shown);
+            firstNew = firstNew || card;
+            frag.appendChild(card);
+        }
+        container.insertBefore(frag, moreBtn.isConnected ? moreBtn : null);
+        const remaining = items.length - shown;
+        if (remaining > 0) {
+            moreBtn.textContent = `Show ${Math.min(pageSize, remaining)} more (${remaining} left)`;
+            if (!moreBtn.isConnected) container.appendChild(moreBtn);
+        } else {
+            moreBtn.remove();
+        }
+        return firstNew;
+    };
+
+    moreBtn.addEventListener('click', () => {
+        listPaging.shown = shown + pageSize;
+        const firstNew = addUpTo(listPaging.shown);
+        firstNew?.focus({ preventScroll: true }); // keep keyboard / screen-reader position
+    });
+    addUpTo(listPaging.shown);
+}
+
+// --- Loading & error states ---
+export function skeletonCardsHtml(count = 4) {
+    const card = `
+        <div class="store-card skeleton-card" aria-hidden="true">
+            <div class="skeleton skeleton-line" style="width:55%; height:16px;"></div>
+            <div class="skeleton skeleton-line" style="width:85%;"></div>
+            <div class="skeleton-row"><div class="skeleton skeleton-box"></div><div class="skeleton skeleton-box"></div></div>
+            <div class="skeleton-row"><div class="skeleton skeleton-btn"></div><div class="skeleton skeleton-btn"></div></div>
+        </div>`;
+    return `<div class="skeleton-list" role="status" aria-live="polite"><span class="sr-only">Loading…</span>${card.repeat(count)}</div>`;
+}
+
+export function errorStateHtml({ title, message, action, label = 'Try again', attrs = '' }) {
+    return `
+        <div class="empty-state error-state" role="alert">
+            <div class="error-state-icon" aria-hidden="true">⚠️</div>
+            <h3>${escapeHtml(title)}</h3>
+            <p>${escapeHtml(message)}</p>
+            <button type="button" class="btn-action" data-action="${action}" ${attrs}>↻ ${escapeHtml(label)}</button>
+        </div>`;
+}
 
 export function createStoreCard(store, { highlight = null, index = null, showDistance = false, distanceSuffix = '' } = {}) {
     const div = document.createElement('div');
@@ -49,8 +116,11 @@ export function createStoreCard(store, { highlight = null, index = null, showDis
         ${gasStatusHtml(store)}
         <div class="prices">${priceTagsHtml}</div>
         <div class="card-actions">
-            <button type="button" class="btn-action btn-outline-blue" data-action="history" data-state="${escapeHtml(store.state)}" data-city="${escapeHtml(store.city)}">
-                📈 History
+            <a class="btn-action btn-directions" data-action="directions" href="${escapeHtml(directionsUrl(store))}" target="_blank" rel="noopener noreferrer" aria-label="Directions to ${escapeHtml(store.city)}, ${escapeHtml(store.state)}">
+                ${DIRECTIONS_ICON} Directions
+            </a>
+            <button type="button" class="btn-action btn-outline-blue btn-card-history" data-action="history" data-state="${escapeHtml(store.state)}" data-city="${escapeHtml(store.city)}" title="Price history">
+                📈 <span class="btn-label">History</span>
             </button>
             <button type="button" class="btn-action favorite-btn ${isFav ? 'active' : ''}" data-action="toggle-favorite" data-state="${escapeHtml(store.state)}" data-city="${escapeHtml(store.city)}" title="${isFav ? 'Remove from favorites' : 'Add to favorites'}">
                 ${isFav ? '★' : '☆'}
@@ -127,7 +197,10 @@ export function renderMobileStoreCardContent(store) {
         ${gasHoursDetailsHtml(store)}
         <div class="mobile-sheet-prices">${priceTagsHtml}</div>
         <div class="mobile-sheet-actions">
-            <button type="button" class="btn-action btn-history" data-action="history" data-state="${escapeHtml(store.state)}" data-city="${escapeHtml(store.city)}">
+            <a class="btn-action btn-directions" data-action="directions" href="${escapeHtml(directionsUrl(store))}" target="_blank" rel="noopener noreferrer">
+                ${DIRECTIONS_ICON} Directions
+            </a>
+            <button type="button" class="btn-action btn-outline-blue btn-history" data-action="history" data-state="${escapeHtml(store.state)}" data-city="${escapeHtml(store.city)}">
                 📈 History
             </button>
             <a href="${escapeHtml(store.url)}" target="_blank" rel="noopener noreferrer" class="btn-action btn-outline-blue btn-store-link">

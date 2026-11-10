@@ -17,7 +17,7 @@ import {
     updateFavoriteRoute,
     removeFavoriteRoute
 } from './state.js';
-import { createStoreCard, renderSavedRoutesHtml } from './components.js';
+import { createStoreCard, renderSavedRoutesHtml, appendPagedCards, skeletonCardsHtml } from './components.js';
 import { geocodeAddress, setupInputAutocomplete } from './search.js';
 
 let routesContext = {
@@ -260,12 +260,9 @@ export function renderRouteResults(routeState) {
     }
 
     el.innerHTML += `<div class="leaderboard-header">Cheapest ${gradeLabel} Along the Way</div>`;
-    sorted.forEach((store, index) => el.appendChild(createStoreCard(store, {
-        highlight: state.gasPref,
-        index,
-        showDistance: true,
-        distanceSuffix: ' off route'
-    })));
+    appendPagedCards(el, sorted,
+        (store, index) => createStoreCard(store, { highlight: state.gasPref, index, showDistance: true, distanceSuffix: ' off route' }),
+        { key: `route|${routeState.originText}|${routeState.destText}|${bufferMiles}|${state.gasPref}` });
 }
 
 export function renderRouteOnMap(routeCoords, origin, destination) {
@@ -320,7 +317,7 @@ export async function findGasAlongRoute() {
         return;
     }
 
-    resultsEl.innerHTML = `<p class="empty-msg" style="margin-top:20px;">Calculating route…</p>`;
+    resultsEl.innerHTML = `<p class="route-summary">Calculating route…</p>${skeletonCardsHtml(3)}`;
 
     try {
         const origin = (state.routeOriginLocation && state.routeOriginLocation.label.toLowerCase() === originText.toLowerCase())
@@ -348,6 +345,8 @@ export async function findGasAlongRoute() {
         renderRoutePanel();
     } catch (err) {
         console.error('Route search failed:', err);
-        resultsEl.innerHTML = `<p class="route-error">${escapeHtml(err.message || "Couldn't calculate that route. Please try again.")}</p>`;
+        resultsEl.innerHTML = `
+            <p class="route-error">${escapeHtml(err.message || "Couldn't calculate that route. Please try again.")}</p>
+            <button type="button" class="btn-action btn-outline-blue" style="width:100%;" data-action="route-find">↻ Try again</button>`;
     }
 }
