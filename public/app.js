@@ -96,7 +96,7 @@ function isMobileViewport() {
 const SHEET_STATES = ['peek', 'half', 'full'];
 const SHEET_HALF_FRACTION = 0.5; // how much of the sheet is pushed down at "half"
 
-function setSheetState(next) {
+function setSheetState(next, { keepDetail = false } = {}) {
     if (!SHEET_STATES.includes(next)) next = 'peek';
     state.mobileViewMode = next;
     const container = document.getElementById('appContainer');
@@ -107,7 +107,8 @@ function setSheetState(next) {
     }
     if (sidebar) sidebar.style.transform = ''; // drop any drag offset
     syncSheetA11y();
-    if (next !== 'peek') closeMobileStoreCard();
+    // Dragging down to peek dismisses the details; opening further keeps them.
+    if (!keepDetail && state.activeMobileStore && next === 'peek') closeMobileStoreCard();
     if (map) setTimeout(() => map.invalidateSize(), 60);
 }
 
@@ -297,34 +298,53 @@ function linkPinToCard(marker, store, on) {
 function openMobileStoreCard(store) {
     if (!store) return;
     state.activeMobileStore = store;
-    if (isPhoneViewport() && state.mobileViewMode !== 'peek') {
-        setSheetState('peek');
-    }
     renderMobileStoreCardContent(store);
-    const sheet = document.getElementById('mobileStoreSheet');
     const container = document.getElementById('appContainer');
+
+    if (isPhoneViewport()) {
+        // One sheet: the list gives way to the station's details, same drag heights.
+        const sidebar = document.getElementById('sidebar');
+        const detail = document.getElementById('sheetDetail');
+        if (detail) { detail.hidden = false; detail.scrollTop = 0; }
+        if (sidebar) sidebar.classList.add('has-detail');
+        if (state.mobileViewMode === 'peek') setSheetState('half', { keepDetail: true });
+        else syncSheetA11y();
+        detail?.querySelector('.mobile-sheet-close')?.focus({ preventScroll: true });
+        return;
+    }
+
+    const sheet = document.getElementById('mobileStoreSheet');
     if (sheet) {
         sheet.classList.add('active');
         sheet.setAttribute('aria-hidden', 'false');
         sheet.removeAttribute('inert');
     }
-    if (container) {
-        container.classList.add('mobile-sheet-open');
-    }
+    if (container) container.classList.add('mobile-sheet-open');
 }
 
 function closeMobileStoreCard() {
+    const hadStore = Boolean(state.activeMobileStore);
     state.activeMobileStore = null;
     const sheet = document.getElementById('mobileStoreSheet');
     const container = document.getElementById('appContainer');
+    const sidebar = document.getElementById('sidebar');
+    const detail = document.getElementById('sheetDetail');
     if (sheet) {
         sheet.classList.remove('active');
         sheet.setAttribute('aria-hidden', 'true');
         sheet.setAttribute('inert', '');
     }
-    if (container) {
-        container.classList.remove('mobile-sheet-open');
-    }
+    if (container) container.classList.remove('mobile-sheet-open');
+    if (sidebar) sidebar.classList.remove('has-detail');
+    if (detail) detail.hidden = true;
+    if (hadStore && isPhoneViewport()) document.getElementById('sheetGrabber')?.focus({ preventScroll: true });
+}
+
+// On phones the sheet covers the lower half, so aim the map at the visible upper part.
+function sheetAwareCenter(latlng, zoom) {
+    if (!isPhoneViewport() || !map) return latlng;
+    const shift = map.getSize().y * 0.22;
+    return map.unproject(map.project(latlng, zoom).add([0, shift]), zoom);
 }
 
 function refreshLastUpdatedLabel() {
@@ -567,6 +587,9 @@ function initMap() {
         } else if (isMobileViewport()) {
             map.closePopup();
         }
+        if (state.activeMobileStore && isPhoneViewport() !== (document.getElementById('sheetDetail')?.hidden === false)) {
+            closeMobileStoreCard(); // details live in a different container on this tier
+        }
         syncSheetA11y();
         syncSidebarToggle();
         map.invalidateSize();
@@ -632,7 +655,7 @@ function renderMap(dataArray) {
         marker.openPopup = function(...args) {
             if (isMobileViewport()) {
                 openMobileStoreCard(store);
-                map.panTo([store.lat, store.lng], { animate: !prefersReducedMotion() });
+                map.panTo(sheetAwareCenter(L.latLng(store.lat, store.lng), map.getZoom()), { animate: !prefersReducedMotion() });
                 return this;
             }
             return origOpenPopup(...args);
@@ -658,8 +681,7 @@ function moveMapTo(latlng, zoom, duration) {
 
 function flyToStore(store) {
     if (isMobileViewport()) {
-        setMobileView('map');
-        moveMapTo([store.lat, store.lng], 14, 1.2);
+        moveMapTo(sheetAwareCenter(L.latLng(store.lat, store.lng), 14), 14, 1.2);
         openMobileStoreCard(store);
         return;
     }
