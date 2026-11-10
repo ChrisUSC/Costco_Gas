@@ -755,8 +755,71 @@ function setupMobileSheetGestures() {
     }, { passive: true });
 }
 
+// --- Double-tap / double-click to zoom ---
+// Leaflet relies on the browser's dblclick. Browsers that don't send one for touch (iOS
+// Safari) fall back to Leaflet's own detection, which only counts two taps within 200ms, so
+// a relaxed double-tap does nothing. Touch is detected here instead, with a wider window.
+const DOUBLE_TAP_MS = 350;      // max gap between the two taps
+const DOUBLE_TAP_SLOP_PX = 40;  // max distance between the two taps
+const TAP_MOVE_PX = 12;         // more movement than this is a drag, not a tap
+const TAP_HOLD_MS = 350;        // a longer press is not a tap
+
+function setupDoubleTapZoom() {
+    const mapEl = map.getContainer();
+    const isMapSurface = (e) => !e.target.closest?.('.leaflet-marker-icon, .leaflet-control, .leaflet-popup');
+    const zoomAt = (e, delta) => {
+        lastUserZoomInput = Date.now(); // counts as a user zoom for "Search this area"
+        map.setZoomAround(map.mouseEventToContainerPoint(e), map.getZoom() + delta);
+    };
+
+    let lastPointerType = 'mouse';
+    let press = null;       // the touch currently down
+    let lastTap = null;     // { x, y, t } of the previous tap
+    let pointersDown = 0;
+
+    mapEl.addEventListener('pointerdown', (e) => {
+        lastPointerType = e.pointerType;
+        if (e.pointerType === 'mouse') return;
+        pointersDown++;
+        if (pointersDown > 1) { press = null; lastTap = null; return; } // pinch, not a tap
+        press = { x: e.clientX, y: e.clientY, t: e.timeStamp, moved: false };
+    });
+    mapEl.addEventListener('pointermove', (e) => {
+        if (!press || e.pointerType === 'mouse') return;
+        if (Math.hypot(e.clientX - press.x, e.clientY - press.y) > TAP_MOVE_PX) press.moved = true;
+    });
+    const endPress = (e) => {
+        if (e.pointerType === 'mouse') return;
+        pointersDown = Math.max(0, pointersDown - 1);
+        const p = press;
+        press = null;
+        if (!p || e.type === 'pointercancel' || p.moved || e.timeStamp - p.t > TAP_HOLD_MS || !isMapSurface(e)) {
+            lastTap = null;
+            return;
+        }
+        if (lastTap && e.timeStamp - lastTap.t <= DOUBLE_TAP_MS
+            && Math.hypot(e.clientX - lastTap.x, e.clientY - lastTap.y) <= DOUBLE_TAP_SLOP_PX) {
+            lastTap = null;
+            zoomAt(e, map.options.zoomDelta);
+        } else {
+            lastTap = { x: e.clientX, y: e.clientY, t: e.timeStamp };
+        }
+    };
+    mapEl.addEventListener('pointerup', endPress);
+    mapEl.addEventListener('pointercancel', endPress);
+
+    // Mouse double-click (Shift zooms out). The dblclick some browsers fire after a touch
+    // double-tap is ignored: the handler above has already zoomed.
+    mapEl.addEventListener('dblclick', (e) => {
+        if (lastPointerType !== 'mouse' || !isMapSurface(e)) return;
+        e.preventDefault();
+        zoomAt(e, e.shiftKey ? -map.options.zoomDelta : map.options.zoomDelta);
+    });
+}
+
 function initMap() {
-    map = L.map('map', { zoomControl: false }).setView([39.8283, -98.5795], 4);
+    // doubleClickZoom is replaced by setupDoubleTapZoom(), which also handles touch reliably.
+    map = L.map('map', { zoomControl: false, doubleClickZoom: false }).setView([39.8283, -98.5795], 4);
     L.control.zoom({ position: 'bottomright' }).addTo(map);
     setMapTiles();
     markersLayer = createMarkersLayer().addTo(map);
@@ -776,6 +839,7 @@ function initMap() {
     setupSheetDrag();
     setSheetState('peek');
     setupMapAreaSearch();
+    setupDoubleTapZoom();
 
     window.addEventListener('resize', debounce(() => {
         if (!isMobileViewport() && state.activeMobileStore) {
