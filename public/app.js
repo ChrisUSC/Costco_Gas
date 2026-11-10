@@ -76,62 +76,275 @@ let routeLayer;
 let userLocationMarker = null;
 let searchLocationMarker = null;
 
-function isMobileViewport() {
-    return window.innerWidth <= 768;
+// Layout tiers (keep in sync with the media queries in styles.css):
+//   phone   <= 599px   map + draggable bottom sheet for the list
+//   tablet  600-1099px sidebar + map, store details in a sheet over the map
+//   desktop >= 1100px  sidebar + map, store details in the Leaflet popup
+const PHONE_MAX_WIDTH = 599;
+const SHEET_MAX_WIDTH = 1099;
+
+function isPhoneViewport() {
+    return window.innerWidth <= PHONE_MAX_WIDTH;
 }
 
-function setMobileView(mode) {
-    state.mobileViewMode = mode === 'list' ? 'list' : 'map';
-    const container = document.getElementById('appContainer');
-    if (container) {
-        container.classList.toggle('mobile-view-list', state.mobileViewMode === 'list');
-    }
-    [['btnMobileMap', 'map'], ['btnMobileList', 'list']].forEach(([id, mode]) => {
-        const btn = document.getElementById(id);
-        if (!btn) return;
-        btn.classList.toggle('active', state.mobileViewMode === mode);
-        btn.setAttribute('aria-pressed', String(state.mobileViewMode === mode));
-    });
+// Phones and tablets show store details in the bottom sheet instead of a map popup.
+function isMobileViewport() {
+    return window.innerWidth <= SHEET_MAX_WIDTH;
+}
 
-    if (state.mobileViewMode === 'list') {
-        closeMobileStoreCard();
+// --- Phone list sheet: peek (tabs only) / half / full ---
+const SHEET_STATES = ['peek', 'half', 'full'];
+const SHEET_HALF_FRACTION = 0.5; // how much of the sheet is pushed down at "half"
+
+function setSheetState(next, { keepDetail = false } = {}) {
+    if (!SHEET_STATES.includes(next)) next = 'peek';
+    state.mobileViewMode = next;
+    const container = document.getElementById('appContainer');
+    const sidebar = document.getElementById('sidebar');
+    if (container) {
+        SHEET_STATES.forEach(s => container.classList.toggle(`sheet-${s}`, s === next));
+        container.classList.toggle('mobile-view-list', next !== 'peek');
     }
-    if (map) {
-        setTimeout(() => map.invalidateSize(), 60);
+    if (sidebar) sidebar.style.transform = ''; // drop any drag offset
+    syncSheetA11y();
+    // Dragging down to peek dismisses the details; opening further keeps them.
+    if (!keepDetail && state.activeMobileStore && next === 'peek') closeMobileStoreCard();
+    if (map) setTimeout(() => map.invalidateSize(), 60);
+}
+
+// At "peek" only the tab strip is visible, so the list behind it must not be focusable.
+function syncSheetA11y() {
+    const content = document.getElementById('sidebarContent');
+    const grabber = document.getElementById('sheetGrabber');
+    const collapsed = isPhoneViewport() && state.mobileViewMode === 'peek';
+    if (content) content.toggleAttribute('inert', collapsed);
+    if (grabber) grabber.setAttribute('aria-expanded', String(!collapsed));
+    // At "half" the lower part of the sheet is off-screen; the list must stop above it.
+    const sidebar = document.getElementById('sidebar');
+    if (sidebar) sidebar.style.setProperty('--sheet-hidden', `${Math.round(sidebar.offsetHeight * SHEET_HALF_FRACTION)}px`);
+}
+
+// Back-compat wrapper: 'list' opens the sheet, 'map' tucks it away to show the map.
+function setMobileView(mode) {
+    setSheetState(mode === 'list' ? (state.mobileViewMode === 'full' ? 'full' : 'half') : 'peek');
+}
+
+function setupSheetDrag() {
+    const sidebar = document.getElementById('sidebar');
+    const grabber = document.getElementById('sheetGrabber');
+    const container = document.getElementById('appContainer');
+    if (!sidebar || !grabber || !container) return;
+
+    const peekHeight = () => grabber.offsetHeight + document.getElementById('sidebarTabs').offsetHeight;
+    // Resting translateY (px) of each state, measured against the sheet's own height.
+    const restingY = () => {
+        const h = sidebar.offsetHeight;
+        return { full: 0, half: h * SHEET_HALF_FRACTION, peek: Math.max(0, h - peekHeight()) };
+    };
+    const nearest = (y) => {
+        const r = restingY();
+        return SHEET_STATES.reduce((best, st) => Math.abs(r[st] - y) < Math.abs(r[best] - y) ? st : best, 'peek');
+    };
+
+    let drag = null;
+    grabber.addEventListener('pointerdown', (e) => {
+        if (!isPhoneViewport() || (e.pointerType === 'mouse' && e.button !== 0)) return;
+        const r = restingY();
+        drag = { startY: e.clientY, startPos: r[state.mobileViewMode], lastY: e.clientY, lastT: e.timeStamp, velocity: 0, moved: false };
+        grabber.setPointerCapture(e.pointerId);
+    });
+    grabber.addEventListener('pointermove', (e) => {
+        if (!drag) return;
+        const dy = e.clientY - drag.startY;
+        if (!drag.moved && Math.abs(dy) < 6) return;
+        if (!drag.moved) { drag.moved = true; sidebar.classList.add('dragging'); }
+        const dt = e.timeStamp - drag.lastT;
+        if (dt > 0) drag.velocity = (e.clientY - drag.lastY) / dt; // px/ms, + is downward
+        drag.lastY = e.clientY; drag.lastT = e.timeStamp;
+        const r = restingY();
+        const y = Math.min(r.peek, Math.max(0, drag.startPos + dy));
+        sidebar.style.transform = `translateY(${y}px)`;
+    });
+    const endDrag = (e) => {
+        if (!drag) return;
+        const d = drag; drag = null;
+        sidebar.classList.remove('dragging');
+        if (!d.moved) return; // a plain tap is handled by the click listener
+        d.suppressClick = true;
+        grabber.dataset.justDragged = '1';
+        setTimeout(() => delete grabber.dataset.justDragged, 0);
+        const y = d.startPos + (e.clientY - d.startY);
+        let target = nearest(y);
+        if (Math.abs(d.velocity) > 0.5) { // a flick moves one step in its direction
+            const i = SHEET_STATES.indexOf(state.mobileViewMode);
+            const step = d.velocity < 0 ? 1 : -1; // up = more open
+            target = SHEET_STATES[Math.min(2, Math.max(0, i + step))];
+        }
+        setSheetState(target);
+    };
+    grabber.addEventListener('pointerup', endDrag);
+    grabber.addEventListener('pointercancel', endDrag);
+
+    // Tap / Enter / Space cycles peek -> half -> full -> peek; arrows move one step.
+    grabber.addEventListener('click', () => {
+        if (grabber.dataset.justDragged) return;
+        const i = SHEET_STATES.indexOf(state.mobileViewMode);
+        setSheetState(SHEET_STATES[(i + 1) % SHEET_STATES.length]);
+    });
+    grabber.addEventListener('keydown', (e) => {
+        const i = SHEET_STATES.indexOf(state.mobileViewMode);
+        if (e.key === 'ArrowUp') setSheetState(SHEET_STATES[Math.min(2, i + 1)]);
+        else if (e.key === 'ArrowDown') setSheetState(SHEET_STATES[Math.max(0, i - 1)]);
+        else return;
+        e.preventDefault();
+    });
+}
+
+// --- Tablet: collapsible station list (portrait) ---
+function isTabletPortrait() {
+    return window.innerWidth > PHONE_MAX_WIDTH && window.innerWidth <= SHEET_MAX_WIDTH
+        && window.matchMedia?.('(orientation: portrait)').matches;
+}
+
+function setSidebarCollapsed(collapsed) {
+    const container = document.getElementById('appContainer');
+    const toggle = document.getElementById('sidebarToggle');
+    if (!container) return;
+    container.classList.toggle('sidebar-collapsed', collapsed);
+    const sidebar = document.getElementById('sidebar');
+    if (sidebar) sidebar.toggleAttribute('inert', collapsed && isTabletPortrait());
+    if (toggle) {
+        toggle.setAttribute('aria-expanded', String(!collapsed));
+        toggle.querySelector('span').textContent = collapsed ? 'List' : 'Hide';
     }
+    if (map) setTimeout(() => map.invalidateSize(), 260);
+}
+
+// The collapsed state only applies in tablet portrait; elsewhere the sidebar is always usable.
+function syncSidebarToggle() {
+    const container = document.getElementById('appContainer');
+    const sidebar = document.getElementById('sidebar');
+    if (!container || !sidebar) return;
+    const collapsed = container.classList.contains('sidebar-collapsed');
+    sidebar.toggleAttribute('inert', collapsed && isTabletPortrait());
+}
+
+// --- Desktop / tablet: "Search this area" + list <-> map hover link ---
+// Only a drag or a zoom the user performed reveals the button; our own flyTo/fitBounds
+// calls also fire zoomend, so zoom counts only right after a wheel, pinch, key or +/- tap.
+let lastUserZoomInput = 0;
+
+function setSearchAreaVisible(visible) {
+    const btn = document.getElementById('searchAreaBtn');
+    if (btn) btn.hidden = !visible || isPhoneViewport();
+}
+
+function searchThisArea() {
+    if (!map) return;
+    const c = map.getCenter();
+    state.userLocation = { lat: c.lat, lng: c.lng };
+    if (searchLocationMarker) map.removeLayer(searchLocationMarker);
+    searchLocationMarker = L.circleMarker([c.lat, c.lng], {
+        radius: 8, fillColor: "#f59e0b", color: "#ffffff", weight: 3, opacity: 1, fillOpacity: 1
+    }).addTo(map).bindPopup('<b>Search centre</b>');
+    updateClosestStoreState(state.userLocation);
+    setSearchAreaVisible(false);
+    switchTab('nearby');
+    showToast('Showing stations near the centre of the map');
+}
+
+function setupMapAreaSearch() {
+    // Only a drag or a user zoom reveals the button, not our own flyTo/fitBounds calls.
+    const mapEl = map.getContainer();
+    const noteZoomInput = () => { lastUserZoomInput = Date.now(); };
+    ['wheel', 'dblclick'].forEach(t => mapEl.addEventListener(t, noteZoomInput, { passive: true }));
+    mapEl.addEventListener('touchstart', (e) => { if (e.touches.length > 1) noteZoomInput(); }, { passive: true });
+    mapEl.addEventListener('keydown', (e) => { if (/^[-+=]$/.test(e.key)) noteZoomInput(); });
+    mapEl.addEventListener('click', (e) => { if (e.target.closest('.leaflet-control-zoom')) noteZoomInput(); });
+    map.on('dragend', () => setSearchAreaVisible(true));
+    map.on('zoomend', () => { if (Date.now() - lastUserZoomInput < 1500) setSearchAreaVisible(true); });
+
+    // Hovering a card highlights its pin (mouse only; touch has no hover).
+    const content = document.getElementById('sidebarContent');
+    if (!content || !window.matchMedia?.('(hover: hover)').matches) return;
+    const setPinLinked = (card, on) => {
+        const store = card && card.dataset.state && findStore(card.dataset.state, card.dataset.city);
+        const marker = store && store.leafletMarker;
+        if (!marker) return;
+        marker.setZIndexOffset(on ? 2000 : 0);
+        marker.getElement()?.classList.toggle('pin-linked', on);
+    };
+    content.addEventListener('mouseover', (e) => {
+        const card = e.target.closest('.store-card[data-city]');
+        if (card && !card.contains(e.relatedTarget)) setPinLinked(card, true);
+    });
+    content.addEventListener('mouseout', (e) => {
+        const card = e.target.closest('.store-card[data-city]');
+        if (card && !card.contains(e.relatedTarget)) setPinLinked(card, false);
+    });
+}
+
+// Hovering a pin highlights the matching card when it is in the current list.
+function linkPinToCard(marker, store, on) {
+    const content = document.getElementById('sidebarContent');
+    if (!content) return;
+    const card = [...content.querySelectorAll('.store-card[data-city]')]
+        .find(c => c.dataset.state === store.state && c.dataset.city === store.city);
+    if (!card) return;
+    card.classList.toggle('pin-hover', on);
+    if (on) card.scrollIntoView({ block: 'nearest', behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
 }
 
 function openMobileStoreCard(store) {
     if (!store) return;
     state.activeMobileStore = store;
-    if (state.mobileViewMode !== 'map') {
-        setMobileView('map');
-    }
     renderMobileStoreCardContent(store);
-    const sheet = document.getElementById('mobileStoreSheet');
     const container = document.getElementById('appContainer');
+
+    if (isPhoneViewport()) {
+        // One sheet: the list gives way to the station's details, same drag heights.
+        const sidebar = document.getElementById('sidebar');
+        const detail = document.getElementById('sheetDetail');
+        if (detail) { detail.hidden = false; detail.scrollTop = 0; }
+        if (sidebar) sidebar.classList.add('has-detail');
+        if (state.mobileViewMode === 'peek') setSheetState('half', { keepDetail: true });
+        else syncSheetA11y();
+        detail?.querySelector('.mobile-sheet-close')?.focus({ preventScroll: true });
+        return;
+    }
+
+    const sheet = document.getElementById('mobileStoreSheet');
     if (sheet) {
         sheet.classList.add('active');
         sheet.setAttribute('aria-hidden', 'false');
         sheet.removeAttribute('inert');
     }
-    if (container) {
-        container.classList.add('mobile-sheet-open');
-    }
+    if (container) container.classList.add('mobile-sheet-open');
 }
 
 function closeMobileStoreCard() {
+    const hadStore = Boolean(state.activeMobileStore);
     state.activeMobileStore = null;
     const sheet = document.getElementById('mobileStoreSheet');
     const container = document.getElementById('appContainer');
+    const sidebar = document.getElementById('sidebar');
+    const detail = document.getElementById('sheetDetail');
     if (sheet) {
         sheet.classList.remove('active');
         sheet.setAttribute('aria-hidden', 'true');
         sheet.setAttribute('inert', '');
     }
-    if (container) {
-        container.classList.remove('mobile-sheet-open');
-    }
+    if (container) container.classList.remove('mobile-sheet-open');
+    if (sidebar) sidebar.classList.remove('has-detail');
+    if (detail) detail.hidden = true;
+    if (hadStore && isPhoneViewport()) document.getElementById('sheetGrabber')?.focus({ preventScroll: true });
+}
+
+// On phones the sheet covers the lower half, so aim the map at the visible upper part.
+function sheetAwareCenter(latlng, zoom) {
+    if (!isPhoneViewport() || !map) return latlng;
+    const shift = map.getSize().y * 0.22;
+    return map.unproject(map.project(latlng, zoom).add([0, shift]), zoom);
 }
 
 function refreshLastUpdatedLabel() {
@@ -364,6 +577,9 @@ function initMap() {
 
     setupInputAutocomplete('searchInput', 'autocompleteDropdown', 'search');
     setupMobileSheetGestures();
+    setupSheetDrag();
+    setSheetState('peek');
+    setupMapAreaSearch();
 
     window.addEventListener('resize', debounce(() => {
         if (!isMobileViewport() && state.activeMobileStore) {
@@ -371,6 +587,11 @@ function initMap() {
         } else if (isMobileViewport()) {
             map.closePopup();
         }
+        if (state.activeMobileStore && isPhoneViewport() !== (document.getElementById('sheetDetail')?.hidden === false)) {
+            closeMobileStoreCard(); // details live in a different container on this tier
+        }
+        syncSheetA11y();
+        syncSidebarToggle();
         map.invalidateSize();
     }, 150));
 }
@@ -434,12 +655,16 @@ function renderMap(dataArray) {
         marker.openPopup = function(...args) {
             if (isMobileViewport()) {
                 openMobileStoreCard(store);
-                map.panTo([store.lat, store.lng], { animate: !prefersReducedMotion() });
+                map.panTo(sheetAwareCenter(L.latLng(store.lat, store.lng), map.getZoom()), { animate: !prefersReducedMotion() });
                 return this;
             }
             return origOpenPopup(...args);
         };
 
+        if (window.matchMedia?.('(hover: hover)').matches) {
+            marker.on('mouseover', () => linkPinToCard(marker, store, true));
+            marker.on('mouseout', () => linkPinToCard(marker, store, false));
+        }
         marker.addTo(markersLayer);
         store.leafletMarker = marker;
     });
@@ -456,8 +681,7 @@ function moveMapTo(latlng, zoom, duration) {
 
 function flyToStore(store) {
     if (isMobileViewport()) {
-        setMobileView('map');
-        moveMapTo([store.lat, store.lng], 14, 1.2);
+        moveMapTo(sheetAwareCenter(L.latLng(store.lat, store.lng), 14), 14, 1.2);
         openMobileStoreCard(store);
         return;
     }
@@ -485,6 +709,7 @@ function flyToGeoResult(result) {
     // (which is immediate when animation is off).
     map.once('moveend', () => switchTab('nearby'));
     const bounds = [[south, west], [north, east]];
+    setSearchAreaVisible(false);
     if (prefersReducedMotion()) {
         map.fitBounds(bounds, { animate: false, maxZoom: 13, padding: [40, 40] });
     } else {
@@ -884,6 +1109,7 @@ function triggerFindMe() {
             lng: position.coords.longitude
         };
         closeMobileStoreCard();
+        setSearchAreaVisible(false);
         placeUserLocationMarker(state.userLocation, { openPopup: true });
         moveMapTo([state.userLocation.lat, state.userLocation.lng], 10, 2);
         updateClosestStoreState(state.userLocation);
@@ -918,6 +1144,9 @@ function setupKeyboardSupport() {
                 closeHistoryModal();
             } else if (state.activeMobileStore && !e.target.closest?.('input, select')) {
                 closeMobileStoreCard();
+            } else if (isPhoneViewport() && state.mobileViewMode !== 'peek' && !e.target.closest?.('input, select')) {
+                setSheetState('peek');
+                document.getElementById('sheetGrabber')?.focus();
             }
             return;
         }
@@ -949,7 +1178,10 @@ function setupEventListeners() {
         const tabEl = e.target.closest('[data-tab]');
         if (tabEl) {
             const tabName = tabEl.dataset.tab;
-            if (tabName) switchTab(tabName);
+            if (tabName) {
+                switchTab(tabName);
+                if (isPhoneViewport() && state.mobileViewMode === 'peek') setSheetState('half');
+            }
             return;
         }
 
@@ -958,14 +1190,6 @@ function setupEventListeners() {
         if (gasEl) {
             const grade = gasEl.dataset.gasPref;
             if (grade) setGasPref(grade);
-            return;
-        }
-
-        // Mobile view toggle (Map vs List)
-        const viewEl = e.target.closest('[data-mobile-view]');
-        if (viewEl) {
-            const mode = viewEl.dataset.mobileView;
-            if (mode) setMobileView(mode);
             return;
         }
 
@@ -989,6 +1213,12 @@ function setupEventListeners() {
                 break;
             case 'close-mobile-sheet':
                 closeMobileStoreCard();
+                break;
+            case 'toggle-sidebar':
+                setSidebarCollapsed(!document.getElementById('appContainer').classList.contains('sidebar-collapsed'));
+                break;
+            case 'search-this-area':
+                searchThisArea();
                 break;
             case 'history':
                 if (stateCode && city) openHistoryModal(stateCode, city);

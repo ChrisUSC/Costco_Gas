@@ -66,31 +66,32 @@
 
 <div class="app-container" id="appContainer">
     <aside class="sidebar" id="sidebar">
+        <button type="button" class="sheet-grabber" id="sheetGrabber" aria-label="Resize station list" aria-expanded="false"><span class="sheet-grabber-bar"></span></button>
         <div class="tabs" id="sidebarTabs" role="tablist" aria-label="Station lists">
-            <button type="button" class="tab active" id="tab-nearby" data-tab="nearby" role="tab" aria-selected="true" aria-controls="sidebarContent">Near Me</button>
-            <button type="button" class="tab" id="tab-lowest" data-tab="lowest" role="tab" aria-selected="false" aria-controls="sidebarContent" tabindex="-1">State Lowest</button>
+            <button type="button" class="tab active" id="tab-nearby" data-tab="nearby" role="tab" aria-selected="true" aria-controls="sidebarContent"><span class="tab-full">Near Me</span><span class="tab-short">Nearby</span></button>
+            <button type="button" class="tab" id="tab-lowest" data-tab="lowest" role="tab" aria-selected="false" aria-controls="sidebarContent" tabindex="-1"><span class="tab-full">State Lowest</span><span class="tab-short">Lowest</span></button>
             <button type="button" class="tab" id="tab-route" data-tab="route" role="tab" aria-selected="false" aria-controls="sidebarContent" tabindex="-1">Route</button>
-            <button type="button" class="tab" id="tab-search" data-tab="search" role="tab" aria-selected="false" aria-controls="sidebarContent" tabindex="-1">All Stores</button>
+            <button type="button" class="tab" id="tab-search" data-tab="search" role="tab" aria-selected="false" aria-controls="sidebarContent" tabindex="-1"><span class="tab-full">All Stores</span><span class="tab-short">All</span></button>
             <button type="button" class="tab" id="tab-favorites" data-tab="favorites" role="tab" aria-selected="false" aria-controls="sidebarContent" tabindex="-1">Favorites</button>
         </div>
         <div class="sidebar-content" id="sidebarContent" role="tabpanel"></div>
+        <!-- Phone: store details live inside this same sheet (tablet uses the floating card below) -->
+        <section class="sheet-detail" id="sheetDetail" aria-label="Station details" hidden>
+            <div id="sheetDetailContent"></div>
+        </section>
     </aside>
     <div id="map"></div>
+
+    <!-- Tablet portrait: show / hide the station list -->
+    <button type="button" class="sidebar-toggle" id="sidebarToggle" data-action="toggle-sidebar" aria-controls="sidebar" aria-expanded="true">☰ <span>List</span></button>
+
+    <!-- Desktop / tablet: re-run the nearby search around the visible map -->
+    <button type="button" class="search-area-btn" id="searchAreaBtn" data-action="search-this-area" hidden>Search this area</button>
 
     <!-- Floating Map Locate Button (Mobile) -->
     <button type="button" class="map-locate-fab" id="mapLocateBtn" data-action="find-me" title="Find stations near me" aria-label="Find stations near me">
         📍
     </button>
-
-    <!-- Mobile Map / List View Toggle Pill -->
-    <div class="mobile-view-toggle" id="mobileViewToggle" role="group" aria-label="View mode">
-        <button type="button" class="mobile-view-btn active" id="btnMobileMap" data-mobile-view="map" aria-pressed="true">
-            🗺️ Map
-        </button>
-        <button type="button" class="mobile-view-btn" id="btnMobileList" data-mobile-view="list" aria-pressed="false">
-            📋 List
-        </button>
-    </div>
 
     <!-- Mobile Slide-Up Store Detail Card -->
     <div class="mobile-store-sheet" id="mobileStoreSheet" role="dialog" aria-label="Station details" aria-hidden="true" inert>

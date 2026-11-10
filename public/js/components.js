@@ -95,7 +95,8 @@ export function renderSavedRoutesHtml({ fromFavorites = false } = {}) {
 }
 
 export function renderMobileStoreCardContent(store) {
-    const contentEl = document.getElementById('mobileStoreSheetContent');
+    // Phones show details inside the list sheet; tablets use the floating card.
+    const contentEl = document.getElementById(window.innerWidth <= 599 ? 'sheetDetailContent' : 'mobileStoreSheetContent');
     if (!contentEl || !store) return;
 
     const isFav = isFavoriteStore(store.state, store.city);
