@@ -315,12 +315,23 @@ export function getTrendArrow(current, previous, baselineLabel = 'the last updat
     return `<span class="trend-down" title="Down $${Math.abs(diff).toFixed(2)} since ${labelEscaped}">▼</span>`;
 }
 
-// Turn-by-turn directions to the station (opens the Maps app on phones).
-export function directionsUrl(store) {
-    const dest = store.lat && store.lng
-        ? `${store.lat},${store.lng}`
-        : `Costco Gas, ${store.address || `${store.city}, ${store.state}`}`;
-    return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(dest)}`;
+export const DIRECTIONS_APP_LABELS = { google: 'Google Maps', apple: 'Apple Maps', waze: 'Waze' };
+
+// Turn-by-turn directions to the station in the user's chosen app
+// (each link opens the app itself on phones that have it installed).
+export function directionsUrl(store, app = 'google') {
+    const hasCoords = store.lat && store.lng;
+    const coords = `${store.lat},${store.lng}`;
+    const address = `Costco Gas, ${store.address || `${store.city}, ${store.state}`}`;
+    if (app === 'apple') {
+        return `https://maps.apple.com/?daddr=${encodeURIComponent(hasCoords ? coords : address)}&dirflg=d`;
+    }
+    if (app === 'waze') {
+        return hasCoords
+            ? `https://waze.com/ul?ll=${encodeURIComponent(coords)}&navigate=yes`
+            : `https://waze.com/ul?q=${encodeURIComponent(address)}&navigate=yes`;
+    }
+    return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(hasCoords ? coords : address)}`;
 }
 
 export function getMedal(index) {

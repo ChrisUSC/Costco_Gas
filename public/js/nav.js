@@ -3,7 +3,8 @@
 // entries). Opening the station sheet or the price-history modal pushes an entry, so the
 // browser / Android Back button closes it instead of leaving the site.
 
-const TAB_NAMES = ['nearby', 'lowest', 'route', 'search', 'favorites'];
+import { TAB_NAMES } from './state.js';
+
 const GRADE_NAMES = ['regular', 'premium', 'diesel'];
 
 let handlers = {

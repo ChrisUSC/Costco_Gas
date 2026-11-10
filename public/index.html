@@ -69,6 +69,7 @@
         </div>
 
         <button type="button" class="btn-action btn-near-me" data-action="find-me">📍 Near Me</button>
+        <button type="button" class="btn-icon" id="settingsBtn" data-action="open-settings" title="Settings" aria-label="Settings" aria-haspopup="dialog" aria-controls="settingsModal">⚙️</button>
         <button type="button" class="btn-icon" id="themeToggle" data-action="toggle-theme" title="Toggle dark mode" aria-label="Toggle dark mode" aria-pressed="false">🌙</button>
     </div>
 </header>
@@ -120,6 +121,82 @@
         <div class="chart-container">
             <canvas id="priceChart"></canvas>
         </div>
+    </div>
+</div>
+
+<!-- Settings -->
+<div class="modal-overlay" id="settingsModal">
+    <div class="modal-content settings-content" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+        <button type="button" class="modal-close" data-action="close-settings" aria-label="Close settings">×</button>
+        <h2 class="modal-title" id="settingsTitle">Settings</h2>
+        <form id="settingsForm" class="settings-form" onsubmit="return false">
+            <section class="settings-section">
+                <h3 class="settings-heading">Map</h3>
+                <label class="settings-row">
+                    <span class="settings-text">
+                        <span class="settings-label">Cluster stations</span>
+                        <span class="settings-hint">Group nearby stations into one bubble when zoomed out.</span>
+                    </span>
+                    <input type="checkbox" class="settings-switch" name="clusterMarkers" role="switch">
+                </label>
+                <label class="settings-row">
+                    <span class="settings-text">
+                        <span class="settings-label">Colour pins by price</span>
+                        <span class="settings-hint">Green, amber and red for the cheapest, middle and most expensive prices in view.</span>
+                    </span>
+                    <input type="checkbox" class="settings-switch" name="colorPins" role="switch">
+                </label>
+            </section>
+
+            <section class="settings-section">
+                <h3 class="settings-heading">Directions</h3>
+                <fieldset class="settings-choice">
+                    <legend class="settings-label">Open directions in</legend>
+                    <div class="segmented">
+                        <label><input type="radio" name="directionsApp" value="google"><span>Google Maps</span></label>
+                        <label><input type="radio" name="directionsApp" value="apple"><span>Apple Maps</span></label>
+                        <label><input type="radio" name="directionsApp" value="waze"><span>Waze</span></label>
+                    </div>
+                </fieldset>
+            </section>
+
+            <section class="settings-section">
+                <h3 class="settings-heading">Appearance</h3>
+                <fieldset class="settings-choice">
+                    <legend class="settings-label">Theme</legend>
+                    <div class="segmented">
+                        <label><input type="radio" name="theme" value="light"><span>Light</span></label>
+                        <label><input type="radio" name="theme" value="dark"><span>Dark</span></label>
+                        <label><input type="radio" name="theme" value="system"><span>System</span></label>
+                    </div>
+                </fieldset>
+            </section>
+
+            <section class="settings-section">
+                <h3 class="settings-heading">Start-up</h3>
+                <label class="settings-row">
+                    <span class="settings-text">
+                        <span class="settings-label">Open on tab</span>
+                        <span class="settings-hint">Links that name a tab still open that tab.</span>
+                    </span>
+                    <select name="defaultTab" class="settings-select">
+                        <option value="nearby">Near Me</option>
+                        <option value="lowest">State Lowest</option>
+                        <option value="route">Route</option>
+                        <option value="search">All Stores</option>
+                        <option value="favorites">Favorites</option>
+                    </select>
+                </label>
+                <label class="settings-row">
+                    <span class="settings-text">
+                        <span class="settings-label">Use my location automatically</span>
+                        <span class="settings-hint">On opening, use your location if you've allowed it, and guess your state from your internet connection (via ipapi.co). Turn off to do neither; "Near Me" still works when you tap it.</span>
+                    </span>
+                    <input type="checkbox" class="settings-switch" name="autoLocate" role="switch">
+                </label>
+            </section>
+            <p class="settings-footnote">Settings are saved in this browser only.</p>
+        </form>
     </div>
 </div>
 

@@ -11,6 +11,7 @@ import {
     gradeStr,
     getTrendArrow,
     directionsUrl,
+    DIRECTIONS_APP_LABELS,
     GRADE_INFO
 } from './utils.js';
 import { state, isFavoriteStore } from './state.js';
@@ -116,7 +117,7 @@ export function createStoreCard(store, { highlight = null, index = null, showDis
         ${gasStatusHtml(store)}
         <div class="prices">${priceTagsHtml}</div>
         <div class="card-actions">
-            <a class="btn-action btn-directions" data-action="directions" href="${escapeHtml(directionsUrl(store))}" target="_blank" rel="noopener noreferrer" aria-label="Directions to ${escapeHtml(store.city)}, ${escapeHtml(store.state)}">
+            <a class="btn-action btn-directions" data-action="directions" href="${escapeHtml(directionsUrl(store, state.directionsApp))}" title="Open in ${DIRECTIONS_APP_LABELS[state.directionsApp]}" target="_blank" rel="noopener noreferrer" aria-label="Directions to ${escapeHtml(store.city)}, ${escapeHtml(store.state)}">
                 ${DIRECTIONS_ICON} Directions
             </a>
             <button type="button" class="btn-action btn-outline-blue btn-card-history" data-action="history" data-state="${escapeHtml(store.state)}" data-city="${escapeHtml(store.city)}" title="Price history">
@@ -197,7 +198,7 @@ export function renderMobileStoreCardContent(store) {
         ${gasHoursDetailsHtml(store)}
         <div class="mobile-sheet-prices">${priceTagsHtml}</div>
         <div class="mobile-sheet-actions">
-            <a class="btn-action btn-directions" data-action="directions" href="${escapeHtml(directionsUrl(store))}" target="_blank" rel="noopener noreferrer">
+            <a class="btn-action btn-directions" data-action="directions" href="${escapeHtml(directionsUrl(store, state.directionsApp))}" title="Open in ${DIRECTIONS_APP_LABELS[state.directionsApp]}" target="_blank" rel="noopener noreferrer">
                 ${DIRECTIONS_ICON} Directions
             </a>
             <button type="button" class="btn-action btn-outline-blue btn-history" data-action="history" data-state="${escapeHtml(store.state)}" data-city="${escapeHtml(store.city)}">
