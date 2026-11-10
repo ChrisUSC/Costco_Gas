@@ -247,6 +247,22 @@ function applyTheme(isDark) {
     }
 }
 
+// On narrow phones the search box shares its row with the grade toggle, so the
+// full placeholder is cut off ("Search city or z…"). Use a short one there.
+const SEARCH_PLACEHOLDER_FULL = 'Search city or zip code...';
+const SEARCH_PLACEHOLDER_SHORT = 'City or zip';
+
+function initSearchPlaceholder() {
+    const input = document.getElementById('searchInput');
+    const narrow = window.matchMedia?.('(max-width: 480px)');
+    if (!input || !narrow) return;
+    const apply = () => {
+        input.placeholder = narrow.matches ? SEARCH_PLACEHOLDER_SHORT : SEARCH_PLACEHOLDER_FULL;
+    };
+    apply();
+    narrow.addEventListener?.('change', apply);
+}
+
 function initPreferences() {
     applyTheme(state.isDarkMode);
     // Follow the OS light/dark setting until the user picks a theme explicitly.
@@ -1058,6 +1074,7 @@ function setupEventListeners() {
 // --- Initialization ---
 
 initPreferences();
+initSearchPlaceholder();
 initMap();
 
 initSearch({
