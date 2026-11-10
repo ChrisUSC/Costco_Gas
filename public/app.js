@@ -123,6 +123,26 @@ function isMobileViewport() {
 // --- Phone list sheet: peek (tabs only) / half / full ---
 const SHEET_STATES = ['peek', 'half', 'full'];
 const SHEET_HALF_FRACTION = 0.5; // how much of the sheet is pushed down at "half"
+const DETAIL_MAX_FRACTION = 0.88; // a station card never covers more of the sheet than this
+let sheetStateBeforeDetail = null; // list position to return to when the station card closes
+
+// Resting translateY (px) of the "half" state. For the list it's half the sheet; a station
+// card instead sizes the sheet to its content, so it is never cut off and covers no more
+// map than it needs.
+function sheetHalfY() {
+    const sidebar = document.getElementById('sidebar');
+    if (!sidebar) return 0;
+    const h = sidebar.offsetHeight;
+    const detail = document.getElementById('sheetDetail');
+    const content = document.getElementById('sheetDetailContent');
+    if (!sidebar.classList.contains('has-detail') || !detail || detail.hidden || !content) {
+        return Math.round(h * SHEET_HALF_FRACTION);
+    }
+    const cs = getComputedStyle(detail);
+    const needed = (document.getElementById('sheetGrabber')?.offsetHeight || 0)
+        + content.offsetHeight + parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+    return Math.round(Math.max(h * (1 - DETAIL_MAX_FRACTION), h - needed));
+}
 
 function setSheetState(next, { keepDetail = false } = {}) {
     if (!SHEET_STATES.includes(next)) next = 'peek';
@@ -136,7 +156,7 @@ function setSheetState(next, { keepDetail = false } = {}) {
     if (sidebar) sidebar.style.transform = ''; // drop any drag offset
     syncSheetA11y();
     // Dragging down to peek dismisses the details; opening further keeps them.
-    if (!keepDetail && state.activeMobileStore && next === 'peek') closeMobileStoreCard();
+    if (!keepDetail && state.activeMobileStore && next === 'peek') closeMobileStoreCard({ restoreSheet: false });
     if (map) setTimeout(() => map.invalidateSize(), 60);
 }
 
@@ -149,7 +169,11 @@ function syncSheetA11y() {
     if (grabber) grabber.setAttribute('aria-expanded', String(!collapsed));
     // At "half" the lower part of the sheet is off-screen; the list must stop above it.
     const sidebar = document.getElementById('sidebar');
-    if (sidebar) sidebar.style.setProperty('--sheet-hidden', `${Math.round(sidebar.offsetHeight * SHEET_HALF_FRACTION)}px`);
+    if (sidebar) {
+        const halfY = `${sheetHalfY()}px`;
+        sidebar.style.setProperty('--half-y', halfY);
+        sidebar.style.setProperty('--sheet-hidden', halfY);
+    }
 }
 
 // Back-compat wrapper: 'list' opens the sheet, 'map' tucks it away to show the map.
@@ -167,7 +191,7 @@ function setupSheetDrag() {
     // Resting translateY (px) of each state, measured against the sheet's own height.
     const restingY = () => {
         const h = sidebar.offsetHeight;
-        return { full: 0, half: h * SHEET_HALF_FRACTION, peek: Math.max(0, h - peekHeight()) };
+        return { full: 0, half: sheetHalfY(), peek: Math.max(0, h - peekHeight()) };
     };
     const nearest = (y) => {
         const r = restingY();
@@ -342,10 +366,10 @@ function openMobileStoreCard(store, { fromHistory = false } = {}) {
         // One sheet: the list gives way to the station's details, same drag heights.
         const sidebar = document.getElementById('sidebar');
         const detail = document.getElementById('sheetDetail');
+        if (sidebar && !sidebar.classList.contains('has-detail')) sheetStateBeforeDetail = state.mobileViewMode;
         if (detail) { detail.hidden = false; detail.scrollTop = 0; }
         if (sidebar) sidebar.classList.add('has-detail');
-        if (state.mobileViewMode === 'peek') setSheetState('half', { keepDetail: true });
-        else syncSheetA11y();
+        setSheetState('half', { keepDetail: true }); // sized to the card (see sheetHalfY)
         detail?.querySelector('.mobile-sheet-close')?.focus({ preventScroll: true });
         if (!fromHistory) recordSheetOpen(store);
         return;
@@ -361,7 +385,7 @@ function openMobileStoreCard(store, { fromHistory = false } = {}) {
     if (!fromHistory) recordSheetOpen(store);
 }
 
-function closeMobileStoreCard({ fromHistory = false } = {}) {
+function closeMobileStoreCard({ fromHistory = false, restoreSheet = true } = {}) {
     const hadStore = Boolean(state.activeMobileStore);
     state.activeMobileStore = null;
     const sheet = document.getElementById('mobileStoreSheet');
@@ -376,6 +400,13 @@ function closeMobileStoreCard({ fromHistory = false } = {}) {
     if (container) container.classList.remove('mobile-sheet-open');
     if (sidebar) sidebar.classList.remove('has-detail');
     if (detail) detail.hidden = true;
+    // Put the list back where it was before the card opened (e.g. tucked away at "peek").
+    const before = sheetStateBeforeDetail;
+    sheetStateBeforeDetail = null;
+    if (hadStore && isPhoneViewport()) {
+        if (restoreSheet && before && before !== state.mobileViewMode) setSheetState(before, { keepDetail: true });
+        else syncSheetA11y();
+    }
     if (hadStore && isPhoneViewport()) document.getElementById('sheetGrabber')?.focus({ preventScroll: true });
     if (hadStore && !fromHistory && !popOverlay('sheet')) syncUrl();
 }
@@ -416,10 +447,12 @@ function applyOverlayFromHistory(overlay) {
 }
 
 // On phones the sheet covers the lower half, so aim the map at the visible upper part.
+// Call after the card has opened, so its height is known.
 function sheetAwareCenter(latlng, zoom) {
     if (!isPhoneViewport() || !map) return latlng;
-    const shift = map.getSize().y * 0.22;
-    return map.unproject(map.project(latlng, zoom).add([0, shift]), zoom);
+    const sidebar = document.getElementById('sidebar');
+    const covered = sidebar ? sidebar.offsetHeight - sheetHalfY() : map.getSize().y * 0.44;
+    return map.unproject(map.project(latlng, zoom).add([0, covered / 2]), zoom);
 }
 
 function refreshLastUpdatedLabel() {
@@ -755,8 +788,71 @@ function setupMobileSheetGestures() {
     }, { passive: true });
 }
 
+// --- Double-tap / double-click to zoom ---
+// Leaflet relies on the browser's dblclick. Browsers that don't send one for touch (iOS
+// Safari) fall back to Leaflet's own detection, which only counts two taps within 200ms, so
+// a relaxed double-tap does nothing. Touch is detected here instead, with a wider window.
+const DOUBLE_TAP_MS = 350;      // max gap between the two taps
+const DOUBLE_TAP_SLOP_PX = 40;  // max distance between the two taps
+const TAP_MOVE_PX = 12;         // more movement than this is a drag, not a tap
+const TAP_HOLD_MS = 350;        // a longer press is not a tap
+
+function setupDoubleTapZoom() {
+    const mapEl = map.getContainer();
+    const isMapSurface = (e) => !e.target.closest?.('.leaflet-marker-icon, .leaflet-control, .leaflet-popup');
+    const zoomAt = (e, delta) => {
+        lastUserZoomInput = Date.now(); // counts as a user zoom for "Search this area"
+        map.setZoomAround(map.mouseEventToContainerPoint(e), map.getZoom() + delta);
+    };
+
+    let lastPointerType = 'mouse';
+    let press = null;       // the touch currently down
+    let lastTap = null;     // { x, y, t } of the previous tap
+    let pointersDown = 0;
+
+    mapEl.addEventListener('pointerdown', (e) => {
+        lastPointerType = e.pointerType;
+        if (e.pointerType === 'mouse') return;
+        pointersDown++;
+        if (pointersDown > 1) { press = null; lastTap = null; return; } // pinch, not a tap
+        press = { x: e.clientX, y: e.clientY, t: e.timeStamp, moved: false };
+    });
+    mapEl.addEventListener('pointermove', (e) => {
+        if (!press || e.pointerType === 'mouse') return;
+        if (Math.hypot(e.clientX - press.x, e.clientY - press.y) > TAP_MOVE_PX) press.moved = true;
+    });
+    const endPress = (e) => {
+        if (e.pointerType === 'mouse') return;
+        pointersDown = Math.max(0, pointersDown - 1);
+        const p = press;
+        press = null;
+        if (!p || e.type === 'pointercancel' || p.moved || e.timeStamp - p.t > TAP_HOLD_MS || !isMapSurface(e)) {
+            lastTap = null;
+            return;
+        }
+        if (lastTap && e.timeStamp - lastTap.t <= DOUBLE_TAP_MS
+            && Math.hypot(e.clientX - lastTap.x, e.clientY - lastTap.y) <= DOUBLE_TAP_SLOP_PX) {
+            lastTap = null;
+            zoomAt(e, map.options.zoomDelta);
+        } else {
+            lastTap = { x: e.clientX, y: e.clientY, t: e.timeStamp };
+        }
+    };
+    mapEl.addEventListener('pointerup', endPress);
+    mapEl.addEventListener('pointercancel', endPress);
+
+    // Mouse double-click (Shift zooms out). The dblclick some browsers fire after a touch
+    // double-tap is ignored: the handler above has already zoomed.
+    mapEl.addEventListener('dblclick', (e) => {
+        if (lastPointerType !== 'mouse' || !isMapSurface(e)) return;
+        e.preventDefault();
+        zoomAt(e, e.shiftKey ? -map.options.zoomDelta : map.options.zoomDelta);
+    });
+}
+
 function initMap() {
-    map = L.map('map', { zoomControl: false }).setView([39.8283, -98.5795], 4);
+    // doubleClickZoom is replaced by setupDoubleTapZoom(), which also handles touch reliably.
+    map = L.map('map', { zoomControl: false, doubleClickZoom: false }).setView([39.8283, -98.5795], 4);
     L.control.zoom({ position: 'bottomright' }).addTo(map);
     setMapTiles();
     markersLayer = createMarkersLayer().addTo(map);
@@ -775,7 +871,14 @@ function initMap() {
     setupMobileSheetGestures();
     setupSheetDrag();
     setSheetState('peek');
+    // Re-fit the sheet when the card's height changes (gas hours expanded, re-render, fonts).
+    const detailContent = document.getElementById('sheetDetailContent');
+    if (detailContent && typeof ResizeObserver === 'function') {
+        new ResizeObserver(() => { if (isPhoneViewport() && state.activeMobileStore) syncSheetA11y(); })
+            .observe(detailContent);
+    }
     setupMapAreaSearch();
+    setupDoubleTapZoom();
 
     window.addEventListener('resize', debounce(() => {
         if (!isMobileViewport() && state.activeMobileStore) {
@@ -1005,8 +1108,8 @@ function moveMapTo(latlng, zoom, duration) {
 
 function flyToStore(store) {
     if (isMobileViewport()) {
+        openMobileStoreCard(store); // first, so the map can centre above the card
         moveMapTo(sheetAwareCenter(L.latLng(store.lat, store.lng), 14), 14, 1.2);
-        openMobileStoreCard(store);
         return;
     }
     // Register first: with reduced motion the move (and its moveend) completes synchronously.
