@@ -10,13 +10,34 @@ export const GRADE_INFO = {
 };
 export const GRADE_KEYS = Object.keys(GRADE_INFO);
 
+// localStorage can throw (blocked site data, some private windows, sandboxed frames).
+// Preferences are a convenience, so a failure just means defaults and nothing saved.
+export function storageGet(key) {
+    try { return localStorage.getItem(key); } catch (e) { return null; }
+}
+
+export function storageSet(key, value) {
+    try { localStorage.setItem(key, String(value)); } catch (e) { /* not saved */ }
+}
+
+export function storageRemove(key) {
+    try { localStorage.removeItem(key); } catch (e) { /* nothing to remove */ }
+}
+
 export function loadJsonPref(key, fallback) {
     try {
-        const raw = localStorage.getItem(key);
+        const raw = storageGet(key);
         return raw ? JSON.parse(raw) : fallback;
     } catch (e) {
         return fallback;
     }
+}
+
+// Case-insensitive match of a store's city, address or state against a lowercased query.
+export function storeMatchesQuery(store, query) {
+    return store.city.toLowerCase().includes(query)
+        || (store.address || '').toLowerCase().includes(query)
+        || store.state.toLowerCase().includes(query);
 }
 
 export function gradeVal(store, grade) {

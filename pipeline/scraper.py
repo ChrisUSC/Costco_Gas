@@ -8,6 +8,7 @@ import sys
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 
 import requests
 from bs4 import BeautifulSoup
@@ -35,6 +36,10 @@ SNAPSHOT_STORE_COVERAGE_THRESHOLD = 0.75
 LOCAL_HISTORY_FILE, LOCAL_LATEST_FILE = snapshot_path('local_history.json'), snapshot_path('local_latest.json')
 CA_HISTORY_FILE, CA_LATEST_FILE = snapshot_path('ca_history.json'), snapshot_path('ca_latest.json')
 US_HISTORY_FILE, US_LATEST_FILE = snapshot_path('us_history.json'), snapshot_path('us_latest.json')
+
+# Snapshot timestamps are Pacific wall-clock time ("YYYY-MM-DD HH:MM"), whatever the
+# machine's own time zone is.
+SCRAPER_TZ = ZoneInfo("America/Los_Angeles")
 
 # Compare current prices against a snapshot ~72h back so trend arrows reflect meaningful moves.
 TREND_LOOKBACK_HOURS = 72
@@ -123,6 +128,29 @@ def print_lowest_prices(prices: dict) -> None:
                 print(f"No {gas_type} prices available for {timestamp}.")
 
 
+def scraper_timestamp(now: datetime | None = None) -> str:
+    """Current time as a Pacific 'YYYY-MM-DD HH:MM' string (independent of the TZ env var)."""
+    now = now or datetime.now(SCRAPER_TZ)
+    return now.astimezone(SCRAPER_TZ).strftime("%Y-%m-%d %H:%M")
+
+
+def carry_forward_missing(fetched: dict, last_known: dict, locations: dict) -> tuple[dict, int]:
+    """Fills in stores that returned no price this run with their last known price, so a
+    one-off fetch failure doesn't drop the station from *_latest.json (and from the map).
+    Only stores still in `locations` are carried forward. Returns (merged, carried_count)."""
+    merged = {state: dict(cities) for state, cities in fetched.items()}
+    carried = 0
+    for state, cities in locations.items():
+        for city in cities:
+            if city in merged.get(state, {}):
+                continue
+            prev = last_known.get(state, {}).get(city)
+            if prev is not None:
+                merged.setdefault(state, {})[city] = prev
+                carried += 1
+    return {s: dict(sorted(c.items())) for s, c in sorted(merged.items()) if c}, carried
+
+
 def validate_snapshot(fetched_prices: dict, locations: dict) -> tuple[bool, str]:
     """Verifies that a fetched price snapshot meets state and store coverage thresholds."""
     expected_states = len(locations)
@@ -205,12 +233,15 @@ def find_trend_baseline(history: dict, current_timestamp_str: str) -> tuple[dict
     return reconstruct_store_prices_at(history, latest_prior), latest_prior
 
 
-def save_data(data: dict, history_path: str, latest_path: str) -> None:
+def save_data(data: dict, history_path: str, latest_path: str) -> bool:
     """Appends only changed store prices to history_path (seeding a full snapshot if the
-    history is empty) and writes the compact latest snapshot to latest_path."""
+    history is empty) and writes the compact latest snapshot to latest_path.
+
+    Returns False if nothing could be saved because the existing history is unreadable,
+    True otherwise (including a deliberately skipped run, see below)."""
     timestamp_str = next(iter(data.keys()), None)
     if not timestamp_str:
-        return
+        return True
 
     raw_states_data = data[timestamp_str]
     sorted_states_data = {
@@ -227,10 +258,19 @@ def save_data(data: dict, history_path: str, latest_path: str) -> None:
         except json.JSONDecodeError as e:
             print(f"⚠️ ERROR: {history_path} contains invalid JSON ({e}).")
             print("Skipping save to prevent deleting historical data.")
-            return
+            return False
         except Exception as e:
             print(f"⚠️ ERROR reading {history_path}: {e}")
-            return
+            return False
+
+    # Timestamps are Pacific wall-clock time, so when clocks fall back the 01:xx hour repeats
+    # and a new timestamp can sort at or before entries already saved. Appending it would
+    # compute deltas against the wrong state, so skip this run (at most ~1 hour, once a year).
+    if save_prices and timestamp_str <= max(save_prices):
+        print(f"⚠️ Timestamp {timestamp_str} is not after the last history entry "
+              f"({max(save_prices)}), likely the daylight-saving fall-back hour. "
+              f"Skipping this run's save.")
+        return True
 
     previous_prices, previous_timestamp = find_trend_baseline(save_prices, timestamp_str)
 
@@ -258,6 +298,7 @@ def save_data(data: dict, history_path: str, latest_path: str) -> None:
     atomic_write_json(latest_path, latest_payload, separators=(',', ':'))
 
     print(f"Saved latest snapshot -> {latest_path}")
+    return True
 
 
 def atomic_write_json(file_path: str, data: dict, indent: int | None = None, separators: tuple[str, str] | None = None) -> None:
@@ -426,16 +467,35 @@ def _lookup_timezone(lat: float, lng: float) -> str | None:
     return _TZ_FINDER.timezone_at(lat=lat, lng=lng)
 
 
-def extract_store_metadata(html_content: str) -> dict | None:
-    """Extracts coordinates, address, phone, gas hours, and timezone from a store page."""
-    soup = BeautifulSoup(html_content, 'html.parser')
+def _ld_json_objects(raw) -> list[dict]:
+    """Flattens a parsed JSON-LD block (an object, a list, or an object with @graph) into dicts."""
+    if isinstance(raw, list):
+        return [obj for item in raw for obj in _ld_json_objects(item)]
+    if not isinstance(raw, dict):
+        return []
+    if isinstance(raw.get('@graph'), list):
+        return [raw] + _ld_json_objects(raw['@graph'])
+    return [raw]
+
+
+def _iter_local_business_ld(soup: BeautifulSoup):
     for script in soup.find_all('script', type='application/ld+json'):
         if not script.string:
             continue
         try:
-            data = json.loads(script.string)
-            if data.get('@type') != 'LocalBusiness':
-                continue
+            raw = json.loads(script.string)
+        except json.JSONDecodeError:
+            continue
+        for obj in _ld_json_objects(raw):
+            if obj.get('@type') == 'LocalBusiness':
+                yield obj
+
+
+def extract_store_metadata(html_content: str) -> dict | None:
+    """Extracts coordinates, address, phone, gas hours, and timezone from a store page."""
+    soup = BeautifulSoup(html_content, 'html.parser')
+    for data in _iter_local_business_ld(soup):
+        try:
 
             lat = float(data['geo']['latitude'])
             lng = float(data['geo']['longitude'])
@@ -464,7 +524,7 @@ def extract_store_metadata(html_content: str) -> dict | None:
             if tz := _lookup_timezone(lat, lng):
                 meta["tz"] = tz
             return meta
-        except (json.JSONDecodeError, KeyError, ValueError, TypeError):
+        except (KeyError, ValueError, TypeError, AttributeError):
             continue
 
     return None
@@ -553,12 +613,6 @@ def _find_quorum(samples: list[float | None], quorum: int = CONFIRMATION_QUORUM)
             if _prices_match(cluster[0], val):
                 return True, cluster[0]
     return True, winning[-1][0]
-
-
-def _quorum_value(samples: list[float | None]) -> float | None:
-    """Returns the value that has reached CONFIRMATION_QUORUM agreeing samples (favoring the freshest cluster)."""
-    has_quorum, val = _find_quorum(samples)
-    return val if has_quorum else None
 
 
 def confirm_or_revert_price(
@@ -705,7 +759,7 @@ def get_gas_prices_ajax(
     failed_stores: list[tuple[str, str]] = []
     candidates = []
     unconfirmed_jumps: list[tuple[str, str]] = []
-    run_timestamp = time.strftime("%Y-%m-%d %H:%M", time.localtime())
+    run_timestamp = scraper_timestamp()
     phase1_start = time.time()
 
     with ThreadPoolExecutor(max_workers=10) as executor:
@@ -770,10 +824,13 @@ def get_gas_prices_ajax(
                     unconfirmed_jumps.append((c_state, c_city))
 
     if unconfirmed_jumps:
+        reverted = verify_all_changes if revert_unconfirmed is None else revert_unconfirmed
+        outcome = ("Reverted each to its last known price" if reverted
+                   else "Kept the freshest fetched value for each")
         print(
-            f"⚠️  {len(unconfirmed_jumps)} store(s) had a large price jump that couldn't be "
-            f"confirmed by a recheck this run. Kept the freshest fetched value for each - "
-            f"worth a manual look if the same store keeps showing up here:"
+            f"⚠️  {len(unconfirmed_jumps)} store(s) had a price change that couldn't be "
+            f"confirmed by a recheck this run. {outcome} - worth a manual look if the "
+            f"same store keeps showing up here:"
         )
         for state, city in unconfirmed_jumps:
             print(f"  - {city}, {state}")
@@ -951,9 +1008,10 @@ def process_and_save(
     verify_all_changes: bool = True,
 ) -> bool:
     """Fetches prices for one dataset, validates completeness, and saves if healthy."""
+    last_known = load_latest_prices(latest_file)
     prices = get_gas_prices_ajax(
         locations,
-        load_latest_prices(latest_file),
+        last_known,
         verify_all_changes=verify_all_changes,
     )
     timestamp = next(iter(prices))
@@ -966,14 +1024,26 @@ def process_and_save(
         return False
 
     print(f"✅ {label} snapshot looks healthy: {reason}")
-    save_data(prices, history_file, latest_file)
+    merged, carried = carry_forward_missing(fetched, last_known, locations)
+    if carried:
+        print(f"Carried forward the last known price for {carried} store(s) that returned none this run.")
+    prices = {timestamp: merged}
+    if not save_data(prices, history_file, latest_file):
+        return False
     print_lowest_prices(prices)
     return True
 
 
+MENU_OPTIONS = {1, 2, 3, 4, 5, 6, 8}
+
+
 def main() -> None:
     if len(sys.argv) > 1:
-        run_type = int(sys.argv[1])
+        try:
+            run_type = int(sys.argv[1])
+        except ValueError:
+            print(f"Invalid option '{sys.argv[1]}'. Expected one of {sorted(MENU_OPTIONS)}.")
+            sys.exit(1)
         print(f"Automated run detected. Executing Option {run_type}")
     else:
         print("1: Update Local Prices")
@@ -989,10 +1059,17 @@ def main() -> None:
             print("Invalid input. Exiting.")
             sys.exit(1)
 
+    if run_type not in MENU_OPTIONS:
+        print(f"Unknown option {run_type}. Expected one of {sorted(MENU_OPTIONS)}.")
+        sys.exit(1)
+
     if run_type in DATASETS:
         label, store_file, hist_file, latest_file = DATASETS[run_type]
         stores = load_store_locations(store_file)
-        if stores and not process_and_save(stores, hist_file, latest_file, label):
+        if not stores:
+            print(f"Couldn't load stores from '{store_file}': file is missing, empty, or not valid JSON.")
+            sys.exit(1)
+        if not process_and_save(stores, hist_file, latest_file, label):
             sys.exit(1)
 
     elif run_type == 4:

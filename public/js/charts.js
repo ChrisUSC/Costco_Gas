@@ -74,7 +74,7 @@ export function ensureHistoryLoaded() {
 function showChartMessage(msg, isError = false) {
     const chartContainer = document.querySelector('.chart-container');
     if (!chartContainer) return;
-    chartContainer.innerHTML = `<p class="empty-msg${isError ? ' is-error' : ''}">${msg}</p>`;
+    chartContainer.innerHTML = `<p class="empty-msg${isError ? ' is-error' : ''}">${escapeHtml(msg)}</p>`;
 }
 
 function showChartSkeleton() {

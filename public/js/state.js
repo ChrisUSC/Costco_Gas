@@ -1,47 +1,48 @@
 // --- Centralized Application State & Storage Management ---
 
-import { loadJsonPref } from './utils.js';
+import { loadJsonPref, storageGet, storageSet, storageRemove, GRADE_KEYS } from './utils.js';
 
 function initialDarkMode() {
-    const saved = localStorage.getItem('theme');
+    const saved = storageGet('theme');
     if (saved === 'dark') return true;
     if (saved === 'light') return false;
     return Boolean(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
 }
 
 export function hasExplicitThemePref() {
-    const saved = localStorage.getItem('theme');
+    const saved = storageGet('theme');
     return saved === 'dark' || saved === 'light';
 }
 
 export const TAB_NAMES = ['nearby', 'lowest', 'route', 'search', 'favorites'];
 export const DIRECTIONS_APPS = ['google', 'apple', 'waze'];
+export const NEARBY_RADII = [5, 10, 25, 50, 100];
 
 function oneOf(value, allowed, fallback) {
     return allowed.includes(value) ? value : fallback;
 }
 
 function loadBoolPref(key, fallback) {
-    const v = localStorage.getItem(key);
+    const v = storageGet(key);
     return v === null ? fallback : v === 'true';
 }
 
 // 'light' | 'dark' | 'system' (no saved choice: follow the operating system)
 export function getThemePref() {
-    const saved = localStorage.getItem('theme');
+    const saved = storageGet('theme');
     return saved === 'dark' || saved === 'light' ? saved : 'system';
 }
 
 export function setThemePref(pref) {
-    if (pref === 'system') localStorage.removeItem('theme');
-    else localStorage.setItem('theme', pref);
+    if (pref === 'system') storageRemove('theme');
+    else storageSet('theme', pref);
     state.isDarkMode = initialDarkMode();
 }
 
 // Saves one of the boolean / choice settings above.
 export function setSetting(key, value) {
     state[key] = value;
-    localStorage.setItem(key, String(value));
+    storageSet(key, value);
 }
 
 export const state = {
@@ -59,19 +60,19 @@ export const state = {
 
     // User preferences (synced to localStorage)
     isDarkMode: initialDarkMode(),
-    gasPref: localStorage.getItem('gasPref') || 'regular',
-    nearbyRadiusMiles: parseFloat(localStorage.getItem('nearbyRadius')) || 50,
-    nearbySortMode: localStorage.getItem('nearbySort') || 'price', // 'price' | 'distance'
+    gasPref: oneOf(storageGet('gasPref'), GRADE_KEYS, 'regular'),
+    nearbyRadiusMiles: oneOf(parseFloat(storageGet('nearbyRadius')), NEARBY_RADII, 50),
+    nearbySortMode: oneOf(storageGet('nearbySort'), ['price', 'distance'], 'price'),
     favoriteStoreKeys: new Set(loadJsonPref('favoriteStores', [])),
     favoriteRoutes: loadJsonPref('favoriteRoutes', []),
     // Settings panel (see SETTINGS_DEFAULTS)
     clusterMarkers: loadBoolPref('clusterMarkers', true),
     colorPins: loadBoolPref('colorPins', true),
-    directionsApp: oneOf(localStorage.getItem('directionsApp'), DIRECTIONS_APPS, 'google'),
-    defaultTab: oneOf(localStorage.getItem('defaultTab'), TAB_NAMES, 'nearby'),
+    directionsApp: oneOf(storageGet('directionsApp'), DIRECTIONS_APPS, 'google'),
+    defaultTab: oneOf(storageGet('defaultTab'), TAB_NAMES, 'nearby'),
     autoLocate: loadBoolPref('autoLocate', true),
     historyRangeDays: (() => {
-        const val = parseInt(localStorage.getItem('historyRangeDays'), 10);
+        const val = parseInt(storageGet('historyRangeDays'), 10);
         return isNaN(val) ? 30 : val;
     })(),
 
@@ -99,7 +100,7 @@ export function toggleFavoriteStore(stateCode, city) {
     } else {
         state.favoriteStoreKeys.add(key);
     }
-    localStorage.setItem('favoriteStores', JSON.stringify([...state.favoriteStoreKeys]));
+    storageSet('favoriteStores', JSON.stringify([...state.favoriteStoreKeys]));
     return !wasFav;
 }
 
@@ -109,43 +110,43 @@ export function findStore(stateCode, city) {
 
 export function setGasPref(pref) {
     state.gasPref = pref;
-    localStorage.setItem('gasPref', pref);
+    storageSet('gasPref', pref);
 }
 
 export function setDarkMode(isDark) {
     state.isDarkMode = isDark;
-    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+    storageSet('theme', isDark ? 'dark' : 'light');
 }
 
 export function setNearbyRadius(miles) {
     state.nearbyRadiusMiles = parseFloat(miles);
-    localStorage.setItem('nearbyRadius', state.nearbyRadiusMiles);
+    storageSet('nearbyRadius', state.nearbyRadiusMiles);
 }
 
 export function setNearbySort(mode) {
     state.nearbySortMode = mode;
-    localStorage.setItem('nearbySort', mode);
+    storageSet('nearbySort', mode);
 }
 
 export function setHistoryRangeDays(days) {
     state.historyRangeDays = days;
-    localStorage.setItem('historyRangeDays', days);
+    storageSet('historyRangeDays', days);
 }
 
 export function saveFavoriteRoute(route) {
     state.favoriteRoutes.push(route);
-    localStorage.setItem('favoriteRoutes', JSON.stringify(state.favoriteRoutes));
+    storageSet('favoriteRoutes', JSON.stringify(state.favoriteRoutes));
 }
 
 export function updateFavoriteRoute(id, updatedFields) {
     const target = state.favoriteRoutes.find(r => r.id === id);
     if (target) {
         Object.assign(target, updatedFields);
-        localStorage.setItem('favoriteRoutes', JSON.stringify(state.favoriteRoutes));
+        storageSet('favoriteRoutes', JSON.stringify(state.favoriteRoutes));
     }
 }
 
 export function removeFavoriteRoute(id) {
     state.favoriteRoutes = state.favoriteRoutes.filter(r => r.id !== id);
-    localStorage.setItem('favoriteRoutes', JSON.stringify(state.favoriteRoutes));
+    storageSet('favoriteRoutes', JSON.stringify(state.favoriteRoutes));
 }

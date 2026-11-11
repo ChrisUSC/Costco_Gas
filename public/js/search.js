@@ -5,7 +5,8 @@ import {
     debounce,
     getDistanceMiles,
     formatAddress,
-    showToast
+    showToast,
+    storeMatchesQuery
 } from './utils.js';
 import { state } from './state.js';
 import { icon } from './icons.js';
@@ -88,11 +89,7 @@ export function buildNominatimUrl(query, limit = 5) {
 
 export function getStoreMatches(query) {
     if (!query) return [];
-    const matches = state.stores.filter(s =>
-        s.city.toLowerCase().includes(query) ||
-        s.address.toLowerCase().includes(query) ||
-        s.state.toLowerCase().includes(query)
-    );
+    const matches = state.stores.filter(s => storeMatchesQuery(s, query));
 
     const map = searchContext.getMap();
     if (map) {

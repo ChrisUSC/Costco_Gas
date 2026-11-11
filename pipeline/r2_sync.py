@@ -85,6 +85,10 @@ def download_files(files: Sequence[str]):
     print(f"⬇️ Downloading baseline snapshots from R2 bucket '{bucket}' into {SNAPSHOT_DIR}...")
     os.makedirs(SNAPSHOT_DIR, exist_ok=True)
 
+    # A file that is missing in R2 is fine (first run). Any other failure must stop the job:
+    # carrying on without the history would make the scraper seed a fresh one-entry history,
+    # and the upload step would then overwrite the real history in R2 with it.
+    failed = []
     for filename in files:
         local_path = snapshot_path(filename)
         tmp_name = f"{local_path}.r2tmp"
@@ -100,11 +104,18 @@ def download_files(files: Sequence[str]):
             if code in ("404", "NoSuchKey"):
                 print(f"  ℹ {filename} does not exist in R2 yet (skipping)")
             else:
-                print(f"  ⚠️ Warning: Failed to download {filename}: {e}")
+                print(f"  ❌ Failed to download {filename}: {e}")
+                failed.append(filename)
         except Exception as e:
             if os.path.exists(tmp_name):
                 os.remove(tmp_name)
-            print(f"  ⚠️ Warning: Unexpected error downloading {filename}: {e}")
+            print(f"  ❌ Unexpected error downloading {filename}: {e}")
+            failed.append(filename)
+
+    if failed:
+        print(f"❌ {len(failed)} download(s) failed: {', '.join(failed)}. "
+              f"Stopping so stale or missing snapshots are never uploaded over the real ones.")
+        sys.exit(1)
 
 
 def upload_files(files: Sequence[str]):
@@ -139,7 +150,8 @@ def upload_files(files: Sequence[str]):
             print(f"  ✓ Uploaded {filename} ({size:,} bytes) [Cache-Control: {cache_control}]")
             uploaded_count += 1
 
-            # 2. For history files, also upload a dated backup snapshot once per day
+            # 2. For history files, also keep a dated backup (one key per UTC day; each run
+            #    overwrites that day's copy, so it holds the day's latest state)
             if "history" in filename:
                 base_name = os.path.splitext(filename)[0]
                 backup_key = f"backups/{base_name}_{today_str}.json"
