@@ -788,6 +788,16 @@ function setupMobileSheetGestures() {
     }, { passive: true });
 }
 
+// --- Offline support ---
+// sw.js keeps the app files and the last prices so the installed app opens without a
+// connection. Registered after load so it doesn't compete with the first page load.
+function registerServiceWorker() {
+    if (!('serviceWorker' in navigator)) return;
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(err => console.warn('Offline support unavailable:', err));
+    });
+}
+
 // --- Phones: only the map zooms ---
 // styles.css stops pinch / double-tap page zoom with touch-action (same media query). iOS
 // Safari doesn't always honour that for pinch, so also cancel its page-zoom gestures when
@@ -1244,6 +1254,10 @@ async function loadData() {
         state.trendBaselineLabel = getRelativeTimeLabel(previousTimestamp);
         state.latestTimestamp = latestTimestamp;
         refreshLastUpdatedLabel();
+        // Offline, sw.js answers with the last prices it saved; say so.
+        if (navigator.onLine === false) {
+            showToast(`You're offline. Showing saved prices (${formatLastUpdatedLabel(latestTimestamp).text.toLowerCase()}).`, 5000);
+        }
 
         const loadedStores = [];
         for (const stateCode in storeData) {
@@ -1807,6 +1821,7 @@ initNav({
 initPreferences();
 initSearchPlaceholder();
 lockPageZoomOnPhones();
+registerServiceWorker();
 initMap();
 
 initSearch({
