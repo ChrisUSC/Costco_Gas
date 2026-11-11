@@ -124,7 +124,10 @@ export async function getGeoMatches(query, { limit = 5, abortPrevious = true } =
 export async function geocodeAddress(query) {
     const coordMatch = query.match(/^(-?\d+\.?\d*),\s*(-?\d+\.?\d*)$/);
     if (coordMatch) {
-        return { lat: parseFloat(coordMatch[1]), lng: parseFloat(coordMatch[2]), label: 'Your location' };
+        // Labelled with the coordinates themselves: "Your location" means the device's
+        // current position (saved routes re-resolve it), which typed coordinates are not.
+        const lat = parseFloat(coordMatch[1]), lng = parseFloat(coordMatch[2]);
+        return { lat, lng, label: `${lat}, ${lng}` };
     }
     const matches = await getGeoMatches(query, { limit: 1, abortPrevious: false });
     if (!matches || matches.length === 0) return null;

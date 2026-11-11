@@ -163,7 +163,7 @@ async function prefillOriginFromDevice() {
     input.placeholder = 'Finding your location…';
     // A position from the device earlier this session also proves access was allowed
     // (and covers browsers whose Permissions API doesn't report geolocation).
-    const loc = (await getLocationIfGranted()) || state.deviceLocation;
+    const loc = (await getLocationIfGranted({ maxAgeMs: 60 * 1000 })) || state.deviceLocation;
     if (loc) state.deviceLocation = { lat: loc.lat, lng: loc.lng };
 
     // The panel is re-rendered on many changes, so look the field up again.
@@ -228,9 +228,29 @@ export function populateRouteInputsFromSaved(route) {
     if (bufferEl) bufferEl.value = route.bufferMiles;
 }
 
+// A saved route that starts (or ends) at "Your location" means wherever the user is now,
+// not where they were when they saved it. Uses the position only if location access is
+// already allowed (no prompt); otherwise keeps the saved coordinates and says so.
+async function withCurrentLocation(route) {
+    const isHere = loc => loc?.label === YOUR_LOCATION;
+    if (!isHere(route.origin) && !isHere(route.destination)) return route;
+
+    // A fresh position: the user may be far from where they last were. If it can't be had in
+    // time, the last device position is still a better guess than where the route was saved.
+    const here = (await getLocationIfGranted({ maxAgeMs: 0 })) || state.deviceLocation;
+    if (!here) {
+        showToast(`Couldn't get your current location, so "${YOUR_LOCATION}" is where you saved this route`, 5000);
+        return route;
+    }
+    state.deviceLocation = { lat: here.lat, lng: here.lng };
+    const current = loc => (isHere(loc) ? { lat: here.lat, lng: here.lng, label: YOUR_LOCATION } : loc);
+    return { ...route, origin: current(route.origin), destination: current(route.destination) };
+}
+
 export async function loadFavoriteRoute(id) {
-    const route = state.favoriteRoutes.find(r => r.id === id);
-    if (!route) return;
+    const saved = state.favoriteRoutes.find(r => r.id === id);
+    if (!saved) return;
+    const route = await withCurrentLocation(saved);
 
     state.editingRouteId = null;
     state.editSnapshot = null;
@@ -241,8 +261,9 @@ export async function loadFavoriteRoute(id) {
 }
 
 export async function startEditRoute(id) {
-    const route = state.favoriteRoutes.find(r => r.id === id);
-    if (!route) return;
+    const saved = state.favoriteRoutes.find(r => r.id === id);
+    if (!saved) return;
+    const route = await withCurrentLocation(saved);
 
     if (state.editingRouteId === null) {
         state.editSnapshot = {
