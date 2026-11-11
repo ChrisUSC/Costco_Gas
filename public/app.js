@@ -26,6 +26,7 @@ import {
     prefersReducedMotion,
     requestBrowserLocation,
     storeMatchesQuery,
+    getLocationIfGranted,
     trapFocus,
     PHONE_MAX_WIDTH
 } from './js/utils.js';
@@ -1160,23 +1161,6 @@ async function detectUserState() {
     } catch (e) {}
 }
 
-async function tryAutoLocateOnLoad() {
-    if (!navigator.geolocation || !navigator.permissions?.query) return null;
-    try {
-        const status = await navigator.permissions.query({ name: 'geolocation' });
-        if (status.state !== 'granted') return null;
-    } catch (e) {
-        return null;
-    }
-
-    return new Promise((resolve) => {
-        navigator.geolocation.getCurrentPosition(
-            (position) => resolve({ lat: position.coords.latitude, lng: position.coords.longitude }),
-            () => resolve(null),
-            { maximumAge: 10 * 60 * 1000, timeout: 5000 }
-        );
-    });
-}
 
 function updateClosestStoreState(loc) {
     if (!loc || state.stores.length === 0) return;
@@ -1229,7 +1213,7 @@ async function loadData() {
             fetch(`us_latest.json?t=${cb}`),
             fetch(`us_stores.json?t=${cb}`),
             state.autoLocate ? detectUserState() : null,
-            state.autoLocate ? tryAutoLocateOnLoad() : null
+            state.autoLocate ? getLocationIfGranted() : null
         ]);
 
         if (!latestRes.ok || !storesRes.ok) throw new Error('Failed to fetch latest snapshot or store list');
@@ -1277,6 +1261,7 @@ async function loadData() {
         renderMap(state.stores);
 
         if (autoLocation) {
+            state.deviceLocation = autoLocation;
             state.userLocation = autoLocation;
             updateClosestStoreState(autoLocation);
             placeUserLocationMarker(autoLocation);
@@ -1572,6 +1557,7 @@ function triggerFindMe() {
             lat: position.coords.latitude,
             lng: position.coords.longitude
         };
+        state.deviceLocation = { ...state.userLocation };
         closeMobileStoreCard();
         setSearchAreaVisible(false);
         placeUserLocationMarker(state.userLocation, { openPopup: true });

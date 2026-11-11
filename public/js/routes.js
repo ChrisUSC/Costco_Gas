@@ -7,6 +7,7 @@ import {
     escapeHtml,
     showToast,
     requestBrowserLocation,
+    getLocationIfGranted,
     GRADE_INFO,
     gradeVal,
     hasGradeData
@@ -64,8 +65,10 @@ export function renderRoutePanel() {
     const container = document.getElementById("sidebarContent");
     if (!container) return;
 
-    const originVal = state.lastRouteState ? escapeHtml(state.lastRouteState.originText) : '';
-    const destVal = state.lastRouteState ? escapeHtml(state.lastRouteState.destText) : '';
+    // Before any route is shown, keep places already chosen (e.g. the prefilled
+    // "Your location") when the panel re-renders after a grade or favorite change.
+    const originVal = escapeHtml(state.lastRouteState ? state.lastRouteState.originText : state.routeOriginLocation?.label || '');
+    const destVal = escapeHtml(state.lastRouteState ? state.lastRouteState.destText : state.routeDestLocation?.label || '');
     const buffer = state.lastRouteState ? state.lastRouteState.bufferMiles : 2;
 
     let saveButtonHtml = '';
@@ -114,12 +117,59 @@ export function renderRoutePanel() {
 
     setupInputAutocomplete('routeOrigin', 'routeOriginDropdown', 'routeOrigin');
     setupInputAutocomplete('routeDestination', 'routeDestDropdown', 'routeDest');
+    prefillOriginFromDevice();
 
     if (state.lastRouteState && state.lastRouteState.along) {
         renderRouteResults(state.lastRouteState);
         renderRouteOnMap(state.lastRouteState.route.coords, state.lastRouteState.origin, state.lastRouteState.destination);
         routesContext.renderMap(state.lastRouteState.along.length > 0 ? state.lastRouteState.along : state.stores);
     }
+}
+
+// --- Start the route from the user's location ---
+// If the user has already allowed location access (and "Use my location automatically" is
+// on), an empty "From" field starts as "Your location". This never shows the browser's
+// permission prompt. The location lookup runs once per page load (a failed fix isn't
+// retried on every re-render), and the field is filled at most once, so clearing it sticks.
+const YOUR_LOCATION = 'Your location';
+let originLookupTried = false;
+let originPrefilled = false;
+
+function originIsEmpty() {
+    const input = document.getElementById('routeOrigin');
+    return Boolean(input) && !input.value.trim() && !state.routeOriginLocation && !state.lastRouteState;
+}
+
+function fillOrigin(loc) {
+    const input = document.getElementById('routeOrigin');
+    if (!loc || !input || state.currentTab !== 'route' || !originIsEmpty()) return;
+    originPrefilled = true;
+    state.routeOriginLocation = { lat: loc.lat, lng: loc.lng, label: YOUR_LOCATION };
+    input.value = YOUR_LOCATION;
+}
+
+async function prefillOriginFromDevice() {
+    if (originPrefilled || !state.autoLocate || !originIsEmpty()) return;
+    // Already looked once: only a position the device has given since (e.g. "Near me")
+    // can fill it now, without asking again.
+    if (originLookupTried) {
+        fillOrigin(state.deviceLocation);
+        return;
+    }
+    originLookupTried = true;
+
+    const input = document.getElementById('routeOrigin');
+    const placeholder = input.placeholder;
+    input.placeholder = 'Finding your location…';
+    // A position from the device earlier this session also proves access was allowed
+    // (and covers browsers whose Permissions API doesn't report geolocation).
+    const loc = (await getLocationIfGranted()) || state.deviceLocation;
+    if (loc) state.deviceLocation = { lat: loc.lat, lng: loc.lng };
+
+    // The panel is re-rendered on many changes, so look the field up again.
+    const current = document.getElementById('routeOrigin');
+    if (current) current.placeholder = placeholder;
+    fillOrigin(loc);
 }
 
 export function saveCurrentRouteAsFavorite() {
@@ -285,14 +335,12 @@ export function renderRouteOnMap(routeCoords, origin, destination) {
 
 export function useMyLocationForRoute() {
     requestBrowserLocation((position) => {
+        const { latitude: lat, longitude: lng } = position.coords;
+        state.deviceLocation = { lat, lng };
         const originInput = document.getElementById('routeOrigin');
         if (originInput) {
-            originInput.value = 'Your location';
-            state.routeOriginLocation = {
-                lat: position.coords.latitude,
-                lng: position.coords.longitude,
-                label: 'Your location'
-            };
+            originInput.value = YOUR_LOCATION;
+            state.routeOriginLocation = { lat, lng, label: YOUR_LOCATION };
         }
     });
 }

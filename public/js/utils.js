@@ -469,6 +469,26 @@ function describeLocationError(err) {
     return "Couldn't get your location. Try again, or search for a city instead.";
 }
 
+// The user's position, but only if they have already allowed location access: this never
+// shows the browser's permission prompt. Resolves to { lat, lng } or null.
+export async function getLocationIfGranted() {
+    if (!navigator.geolocation || !navigator.permissions?.query) return null;
+    try {
+        const status = await navigator.permissions.query({ name: 'geolocation' });
+        if (status.state !== 'granted') return null;
+    } catch (e) {
+        return null;
+    }
+
+    return new Promise((resolve) => {
+        navigator.geolocation.getCurrentPosition(
+            (position) => resolve({ lat: position.coords.latitude, lng: position.coords.longitude }),
+            () => resolve(null),
+            { maximumAge: 10 * 60 * 1000, timeout: 5000 }
+        );
+    });
+}
+
 export function requestBrowserLocation(onSuccess, onError) {
     if (!navigator.geolocation) {
         const err = new Error("Geolocation is not supported by your browser.");

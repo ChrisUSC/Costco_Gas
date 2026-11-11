@@ -333,6 +333,11 @@ export function setupInputAutocomplete(inputId, dropdownId, actionType) {
         currentAutocompleteAction = actionType;
 
         const query = inputEl.value.toLowerCase().trim();
+        // A route field that already holds the chosen place (e.g. "Your location") has
+        // nothing to look up; searching for its label would only show "No matches".
+        const chosen = actionType === 'routeOrigin' ? state.routeOriginLocation
+            : actionType === 'routeDest' ? state.routeDestLocation : null;
+        if (chosen && chosen.label.toLowerCase() === query) return;
         if (query.length > 0) debouncedAutocomplete(query);
     });
 }
