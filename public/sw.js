@@ -8,7 +8,7 @@
 // When you add a file under public/ that the app loads, add it to APP_FILES as well
 // (tests/test_service_worker.py checks this). Bump CACHE_VERSION to drop old caches.
 
-const CACHE_VERSION = 'v1';
+const CACHE_VERSION = 'v2';
 const CACHE = `costco-gas-${CACHE_VERSION}`;
 
 // The app itself. If any of these can't be fetched, installing fails and is retried on
@@ -28,6 +28,7 @@ const APP_FILES = [
     'js/state.js',
     'js/utils.js',
     'manifest.webmanifest',
+    'us-outline.json',
     'icons/apple-touch-icon.png',
     'icons/icon-192.png',
     'icons/icon-512.png',
@@ -101,9 +102,17 @@ async function networkFirst(req, cacheKey, timeoutMs = 0) {
         return res;
     } catch (err) {
         const cached = await cache.match(cacheKey, { ignoreSearch: true });
-        if (cached) return cached;
+        if (cached) return markedAsSaved(cached);
         throw err;
     }
+}
+
+// The app checks this header to know it's showing saved data (a phone can report being
+// online on Wi-Fi with no internet, so navigator.onLine alone isn't enough).
+function markedAsSaved(res) {
+    const headers = new Headers(res.headers);
+    headers.set('X-From-Cache', '1');
+    return new Response(res.body, { status: res.status, statusText: res.statusText, headers });
 }
 
 async function cacheFirst(req) {

@@ -32,6 +32,13 @@ export const HISTORY_RANGE_OPTIONS = [
     { label: 'All', days: 0 }
 ];
 
+// Forget the parsed history so the next chart fetches it again (after fresh prices arrive).
+export function resetHistoryCache() {
+    globalHistory = {};
+    historyLoaded = false;
+    historyLoadPromise = null;
+}
+
 export function ensureHistoryLoaded() {
     if (historyLoaded) return Promise.resolve();
     if (historyLoadPromise) return historyLoadPromise;

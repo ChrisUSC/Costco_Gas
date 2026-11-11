@@ -53,6 +53,7 @@ export const state = {
     currentStateContext: 'CA',
     userLocation: null,   // where the Nearby list is centred (device, searched place or map centre)
     deviceLocation: null, // last position from the device itself (proof location access is allowed)
+    offline: false,       // showing saved prices: no connection, or the network couldn't be reached
     currentTab: 'nearby', // 'nearby' | 'lowest' | 'route' | 'search' | 'favorites'
 
     // Mobile viewport & sheet state

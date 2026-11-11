@@ -137,9 +137,10 @@ export async function geocodeAddress(query) {
 
 export const debouncedAutocomplete = debounce(async (query) => {
     const storeMatches = getStoreMatches(query);
-    renderAutocompleteDropdown(storeMatches, [], query, true);
+    renderAutocompleteDropdown(storeMatches, [], query, !state.offline);
 
-    const geoMatches = query.length >= 2 ? await getGeoMatches(query) : [];
+    // Place lookup needs a connection; offline only stations are searched.
+    const geoMatches = query.length >= 2 && !state.offline ? await getGeoMatches(query) : [];
     const activeInput = document.getElementById(activeInputId);
     if (activeInput && activeInput.value.toLowerCase().trim() === query) {
         renderAutocompleteDropdown(storeMatches, geoMatches, query, false);
@@ -263,7 +264,7 @@ export async function resolveBestMatchAndAct(query) {
     const storeMatches = getStoreMatches(query);
     if (storeMatches.length > 0) {
         best = { type: 'store', data: storeMatches[0] };
-    } else {
+    } else if (!state.offline) {
         const geoMatches = await getGeoMatches(query);
         if (geoMatches.length > 0) {
             best = { type: 'place', data: geoMatches[0] };
@@ -271,7 +272,7 @@ export async function resolveBestMatchAndAct(query) {
     }
 
     if (!best) {
-        showToast(`No matches found for "${query}"`);
+        showToast(state.offline ? `No stations match "${query}"` : `No matches found for "${query}"`);
         document.getElementById(activeInputId)?.blur();
         return;
     }

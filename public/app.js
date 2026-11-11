@@ -27,6 +27,8 @@ import {
     requestBrowserLocation,
     storeMatchesQuery,
     getLocationIfGranted,
+    storageGet,
+    storageSet,
     trapFocus,
     PHONE_MAX_WIDTH
 } from './js/utils.js';
@@ -77,7 +79,8 @@ import {
     setHistoryRange,
     refreshChartTheme,
     isChartModalOpen,
-    trapModalFocus
+    trapModalFocus,
+    resetHistoryCache
 } from './js/charts.js';
 import {
     initSearch,
@@ -467,8 +470,11 @@ function refreshLastUpdatedLabel() {
     const el = document.getElementById('lastUpdated');
     if (!el || !state.latestTimestamp) return;
     const { text, title } = formatLastUpdatedLabel(state.latestTimestamp);
-    el.innerText = text;
+    // Offline the prices are the saved copy: say so (this runs every minute, so the
+    // offline wording has to live here or it would revert).
+    el.innerText = state.offline ? `Offline · prices from ${text.replace(/^Updated /, '')}` : text;
     el.title = title;
+    el.classList.toggle('is-offline', state.offline);
 }
 
 // --- Shareable Store Links & Favorites ---
@@ -592,15 +598,19 @@ function applyTheme(isDark) {
 const SEARCH_PLACEHOLDER_FULL = 'Search city or zip';
 const SEARCH_PLACEHOLDER_SHORT = 'City or zip';
 
-function initSearchPlaceholder() {
+const SEARCH_PLACEHOLDER_OFFLINE = 'Search stations'; // places need a connection
+
+function applySearchPlaceholder() {
     const input = document.getElementById('searchInput');
-    const narrow = window.matchMedia?.('(max-width: 480px)');
-    if (!input || !narrow) return;
-    const apply = () => {
-        input.placeholder = narrow.matches ? SEARCH_PLACEHOLDER_SHORT : SEARCH_PLACEHOLDER_FULL;
-    };
-    apply();
-    narrow.addEventListener?.('change', apply);
+    if (!input) return;
+    const narrow = window.matchMedia?.('(max-width: 480px)').matches;
+    input.placeholder = state.offline ? SEARCH_PLACEHOLDER_OFFLINE
+        : narrow ? SEARCH_PLACEHOLDER_SHORT : SEARCH_PLACEHOLDER_FULL;
+}
+
+function initSearchPlaceholder() {
+    applySearchPlaceholder();
+    window.matchMedia?.('(max-width: 480px)').addEventListener?.('change', applySearchPlaceholder);
 }
 
 function initPreferences() {
@@ -1227,6 +1237,50 @@ function renderLoadState() {
     }
 }
 
+// Builds the station list from the store directory and a price snapshot.
+function buildStores(latestData, storeData) {
+    const timestampedPrices = latestData.prices || {};
+    const previousPrices = latestData.previous || {};
+    const loadedStores = [];
+    for (const stateCode in storeData) {
+        if (!timestampedPrices[stateCode]) continue;
+        for (const [cityName, info] of Object.entries(storeData[stateCode])) {
+            const pData = timestampedPrices[stateCode][cityName];
+            if (!pData) continue;
+
+            const [regVal, premVal, dieselVal] = extractGradePrices(pData).map(getValidPrice);
+            const prevData = previousPrices[stateCode]?.[cityName];
+            const [prevRegVal, prevPremVal, prevDieselVal] = prevData
+                ? extractGradePrices(prevData).map(getValidPrice)
+                : [undefined, undefined, undefined];
+
+            loadedStores.push({
+                state: stateCode, city: cityName, address: info.address,
+                lat: info.lat, lng: info.lng, url: info.url,
+                gasHours: info.gas_hours || null, tz: info.tz || null, phone: info.phone || null,
+                regularStr: formatPriceDisplay(regVal),
+                premiumStr: formatPriceDisplay(premVal),
+                dieselStr: formatPriceDisplay(dieselVal),
+                regVal, premVal, dieselVal,
+                prevRegVal, prevPremVal, prevDieselVal
+            });
+        }
+    }
+    return loadedStores;
+}
+
+function applyPriceSnapshot(latestData) {
+    state.trendBaselineLabel = getRelativeTimeLabel(latestData.previous_timestamp || null);
+    state.latestTimestamp = latestData.timestamp;
+    state.stores = buildStores(latestData, storeDirectory);
+}
+
+// sw.js marks responses it answered from the saved copy.
+const isSavedCopy = (res) => res.headers.get('X-From-Cache') === '1';
+
+let storeDirectory = {};   // us_stores.json, kept for quiet price refreshes
+let lastNetworkPricesAt = 0;
+
 async function loadData() {
     loadStatus = 'loading';
     renderLoadState();
@@ -1244,48 +1298,14 @@ async function loadData() {
         if (!latestRes.ok || !storesRes.ok) throw new Error('Failed to fetch latest snapshot or store list');
 
         const latestData = await latestRes.json();
-        const storeData = await storesRes.json();
+        storeDirectory = await storesRes.json();
+        const offline = navigator.onLine === false || isSavedCopy(latestRes);
+        if (!offline) lastNetworkPricesAt = Date.now();
 
-        const latestTimestamp = latestData.timestamp;
-        const timestampedPrices = latestData.prices || {};
-        const previousPrices = latestData.previous || {};
-        const previousTimestamp = latestData.previous_timestamp || null;
-
-        state.trendBaselineLabel = getRelativeTimeLabel(previousTimestamp);
-        state.latestTimestamp = latestTimestamp;
-        refreshLastUpdatedLabel();
-        // Offline, sw.js answers with the last prices it saved; say so.
-        if (navigator.onLine === false) {
-            showToast(`You're offline. Showing saved prices (${formatLastUpdatedLabel(latestTimestamp).text.toLowerCase()}).`, 5000);
-        }
-
-        const loadedStores = [];
-        for (const stateCode in storeData) {
-            if (!timestampedPrices[stateCode]) continue;
-            for (const [cityName, info] of Object.entries(storeData[stateCode])) {
-                const pData = timestampedPrices[stateCode][cityName];
-                if (!pData) continue;
-
-                const [regVal, premVal, dieselVal] = extractGradePrices(pData).map(getValidPrice);
-                const prevData = previousPrices[stateCode]?.[cityName];
-                const [prevRegVal, prevPremVal, prevDieselVal] = prevData
-                    ? extractGradePrices(prevData).map(getValidPrice)
-                    : [undefined, undefined, undefined];
-
-                loadedStores.push({
-                    state: stateCode, city: cityName, address: info.address,
-                    lat: info.lat, lng: info.lng, url: info.url,
-                    gasHours: info.gas_hours || null, tz: info.tz || null, phone: info.phone || null,
-                    regularStr: formatPriceDisplay(regVal),
-                    premiumStr: formatPriceDisplay(premVal),
-                    dieselStr: formatPriceDisplay(dieselVal),
-                    regVal, premVal, dieselVal,
-                    prevRegVal, prevPremVal, prevDieselVal
-                });
-            }
-        }
-        state.stores = loadedStores;
+        applyPriceSnapshot(latestData);
         loadStatus = 'ready';
+        // Before the first render, so a Route tab from a link or the settings falls back to Nearby.
+        setOfflineMode(offline, { announce: true });
 
         renderMap(state.stores);
 
@@ -1311,12 +1331,144 @@ async function loadData() {
                 checkZoomLevel();
             }
         }
+        if (!offline) scheduleHistoryCopy();
     } catch (error) {
         console.error('Error fetching data:', error);
         loadStatus = 'error';
         renderLoadState();
         if (lastUpdatedEl) lastUpdatedEl.innerText = "Couldn't load prices";
     }
+}
+
+// --- Offline mode ---
+// Offline (no connection, or sw.js answered with its saved copy) the app keeps working
+// with the saved prices: the map gets a built-in outline of the US, the label says the
+// prices are saved, and the parts that need a connection (Route, place search, saved
+// routes) are hidden. It returns to normal only after fresh prices arrive.
+const OFFLINE_RETRY_MS = 3 * 60 * 1000;     // retry while offline (Wi-Fi without internet fires no event)
+const STALE_ON_RETURN_MS = 10 * 60 * 1000;  // refresh when the app comes back after this long
+let offlineRetryTimer = null;
+
+function setOfflineMode(offline, { announce = false } = {}) {
+    const changed = state.offline !== offline;
+    state.offline = offline;
+    document.body.classList.toggle('is-offline', offline);
+    refreshLastUpdatedLabel();
+    applySearchPlaceholder();
+    updateOfflineBasemap();
+
+    clearInterval(offlineRetryTimer);
+    offlineRetryTimer = offline ? setInterval(refreshPrices, OFFLINE_RETRY_MS) : null;
+
+    if (offline && state.currentTab === 'route') switchTab('nearby');
+    else if (changed && state.currentTab === 'favorites' && loadStatus === 'ready') renderCurrentTab(); // saved routes
+    if (offline && (changed || announce) && state.latestTimestamp) {
+        showToast(`You're offline. Showing saved prices (${formatLastUpdatedLabel(state.latestTimestamp).text.toLowerCase()}).`, 5000);
+    }
+}
+
+// Built-in outline of the US (us-outline.json, saved for offline use) under the pins, in
+// a pane below the map tiles: any tiles the browser still has draw on top of it.
+let offlineBaseLayer = null;
+let outlineRequest = null;
+
+async function updateOfflineBasemap() {
+    if (!map) return;
+    if (!state.offline) {
+        if (offlineBaseLayer) map.removeLayer(offlineBaseLayer);
+        return;
+    }
+    if (!offlineBaseLayer) {
+        try {
+            outlineRequest ||= fetch('us-outline.json').then(r => (r.ok ? r.json() : Promise.reject(new Error(r.status))));
+            const outline = await outlineRequest;
+            if (!map.getPane('offlineBase')) {
+                const pane = map.createPane('offlineBase');
+                pane.style.zIndex = 150; // below the tile pane (200)
+                pane.style.pointerEvents = 'none';
+            }
+            offlineBaseLayer = L.geoJSON(outline, { pane: 'offlineBase', interactive: false, style: () => ({ className: 'offline-land' }) });
+        } catch (e) {
+            outlineRequest = null;
+            return;
+        }
+    }
+    if (state.offline && !map.hasLayer(offlineBaseLayer)) offlineBaseLayer.addTo(map);
+}
+
+// Fetch fresh prices without disturbing the page: the map stays where it is, the open
+// station stays open, and the current tab re-renders with the new prices.
+let refreshRequest = null;
+
+function refreshPrices() {
+    if (loadStatus === 'loading') return Promise.resolve();
+    if (loadStatus === 'error') return loadData(); // the first load failed: try it again
+    if (refreshRequest) return refreshRequest;
+    refreshRequest = (async () => {
+        try {
+            const res = await fetch(`us_latest.json?t=${Date.now()}`);
+            if (!res.ok) throw new Error(`Prices returned ${res.status}`);
+            const savedCopy = isSavedCopy(res);
+            if (!savedCopy) {
+                const openStore = state.activeMobileStore;
+                applyPriceSnapshot(await res.json());
+                lastNetworkPricesAt = Date.now();
+                resetHistoryCache();
+                // Route results hold copies of stations; give them the new prices.
+                if (state.lastRouteState?.along) {
+                    state.lastRouteState.along = state.lastRouteState.along
+                        .map(s => { const fresh = findStore(s.state, s.city); return fresh ? { ...fresh, distance: s.distance } : null; })
+                        .filter(Boolean);
+                }
+                setOfflineMode(navigator.onLine === false);
+                refreshMapAndList();
+                if (openStore) {
+                    state.activeMobileStore = findStore(openStore.state, openStore.city) || null;
+                    if (state.activeMobileStore) renderMobileStoreCardContent(state.activeMobileStore);
+                    else closeMobileStoreCard();
+                }
+                scheduleHistoryCopy();
+            } else {
+                setOfflineMode(true);
+            }
+        } catch (e) {
+            setOfflineMode(true);
+        } finally {
+            refreshRequest = null;
+        }
+    })();
+    return refreshRequest;
+}
+
+function setupOfflineHandling() {
+    window.addEventListener('offline', () => { if (loadStatus === 'ready') setOfflineMode(true); });
+    window.addEventListener('online', () => refreshPrices());
+    // Phones resume a home-screen app rather than reloading it, so refresh on return.
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState !== 'visible') return;
+        if (state.offline || Date.now() - lastNetworkPricesAt > STALE_ON_RETURN_MS) refreshPrices();
+    });
+}
+
+// Keep the saved price history fresh for offline charts: at most once a day, a few seconds
+// after fresh prices arrive (sw.js saves the response). Skipped when the browser asks to
+// save data; phones don't tell web apps whether they're on Wi-Fi.
+const HISTORY_COPY_EVERY_MS = 24 * 60 * 60 * 1000;
+let historyCopyScheduled = false;
+
+function scheduleHistoryCopy() {
+    if (historyCopyScheduled || navigator.connection?.saveData) return;
+    const last = parseInt(storageGet('historyCopiedAt'), 10) || 0;
+    if (Date.now() - last < HISTORY_COPY_EVERY_MS) return;
+    historyCopyScheduled = true;
+    setTimeout(async () => {
+        try {
+            const res = await fetch(`us_history.json?v=${encodeURIComponent(state.latestTimestamp || Date.now())}`);
+            await res.arrayBuffer(); // read it fully so sw.js finishes saving it
+            if (res.ok && !isSavedCopy(res)) storageSet('historyCopiedAt', Date.now());
+        } catch (e) { /* try again on a later load */ }
+        historyCopyScheduled = false;
+    }, 5000);
 }
 
 // --- Sidebar Views & Store Cards ---
@@ -1484,7 +1636,8 @@ function renderFavoriteStores() {
         .filter(s => isFavoriteStore(s.state, s.city))
         .sort((a, b) => a.city.localeCompare(b.city));
 
-    if (favorites.length === 0 && state.favoriteRoutes.length === 0) {
+    const showRoutes = state.favoriteRoutes.length > 0 && !state.offline; // routes need a connection
+    if (favorites.length === 0 && !showRoutes) {
         container.innerHTML = emptyStateHtml({
             iconName: 'star',
             title: 'No favorites yet',
@@ -1506,7 +1659,7 @@ function renderFavoriteStores() {
             { key: 'favorites' });
     }
 
-    if (state.favoriteRoutes.length > 0) {
+    if (showRoutes) {
         const routesWrap = document.createElement('div');
         routesWrap.innerHTML = renderSavedRoutesHtml({ fromFavorites: true });
         container.appendChild(routesWrap);
@@ -1601,7 +1754,9 @@ function triggerFindMe() {
 function setupKeyboardSupport() {
     // Tabs: arrow keys / Home / End move between tabs (automatic activation)
     document.getElementById('sidebarTabs')?.addEventListener('keydown', (e) => {
-        const tabNames = [...document.querySelectorAll('#sidebarTabs [data-tab]')].map(el => el.dataset.tab);
+        const tabNames = [...document.querySelectorAll('#sidebarTabs [data-tab]')]
+            .filter(el => el.offsetParent !== null) // the Route tab is hidden offline
+            .map(el => el.dataset.tab);
         const current = tabNames.indexOf(state.currentTab);
         let next = null;
         if (e.key === 'ArrowRight') next = (current + 1) % tabNames.length;
@@ -1822,6 +1977,7 @@ initPreferences();
 initSearchPlaceholder();
 lockPageZoomOnPhones();
 registerServiceWorker();
+setupOfflineHandling();
 initMap();
 
 initSearch({

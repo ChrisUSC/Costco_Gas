@@ -42,6 +42,11 @@
     --positive-soft: #e3f5ec;
     --warning: #9a5600;
     --warning-soft: #fdf0d9;
+
+    /* Offline map: built-in US outline shown when map tiles can't load */
+    --offline-water: #c9d8e8;
+    --offline-land: #fbfcfd;
+    --offline-border: #8f9cad;
     --danger: #c0271f;
     --danger-soft: #fdebe9;
     --star: #d99a00;
@@ -105,6 +110,10 @@ body.dark-mode {
     --positive-soft: #10291f;
     --warning: #f2b544;
     --warning-soft: #2e2410;
+
+    --offline-water: #070b11;
+    --offline-land: #252d39;
+    --offline-border: #536073;
     --danger: #ff8078;
     --danger-soft: #331a18;
     --star: #f5c132;
@@ -258,6 +267,19 @@ body.dark-mode .select {
     content: ''; width: 6px; height: 6px; border-radius: 50%;
     background: var(--tier-low); flex-shrink: 0;
 }
+/* Offline: the label says the prices are the saved copy */
+.last-updated.is-offline { color: var(--warning); font-weight: 600; }
+.last-updated.is-offline::before { background: var(--warning); }
+
+/* --- Offline mode --- */
+/* The map's built-in outline (app.js updateOfflineBasemap) */
+body.is-offline .leaflet-container { background: var(--offline-water); }
+.leaflet-pane path.offline-land {
+    fill: var(--offline-land); fill-opacity: 1;
+    stroke: var(--offline-border); stroke-width: 1; stroke-opacity: 1;
+}
+/* Route planning needs the routing and address services, so it is hidden offline */
+body.is-offline #tab-route { display: none; }
 
 .header-controls {
     display: flex; align-items: center; justify-content: flex-end; gap: 8px;

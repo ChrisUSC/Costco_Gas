@@ -14,7 +14,12 @@ def _sw_list(name: str) -> set[str]:
 
 
 def test_app_files_cover_every_module_icon_and_root_asset():
-    expected = {"./", "styles.css", "app.js", "manifest.webmanifest"}
+    # Root assets the app loads (data snapshots from R2 are in DATA_FILES instead).
+    root = {n for n in os.listdir(PUBLIC)
+            if os.path.isfile(os.path.join(PUBLIC, n))
+            and n not in ("index.html", "sw.js", "us_stores.json")
+            and not n.endswith(("_latest.json", "_history.json"))}
+    expected = {"./"} | root
     expected |= {f"js/{n}" for n in os.listdir(os.path.join(PUBLIC, "js")) if n.endswith(".js")}
     expected |= {f"icons/{n}" for n in os.listdir(os.path.join(PUBLIC, "icons"))}
     missing = expected - _sw_list("APP_FILES")
