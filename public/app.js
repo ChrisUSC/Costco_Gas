@@ -788,6 +788,21 @@ function setupMobileSheetGestures() {
     }, { passive: true });
 }
 
+// --- Phones: only the map zooms ---
+// styles.css stops pinch / double-tap page zoom with touch-action (same media query). iOS
+// Safari doesn't always honour that for pinch, so also cancel its page-zoom gestures when
+// they start outside the map. The map's own pinch zoom is Leaflet's, from touch events.
+const ZOOM_LOCK_QUERY = '(max-width: 599px), (pointer: coarse) and (max-height: 500px)';
+
+function lockPageZoomOnPhones() {
+    const phone = window.matchMedia?.(ZOOM_LOCK_QUERY);
+    if (!phone) return;
+    const cancel = (e) => {
+        if (phone.matches && !(e.target instanceof Element && e.target.closest('#map'))) e.preventDefault();
+    };
+    ['gesturestart', 'gesturechange'].forEach(type => document.addEventListener(type, cancel, { passive: false }));
+}
+
 // --- Double-tap / double-click to zoom ---
 // Leaflet relies on the browser's dblclick. Browsers that don't send one for touch (iOS
 // Safari) fall back to Leaflet's own detection, which only counts two taps within 200ms, so
@@ -1791,6 +1806,7 @@ initNav({
 
 initPreferences();
 initSearchPlaceholder();
+lockPageZoomOnPhones();
 initMap();
 
 initSearch({

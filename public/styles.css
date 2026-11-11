@@ -914,6 +914,17 @@ body.dark-mode .segmented input:checked + span { background: var(--surface-3); }
     .search-area-btn:not([hidden]) { left: calc(50% + 40px); }
 }
 
+/* --- Phones (portrait, or landscape: short and touch-first): only the map zooms ---
+   Keep this media query in sync with ZOOM_LOCK_QUERY in app.js. */
+@media (max-width: 599px), (pointer: coarse) and (max-height: 500px) {
+    /* Allow scrolling but not pinch or double-tap page zoom. touch-action is combined with
+       each element's ancestors, so the map (Leaflet sets none on it) and the sheet grabber
+       still get their gestures and handle them in JavaScript. */
+    html, body { touch-action: pan-x pan-y; }
+    /* iOS zooms the page when a text control under 16px gets focus, and stays zoomed. */
+    input:not([type="checkbox"]):not([type="radio"]), select, .select, textarea { font-size: 1rem; }
+}
+
 /* --- Phone: full-height map with the list as a draggable bottom sheet --- */
 @media (max-width: 599px) {
     /* Two rows: [mark] [search] [settings] / [grade toggle] */
