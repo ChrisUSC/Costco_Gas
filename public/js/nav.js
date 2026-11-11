@@ -4,8 +4,7 @@
 // browser / Android Back button closes it instead of leaving the site.
 
 import { TAB_NAMES } from './state.js';
-
-const GRADE_NAMES = ['regular', 'premium', 'diesel'];
+import { GRADE_KEYS } from './utils.js';
 
 let handlers = {
     getView: () => ({}),        // -> { tab, grade, state, store }
@@ -21,7 +20,7 @@ export function readUrlParams() {
     const stateCode = (params.get('state') || '').toUpperCase();
     return {
         tab: TAB_NAMES.includes(tab) ? tab : null,
-        grade: GRADE_NAMES.includes(grade) ? grade : null,
+        grade: GRADE_KEYS.includes(grade) ? grade : null,
         state: /^[A-Z]{2}$/.test(stateCode) ? stateCode : null
     };
 }

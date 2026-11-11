@@ -25,7 +25,9 @@ import {
     showToast,
     prefersReducedMotion,
     requestBrowserLocation,
-    storeMatchesQuery
+    storeMatchesQuery,
+    trapFocus,
+    PHONE_MAX_WIDTH
 } from './js/utils.js';
 import {
     state,
@@ -51,6 +53,9 @@ import {
     errorStateHtml,
     emptyStateHtml,
     priceTilesHtml,
+    phoneLinkHtml,
+    favoriteButtonHtml,
+    shareButtonHtml,
     DIRECTIONS_ICON,
     renderSavedRoutesHtml,
     renderMobileStoreCardContent
@@ -111,7 +116,6 @@ const PIN_ZOOM = 9;
 //   phone   <= 599px   map + draggable bottom sheet for the list
 //   tablet  600-1099px sidebar + map, store details in a sheet over the map
 //   desktop >= 1100px  sidebar + map, store details in the Leaflet popup
-const PHONE_MAX_WIDTH = 599;
 const SHEET_MAX_WIDTH = 1099;
 
 function isPhoneViewport() {
@@ -672,24 +676,7 @@ function closeSettings({ fromHistory = false } = {}) {
 
 // Keeps Tab / Shift+Tab inside the open settings panel. Returns true if handled.
 function trapSettingsFocus(e) {
-    if (e.key !== 'Tab' || !isSettingsOpen()) return false;
-    const modal = document.getElementById('settingsModal');
-    const focusable = [...modal.querySelectorAll('button, select, input:not([type="radio"]), input[type="radio"]:checked')]
-        .filter(el => el.offsetParent !== null);
-    if (focusable.length === 0) return false;
-    const first = focusable[0];
-    const last = focusable[focusable.length - 1];
-    if (!modal.contains(document.activeElement)) {
-        e.preventDefault();
-        first.focus();
-    } else if (e.shiftKey && document.activeElement === first) {
-        e.preventDefault();
-        last.focus();
-    } else if (!e.shiftKey && document.activeElement === last) {
-        e.preventDefault();
-        first.focus();
-    }
-    return true;
+    return isSettingsOpen() && trapFocus(e, document.getElementById('settingsModal'));
 }
 
 // Every setting applies as soon as it changes.
@@ -1016,14 +1003,13 @@ function addPriceLegend() {
 function storePopupHtml(store) {
     const currentIsFav = isFavoriteStore(store.state, store.city);
     const where = `data-state="${escapeHtml(store.state)}" data-city="${escapeHtml(store.city)}"`;
-    const favLabel = currentIsFav ? 'Remove from favorites' : 'Add to favorites';
 
     return `
         <div class="popup-store-name">${escapeHtml(store.city)}, ${escapeHtml(store.state)}</div>
         <div class="popup-address">${escapeHtml(formatAddress(store.address))}</div>
         <div class="popup-meta">
             ${gasStatusHtml(store)}
-            ${store.phone ? `<div class="popup-phone"><a href="tel:${escapeHtml(store.phone.replace(/[^0-9+]/g, ''))}">${icon('phone', 13)} ${escapeHtml(store.phone)}</a></div>` : ''}
+            ${phoneLinkHtml(store, 13)}
         </div>
         ${gasHoursDetailsHtml(store)}
         <div class="popup-prices-grid">${priceTilesHtml(store, state.gasPref)}</div>
@@ -1033,8 +1019,8 @@ function storePopupHtml(store) {
         </div>
         <div class="popup-actions-row">
             <a href="${escapeHtml(store.url)}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary popup-btn-wide">Store page ${icon('external', 14)}</a>
-            <button type="button" class="btn btn-icon favorite-btn ${currentIsFav ? 'active' : ''}" data-action="toggle-favorite" ${where} title="${favLabel}" aria-label="${favLabel}" aria-pressed="${currentIsFav}">${icon('star', 18)}</button>
-            <button type="button" class="btn btn-icon share-btn" data-action="share" ${where} title="Share this station" aria-label="Share this station">${icon('share', 18)}</button>
+            ${favoriteButtonHtml(store, currentIsFav)}
+            ${shareButtonHtml(store)}
         </div>
     `;
 }

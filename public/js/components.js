@@ -14,7 +14,8 @@ import {
     formatAddress,
     hasGradeData,
     DIRECTIONS_APP_LABELS,
-    GRADE_INFO
+    GRADE_INFO,
+    PHONE_MAX_WIDTH
 } from './utils.js';
 import { state, isFavoriteStore } from './state.js';
 import { icon } from './icons.js';
@@ -112,7 +113,13 @@ export function priceTilesHtml(store, featured) {
     }).join('');
 }
 
-function favoriteButtonHtml(store, isFav, cls = '') {
+// Tap-to-call link, shared by the map popup and the station details card.
+export function phoneLinkHtml(store, iconSize = 14) {
+    if (!store.phone) return '';
+    return `<div class="popup-phone"><a href="tel:${escapeHtml(store.phone.replace(/[^0-9+]/g, ''))}">${icon('phone', iconSize)} ${escapeHtml(store.phone)}</a></div>`;
+}
+
+export function favoriteButtonHtml(store, isFav, cls = '') {
     const label = isFav ? 'Remove from favorites' : 'Add to favorites';
     return `
         <button type="button" class="btn btn-icon favorite-btn ${cls} ${isFav ? 'active' : ''}" data-action="toggle-favorite" data-state="${escapeHtml(store.state)}" data-city="${escapeHtml(store.city)}" title="${label}" aria-label="${label}" aria-pressed="${isFav}">
@@ -120,7 +127,7 @@ function favoriteButtonHtml(store, isFav, cls = '') {
         </button>`;
 }
 
-function shareButtonHtml(store, cls = '') {
+export function shareButtonHtml(store, cls = '') {
     return `
         <button type="button" class="btn btn-icon share-btn ${cls}" data-action="share" data-state="${escapeHtml(store.state)}" data-city="${escapeHtml(store.city)}" title="Share this station" aria-label="Share this station">
             ${icon('share', 18)}
@@ -223,13 +230,10 @@ export function renderSavedRoutesHtml({ fromFavorites = false } = {}) {
 
 export function renderMobileStoreCardContent(store) {
     // Phones show details inside the list sheet; tablets use the floating card.
-    const contentEl = document.getElementById(window.innerWidth <= 599 ? 'sheetDetailContent' : 'mobileStoreSheetContent');
+    const contentEl = document.getElementById(window.innerWidth <= PHONE_MAX_WIDTH ? 'sheetDetailContent' : 'mobileStoreSheetContent');
     if (!contentEl || !store) return;
 
     const isFav = isFavoriteStore(store.state, store.city);
-    const phoneHtml = store.phone
-        ? `<div class="popup-phone"><a href="tel:${escapeHtml(store.phone.replace(/[^0-9+]/g, ''))}">${icon('phone', 14)} ${escapeHtml(store.phone)}</a></div>`
-        : '';
 
     contentEl.innerHTML = `
         <div class="mobile-sheet-header">
@@ -239,7 +243,7 @@ export function renderMobileStoreCardContent(store) {
         <div class="mobile-sheet-address">${escapeHtml(formatAddress(store.address))}</div>
         <div class="mobile-sheet-meta">
             ${gasStatusHtml(store)}
-            ${phoneHtml}
+            ${phoneLinkHtml(store, 14)}
         </div>
         ${gasHoursDetailsHtml(store)}
         <div class="mobile-sheet-prices">${priceTilesHtml(store, state.gasPref)}</div>
