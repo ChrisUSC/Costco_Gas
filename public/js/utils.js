@@ -1,6 +1,10 @@
 // --- Shared Constants, Grade Helpers, Geometry, Gas Hours & UI Utilities ---
 
 export const SCRAPER_TIMEZONE = 'America/Los_Angeles';
+
+// Phones (<= this width) show the station list as a draggable bottom sheet and station
+// details inside it. Keep in sync with the media queries in styles.css.
+export const PHONE_MAX_WIDTH = 599;
 export const CARTO_API_KEY = 'cb1_2q9b_1_6d41dfc2a130168400103206';
 
 export const GRADE_INFO = {
@@ -290,23 +294,29 @@ export function parseScraperTimestamp(timestampStr) {
     return new Date(guessUTC - offsetMinutes * 60000);
 }
 
-export function getRelativeTimeLabel(timestampStr) {
-    const d = parseScraperTimestamp(timestampStr);
-    if (!d) return 'the last update';
+// How long ago a scraper timestamp was, or null if it can't be parsed.
+function timestampAge(timestampStr) {
+    const date = parseScraperTimestamp(timestampStr);
+    if (!date) return null;
+    const diffMs = Date.now() - date.getTime();
+    return { date, minutes: Math.round(diffMs / 60000), hours: Math.round(diffMs / 3600000) };
+}
 
-    const hours = Math.round((Date.now() - d.getTime()) / 3600000);
+export function getRelativeTimeLabel(timestampStr) {
+    const age = timestampAge(timestampStr);
+    if (!age) return 'the last update';
+
+    const { hours } = age;
     if (hours < 1) return 'the last hour';
     if (hours < 36) return `${hours}h ago`;
     return `${Math.round(hours / 24)}d ago`;
 }
 
 export function formatLastUpdatedLabel(timestampStr) {
-    const d = parseScraperTimestamp(timestampStr);
-    if (!d) return { text: 'Update time unknown', title: '' };
+    const age = timestampAge(timestampStr);
+    if (!age) return { text: 'Update time unknown', title: '' };
 
-    const diffMs = Date.now() - d.getTime();
-    const minutes = Math.round(diffMs / 60000);
-    const hours = Math.round(diffMs / 3600000);
+    const { date: d, minutes, hours } = age;
     const days = Math.round(hours / 24);
 
     let text;
@@ -394,6 +404,29 @@ export function escapeHtml(str) {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
+}
+
+// Keeps Tab / Shift+Tab inside an open modal. Returns true if the key was handled.
+// Radio groups count once (their checked option): arrow keys move within a group.
+const FOCUSABLE = 'button, [href], select, textarea, input:not([type="radio"]), input[type="radio"]:checked, [tabindex]:not([tabindex="-1"])';
+
+export function trapFocus(e, modal) {
+    if (e.key !== 'Tab' || !modal) return false;
+    const focusable = [...modal.querySelectorAll(FOCUSABLE)].filter(el => el.offsetParent !== null);
+    if (focusable.length === 0) return false;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (!modal.contains(document.activeElement)) {
+        e.preventDefault();
+        first.focus();
+    } else if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+    }
+    return true;
 }
 
 export function debounce(fn, delay) {

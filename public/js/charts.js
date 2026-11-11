@@ -7,7 +7,8 @@ import {
     getValidPrice,
     GRADE_KEYS,
     GRADE_INFO,
-    escapeHtml
+    escapeHtml,
+    trapFocus
 } from './utils.js';
 import { icon } from './icons.js';
 import { state, setHistoryRangeDays } from './state.js';
@@ -328,10 +329,7 @@ export function refreshChartTheme() {
     }
 }
 
-export function closeHistoryModal(event) {
-    if (event && event.target !== document.getElementById('chartModal') && !event.target.closest('.modal-close')) {
-        return;
-    }
+export function closeHistoryModal() {
     const modal = document.getElementById('chartModal');
     const wasOpen = modal?.classList.contains('active');
     modal?.classList.remove('active');
@@ -341,24 +339,7 @@ export function closeHistoryModal(event) {
     lastFocusedBeforeModal = null;
 }
 
-// Keeps Tab / Shift+Tab inside the open modal. Returns true if the event was handled.
+// Keeps Tab / Shift+Tab inside the price-history modal while it is open.
 export function trapModalFocus(e) {
-    if (e.key !== 'Tab' || !isChartModalOpen()) return false;
-    const focusable = [...document.querySelectorAll('#chartModal button, #chartModal [href], #chartModal [tabindex]:not([tabindex="-1"])')]
-        .filter(el => el.offsetParent !== null);
-    if (focusable.length === 0) return false;
-    const first = focusable[0];
-    const last = focusable[focusable.length - 1];
-    const active = document.activeElement;
-    if (!document.getElementById('chartModal').contains(active)) {
-        e.preventDefault();
-        first.focus();
-    } else if (e.shiftKey && active === first) {
-        e.preventDefault();
-        last.focus();
-    } else if (!e.shiftKey && active === last) {
-        e.preventDefault();
-        first.focus();
-    }
-    return true;
+    return isChartModalOpen() && trapFocus(e, document.getElementById('chartModal'));
 }

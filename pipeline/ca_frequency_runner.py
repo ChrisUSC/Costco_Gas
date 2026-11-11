@@ -11,22 +11,9 @@ Usage:
     python pipeline/ca_frequency_runner.py
 """
 
-import json
-import os
 import sys
 
-from scraper import (
-    load_store_locations,
-    load_latest_prices,
-    get_gas_prices_ajax,
-    validate_snapshot,
-    compute_price_deltas,
-    reconstruct_store_prices_at,
-    find_trend_baseline,
-    write_pretty_top_level,
-    atomic_write_json,
-    carry_forward_missing,
-)
+from scraper import get_gas_prices_ajax, load_history, load_latest_prices, load_store_locations, process_and_save
 from paths import CA_STORES_FILE, snapshot_path
 
 CA_FREQ_HISTORY_FILE = snapshot_path("ca_freq_history.json")
@@ -52,87 +39,26 @@ def run_ca_tracker(
     total_stores = sum(len(cities) for cities in stores.values())
     print(f"🚗 Starting California Gas Price Tracking ({total_stores} stores)...")
 
-    # Load existing frequency history FIRST. If it exists but can't be read, abort before
-    # doing any scraping so we never overwrite real history with a fresh seed.
-    history = {}
-    if os.path.exists(history_path) and os.path.getsize(history_path) > 0:
-        try:
-            with open(history_path, "r", encoding="utf-8") as f:
-                history = json.load(f)
-        except Exception as e:
-            print(f"❌ Could not read {history_path}: {e}")
-            print("Aborting to protect existing history. Fix or restore the file and re-run.")
-            return False
-
-    # Prioritize existing frequency latest, fall back to production ca_latest.json
-    latest_known = load_latest_prices(latest_path)
-    if not latest_known:
-        latest_known = load_latest_prices(CA_LATEST_FILE)
-
-    prices = get_gas_prices_ajax(
-        stores,
-        last_known_prices=latest_known,
-        verify_all_changes=True,
-    )
-
-    timestamp = next(iter(prices))
-    fetched = prices[timestamp]
-
-    is_valid, reason = validate_snapshot(fetched, stores)
-    if not is_valid:
-        print(f"⚠️ REJECTED CA snapshot ({timestamp}): {reason}")
-        print("Run's data looks incomplete; aborting save to avoid corrupting frequency history.")
+    # Check the history BEFORE scraping: if it exists but can't be read, stop now so the
+    # run never seeds a fresh history over the real one.
+    if load_history(history_path) is None:
+        print("Aborting to protect existing history. Fix or restore the file and re-run.")
         return False
 
-    # Keep stores that failed this run on the map with their last known price.
-    fetched, carried = carry_forward_missing(fetched, latest_known, stores)
-    if carried:
-        print(f"Carried forward the last known price for {carried} store(s) that returned none this run.")
+    # Prefer the frequency tracker's own latest prices, falling back to production ca_latest.json.
+    last_known = load_latest_prices(latest_path) or load_latest_prices(CA_LATEST_FILE)
 
-    # Pacific wall-clock timestamps repeat during the daylight-saving fall-back hour.
-    if history and timestamp <= max(history):
-        print(f"⚠️ Timestamp {timestamp} is not after the last history entry ({max(history)}); "
-              f"skipping this run's save.")
-        return True
-
-    # Compute trend baseline (~72h lookback) from history as it stood before this run
-    prev_prices, prev_timestamp = find_trend_baseline(history, timestamp)
-
-    # Delta storage: only save when prices change
-    changed = False
-    if history:
-        current_active = reconstruct_store_prices_at(history, timestamp)
-        deltas = compute_price_deltas(fetched, current_active)
-        if deltas:
-            history[timestamp] = deltas
-            write_pretty_top_level(history, history_path)
-            changed = True
-            num_changes = sum(len(cities) for cities in deltas.values())
-            print(f"✨ Found {num_changes} store price change(s). Appended to {history_path}")
-        else:
-            print(f"ℹ️ No price changes detected since previous check. {history_path} left untouched.")
-    else:
-        # Seed first snapshot
-        history[timestamp] = fetched
-        write_pretty_top_level(history, history_path)
-        changed = True
-        print(f"🌱 Seeded initial CA frequency baseline in {history_path}")
-
-    # Write latest snapshot
-    if WRITE_LATEST_ONLY_ON_CHANGE and not changed and os.path.exists(latest_path):
-        print(f"ℹ️ No changes; {latest_path} left untouched.")
-        return True
-
-    latest_payload = {
-        "timestamp": timestamp,
-        "prices": fetched,
-        "previous": prev_prices,
-        "previous_timestamp": prev_timestamp,
-    }
-    atomic_write_json(latest_path, latest_payload, separators=(',', ':'))
-
-    print(f"✅ Saved latest CA snapshot -> {latest_path}")
-    return True
+    # Module globals are read here (not as defaults) so tests can monkeypatch them.
+    return process_and_save(
+        stores,
+        history_path,
+        latest_path,
+        "CA frequency",
+        verify_all_changes=True,
+        last_known=last_known,
+        write_latest_only_on_change=WRITE_LATEST_ONLY_ON_CHANGE,
+        fetch_prices=get_gas_prices_ajax,
+    )
 
 
 def main():

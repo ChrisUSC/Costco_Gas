@@ -71,6 +71,7 @@ public/ (HTML, JS, CSS, us_stores.json) ──► Cloudflare Pages static hostin
 ├── functions/
 │   └── _middleware.js          # Pages Function: serves price snapshots from the R2 bucket
 ├── worker.js                   # Same R2 routing as a standalone Cloudflare Worker
+├── r2_snapshots.js             # R2 snapshot serving shared by the middleware and the Worker
 ├── wrangler.jsonc              # Worker config (static assets from public/, R2 binding)
 │
 ├── pipeline/                   # Python data pipeline

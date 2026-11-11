@@ -8,6 +8,7 @@ import sys
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta
+from functools import lru_cache
 from zoneinfo import ZoneInfo
 
 import requests
@@ -233,9 +234,31 @@ def find_trend_baseline(history: dict, current_timestamp_str: str) -> tuple[dict
     return reconstruct_store_prices_at(history, latest_prior), latest_prior
 
 
-def save_data(data: dict, history_path: str, latest_path: str) -> bool:
+def load_history(history_path: str) -> dict | None:
+    """Reads a history file. Returns {} if it is missing or empty, None if it can't be read
+    (callers must then stop rather than seed a fresh history over the real one)."""
+    if not os.path.exists(history_path) or os.path.getsize(history_path) == 0:
+        return {}
+    try:
+        with open(history_path, 'r', encoding='utf-8') as json_file:
+            return json.load(json_file)
+    except (ValueError, OSError) as e:  # ValueError covers bad JSON and bad UTF-8
+        problem = "contains invalid JSON" if isinstance(e, ValueError) else "couldn't be read"
+        print(f"⚠️ ERROR: {history_path} {problem} ({e}).")
+        return None
+
+
+def save_data(
+    data: dict,
+    history_path: str,
+    latest_path: str,
+    write_latest_only_on_change: bool = False,
+) -> bool:
     """Appends only changed store prices to history_path (seeding a full snapshot if the
     history is empty) and writes the compact latest snapshot to latest_path.
+
+    With write_latest_only_on_change, latest_path is left alone when no price changed (and
+    it already exists), so its "timestamp" means "last change" rather than "last check".
 
     Returns False if nothing could be saved because the existing history is unreadable,
     True otherwise (including a deliberately skipped run, see below)."""
@@ -250,18 +273,10 @@ def save_data(data: dict, history_path: str, latest_path: str) -> bool:
         if isinstance(cities, dict)
     }
 
-    save_prices = {}
-    if os.path.exists(history_path) and os.path.getsize(history_path) > 0:
-        try:
-            with open(history_path, 'r', encoding='utf-8') as json_file:
-                save_prices = json.load(json_file)
-        except json.JSONDecodeError as e:
-            print(f"⚠️ ERROR: {history_path} contains invalid JSON ({e}).")
-            print("Skipping save to prevent deleting historical data.")
-            return False
-        except Exception as e:
-            print(f"⚠️ ERROR reading {history_path}: {e}")
-            return False
+    save_prices = load_history(history_path)
+    if save_prices is None:
+        print("Skipping save to prevent deleting historical data.")
+        return False
 
     # Timestamps are Pacific wall-clock time, so when clocks fall back the 01:xx hour repeats
     # and a new timestamp can sort at or before entries already saved. Appending it would
@@ -274,6 +289,7 @@ def save_data(data: dict, history_path: str, latest_path: str) -> bool:
 
     previous_prices, previous_timestamp = find_trend_baseline(save_prices, timestamp_str)
 
+    changed = True
     if save_prices:
         current_active = reconstruct_store_prices_at(save_prices, timestamp_str)
         delta_prices = compute_price_deltas(sorted_states_data, current_active)
@@ -283,11 +299,16 @@ def save_data(data: dict, history_path: str, latest_path: str) -> bool:
             total_chgs = sum(len(c) for c in delta_prices.values())
             print(f"Appended {total_chgs} store price changes -> {history_path}")
         else:
+            changed = False
             print(f"No price changes detected. {history_path} left untouched.")
     else:
         save_prices[timestamp_str] = sorted_states_data
         write_pretty_top_level(save_prices, history_path)
         print(f"Saved initial snapshot -> {history_path}")
+
+    if write_latest_only_on_change and not changed and os.path.exists(latest_path):
+        print(f"No changes; {latest_path} left untouched.")
+        return True
 
     latest_payload = {
         "timestamp": timestamp_str,
@@ -453,18 +474,20 @@ def extract_gas_hours(html_content: str, ld_data: dict | None = None) -> dict | 
     return None
 
 
-def _lookup_timezone(lat: float, lng: float) -> str | None:
-    """Returns the IANA timezone name for a coordinate if timezonefinder is installed."""
+@lru_cache(maxsize=1)
+def _tz_finder():
+    """One shared TimezoneFinder (slow to build), or None if timezonefinder isn't installed."""
     try:
         from timezonefinder import TimezoneFinder
     except ImportError:
         return None
-    global _TZ_FINDER
-    try:
-        _TZ_FINDER
-    except NameError:
-        _TZ_FINDER = TimezoneFinder()
-    return _TZ_FINDER.timezone_at(lat=lat, lng=lng)
+    return TimezoneFinder()
+
+
+def _lookup_timezone(lat: float, lng: float) -> str | None:
+    """Returns the IANA timezone name for a coordinate if timezonefinder is installed."""
+    finder = _tz_finder()
+    return finder.timezone_at(lat=lat, lng=lng) if finder else None
 
 
 def _ld_json_objects(raw) -> list[dict]:
@@ -995,8 +1018,8 @@ def refresh_store_details(stores: dict, filepath: str) -> int:
     print(f"Refreshed details for {len(jobs) - failed}/{len(jobs)} stores in '{filepath}' "
           f"({changed} field(s) changed, {failed} fetch/parse failure(s)).")
     if changed:
-        out_stores = sort_stores_dict(stores) if not filepath.endswith("local_stores.json") else stores
-        atomic_write_json(filepath, out_stores, indent=4)
+        # Only dict-format lists (us_stores.json) can change here; keep them sorted.
+        atomic_write_json(filepath, sort_stores_dict(stores), indent=4)
     return changed
 
 
@@ -1006,10 +1029,17 @@ def process_and_save(
     latest_file: str,
     label: str,
     verify_all_changes: bool = True,
+    last_known: dict | None = None,
+    write_latest_only_on_change: bool = False,
+    fetch_prices=None,
 ) -> bool:
-    """Fetches prices for one dataset, validates completeness, and saves if healthy."""
-    last_known = load_latest_prices(latest_file)
-    prices = get_gas_prices_ajax(
+    """Fetches prices for one dataset, validates completeness, and saves if healthy.
+
+    last_known defaults to the prices in latest_file; fetch_prices defaults to
+    get_gas_prices_ajax (callers and tests can substitute their own)."""
+    if last_known is None:
+        last_known = load_latest_prices(latest_file)
+    prices = (fetch_prices or get_gas_prices_ajax)(
         locations,
         last_known,
         verify_all_changes=verify_all_changes,
@@ -1028,7 +1058,7 @@ def process_and_save(
     if carried:
         print(f"Carried forward the last known price for {carried} store(s) that returned none this run.")
     prices = {timestamp: merged}
-    if not save_data(prices, history_file, latest_file):
+    if not save_data(prices, history_file, latest_file, write_latest_only_on_change):
         return False
     print_lowest_prices(prices)
     return True
