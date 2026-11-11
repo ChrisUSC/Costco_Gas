@@ -21,7 +21,8 @@ A live-updating map of Costco gas prices across the US. A scheduled scraper coll
 - 🥇 **Lowest**: a ranked state leaderboard, with 72-hour price trends shown as an arrow and the size of the move (`▼ 4¢`, `▲ 6¢`, `–`)
 - 📍 **Nearby**: stations within a 5–100 mi radius of you, a searched place or the map centre, sorted by price or distance
 - 🔗 Shareable links: `?store=STATE_City` opens a station, and `?tab=`, `?grade=` and `?state=` restore the view
-- 📲 Installable to a phone or desktop home screen (web app manifest)
+- 📲 Installable to a phone or desktop home screen (web app manifest), and opens offline with the last prices it saw (service worker)
+- 📴 **Offline mode**: a built-in US outline replaces the map background, the header says the prices are saved, Route and place search are hidden, and prices refresh by themselves when the connection returns
 - ⚙️ Settings panel: clustering and price colours on/off, directions app (Google Maps, Apple Maps or Waze), light/dark/system theme, start-up tab, and automatic location on/off. Settings are saved in the browser.
 - 🌙 Light and dark themes with matching map tiles, following the system setting by default
 - ♿ Keyboard navigation with visible focus, 44px touch targets, reduced-motion support and text contrast that meets WCAG AA
@@ -65,6 +66,8 @@ public/ (HTML, JS, CSS, us_stores.json) ──► Cloudflare Pages static hostin
 │   │   ├── routes.js           # OSRM routing, corridor filtering, saved routes
 │   │   └── nav.js              # URL query state and Back-button handling for the sheet and modal
 │   ├── manifest.webmanifest    # Web app manifest (install to home screen)
+│   ├── sw.js                   # Service worker: offline copy of the app and the last prices
+│   ├── us-outline.json         # Simplified US state outlines for the offline map (US Census, via us-atlas)
 │   ├── icons/                  # App icons referenced by the manifest
 │   └── us_stores.json          # Master store list: address, coordinates, hours, phone, time zone
 │
@@ -233,6 +236,8 @@ python3 -m http.server 8000 -d public
 
 Then open `http://localhost:8000`.
 
+The service worker (`public/sw.js`) loads the app's files from the network whenever it can, so edits show up on a normal reload. If something still looks stale, clear it in DevTools: Application → Service workers → Unregister, or tick "Bypass for network". When you add a file the app loads, add it to `APP_FILES` in `sw.js`; `tests/test_service_worker.py` checks this.
+
 ## Deployment
 
 **Cloudflare Pages** (the live site) deploys from this repo. Project settings:
@@ -247,6 +252,11 @@ Then open `http://localhost:8000`.
 ```bash
 npx wrangler deploy
 ```
+
+## Credits
+
+- Offline map outlines: U.S. Census Bureau cartographic boundary files (public domain), via [us-atlas](https://github.com/topojson/us-atlas) (ISC), simplified with mapshaper.
+- Map tiles: © OpenStreetMap contributors, © CARTO.
 
 ## Testing
 
