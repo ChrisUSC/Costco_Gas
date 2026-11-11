@@ -67,9 +67,9 @@ export const state = {
     nearbySortMode: oneOf(storageGet('nearbySort'), ['price', 'distance'], 'price'),
     favoriteStoreKeys: new Set(loadJsonPref('favoriteStores', [])),
     favoriteRoutes: loadJsonPref('favoriteRoutes', []),
-    // Settings panel (see SETTINGS_DEFAULTS)
-    clusterMarkers: loadBoolPref('clusterMarkers', true),
-    colorPins: loadBoolPref('colorPins', true),
+    // Settings panel. Clustering and price colours start off; a saved choice wins.
+    clusterMarkers: loadBoolPref('clusterMarkers', false),
+    colorPins: loadBoolPref('colorPins', false),
     directionsApp: oneOf(storageGet('directionsApp'), DIRECTIONS_APPS, 'google'),
     defaultTab: oneOf(storageGet('defaultTab'), TAB_NAMES, 'nearby'),
     autoLocate: loadBoolPref('autoLocate', true),
