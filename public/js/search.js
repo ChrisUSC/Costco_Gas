@@ -124,7 +124,10 @@ export async function getGeoMatches(query, { limit = 5, abortPrevious = true } =
 export async function geocodeAddress(query) {
     const coordMatch = query.match(/^(-?\d+\.?\d*),\s*(-?\d+\.?\d*)$/);
     if (coordMatch) {
-        return { lat: parseFloat(coordMatch[1]), lng: parseFloat(coordMatch[2]), label: 'Your location' };
+        // Labelled with the coordinates themselves: "Your location" means the device's
+        // current position (saved routes re-resolve it), which typed coordinates are not.
+        const lat = parseFloat(coordMatch[1]), lng = parseFloat(coordMatch[2]);
+        return { lat, lng, label: `${lat}, ${lng}` };
     }
     const matches = await getGeoMatches(query, { limit: 1, abortPrevious: false });
     if (!matches || matches.length === 0) return null;
@@ -333,6 +336,11 @@ export function setupInputAutocomplete(inputId, dropdownId, actionType) {
         currentAutocompleteAction = actionType;
 
         const query = inputEl.value.toLowerCase().trim();
+        // A route field that already holds the chosen place (e.g. "Your location") has
+        // nothing to look up; searching for its label would only show "No matches".
+        const chosen = actionType === 'routeOrigin' ? state.routeOriginLocation
+            : actionType === 'routeDest' ? state.routeDestLocation : null;
+        if (chosen && chosen.label.toLowerCase() === query) return;
         if (query.length > 0) debouncedAutocomplete(query);
     });
 }

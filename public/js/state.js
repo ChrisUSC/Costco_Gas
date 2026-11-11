@@ -51,7 +51,8 @@ export const state = {
     latestTimestamp: null,
     trendBaselineLabel: 'the last update',
     currentStateContext: 'CA',
-    userLocation: null,
+    userLocation: null,   // where the Nearby list is centred (device, searched place or map centre)
+    deviceLocation: null, // last position from the device itself (proof location access is allowed)
     currentTab: 'nearby', // 'nearby' | 'lowest' | 'route' | 'search' | 'favorites'
 
     // Mobile viewport & sheet state
