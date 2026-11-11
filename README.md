@@ -9,8 +9,8 @@ A live-updating map of Costco gas prices across the US. A scheduled scraper coll
 
 ## Features
 
-- 📍 Interactive Leaflet map of every Costco warehouse with a gas station; stations cluster when zoomed out and turn into price pills as you zoom in
-- 🎨 Pins and price pills coloured by relative price: green, amber and red for the cheapest, middle and most expensive third of the prices in view
+- 📍 Interactive Leaflet map of every Costco warehouse with a gas station; stations cluster into bubbles when zoomed far out, become individual pins as you zoom in, then price pills
+- 🎨 Optional price colours: green, amber and red pins for the cheapest, middle and most expensive third of the prices in view
 - 🧭 One-tap **Directions** to any station (Google Maps, Apple Maps or Waze)
 - ⛽ Regular / Premium / Diesel toggle (Diesel shows only stations that sell it); station cards lead with the selected grade's price
 - 🕒 Live "Open / Closing soon / Closed" status in each station's local time zone, plus 7-day gas hours
@@ -23,7 +23,7 @@ A live-updating map of Costco gas prices across the US. A scheduled scraper coll
 - 🔗 Shareable links: `?store=STATE_City` opens a station, and `?tab=`, `?grade=` and `?state=` restore the view
 - 📲 Installable to a phone or desktop home screen (web app manifest), and opens offline with the last prices it saw (service worker)
 - 📴 **Offline mode**: a built-in US outline replaces the map background, the header says the prices are saved, Route and place search are hidden, and prices refresh by themselves when the connection returns
-- ⚙️ Settings panel: clustering and price colours on/off, directions app (Google Maps, Apple Maps or Waze), light/dark/system theme, start-up tab, and automatic location on/off. Settings are saved in the browser.
+- ⚙️ Settings panel: clustering (on by default) and price colours (off by default), directions app (Google Maps, Apple Maps or Waze), light/dark/system theme, start-up tab, and automatic location on/off. Settings are saved in the browser.
 - 🌙 Light and dark themes with matching map tiles, following the system setting by default
 - ♿ Keyboard navigation with visible focus, 44px touch targets, reduced-motion support and text contrast that meets WCAG AA
 
