@@ -113,7 +113,10 @@ let loadStatus = 'loading'; // 'loading' | 'ready' | 'error'
 const initialUrl = readUrlParams();
 let sharedStoreKey = new URLSearchParams(window.location.search).get('store'); // ?store=CA_City link
 
-// Pins cluster below this zoom; from here on every station shows its own pin and price.
+// From this zoom every station shows its own pin (below it, with clustering on, nearby
+// stations merge into bubbles: country and multi-state views).
+const CLUSTER_UNTIL_ZOOM = 8;
+// From this zoom each pin also shows its price.
 const PIN_ZOOM = 9;
 
 // Layout tiers (keep in sync with the media queries in styles.css):
@@ -932,13 +935,13 @@ function initMap() {
 
 // --- Clustering & price-coloured pins ---
 
-// Below PIN_ZOOM nearby stations merge into a bubble showing how many there are and the
-// cheapest price among them. Falls back to plain markers if the plugin failed to load.
+// Below CLUSTER_UNTIL_ZOOM nearby stations merge into a bubble showing how many there are and
+// the cheapest price among them. Falls back to plain markers if the plugin failed to load.
 function createMarkersLayer() {
     if (!state.clusterMarkers || typeof L.markerClusterGroup !== 'function') return L.layerGroup();
     return L.markerClusterGroup({
-        disableClusteringAtZoom: PIN_ZOOM,
-        maxClusterRadius: 56,
+        disableClusteringAtZoom: CLUSTER_UNTIL_ZOOM,
+        maxClusterRadius: 44, // tighter bubbles break apart sooner as you zoom in
         showCoverageOnHover: false,
         spiderfyOnMaxZoom: false,
         animate: !prefersReducedMotion(),
