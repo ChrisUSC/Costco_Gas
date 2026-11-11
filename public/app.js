@@ -24,7 +24,8 @@ import {
     DIRECTIONS_APP_LABELS,
     showToast,
     prefersReducedMotion,
-    requestBrowserLocation
+    requestBrowserLocation,
+    storeMatchesQuery
 } from './js/utils.js';
 import {
     state,
@@ -37,6 +38,7 @@ import {
     setSetting,
     TAB_NAMES,
     DIRECTIONS_APPS,
+    NEARBY_RADII,
     setGasPref as saveGasPref,
     setDarkMode as saveDarkMode,
     setNearbyRadius as saveNearbyRadius,
@@ -480,12 +482,22 @@ function currentMapData() {
         : state.stores;
 }
 
+// Rebuilding the markers removes the one whose desktop popup is open, which closes it.
+// Re-open it afterwards (if that station is still on the map) so the user keeps their place.
+function refreshMapAndList() {
+    const openPopupStore = popupStore;
+    if (state.stores.length > 0) renderMap(currentMapData());
+    refreshCurrentDisplay();
+    if (!openPopupStore || isMobileViewport()) return;
+    const marker = findStore(openPopupStore.state, openPopupStore.city)?.leafletMarker;
+    if (marker && marker._map) marker.openPopup();
+}
+
 function toggleFavoriteStoreAndRefresh(stateCode, city) {
     const isNowFav = toggleFavoriteStore(stateCode, city);
     showToast(isNowFav ? '★ Added to favorites' : 'Removed from favorites');
 
-    if (state.stores.length > 0) renderMap(currentMapData());
-    refreshCurrentDisplay();
+    refreshMapAndList();
 
     if (state.activeMobileStore && state.activeMobileStore.state === stateCode && state.activeMobileStore.city === city) {
         renderMobileStoreCardContent(state.activeMobileStore);
@@ -732,8 +744,7 @@ function setGasPref(pref) {
 
     syncGradeButtons();
 
-    if (state.stores.length > 0) renderMap(currentMapData());
-    refreshCurrentDisplay();
+    refreshMapAndList();
 
     if (state.activeMobileStore) {
         if (shouldFilterStoresByGrade(state.gasPref) && !hasGradeData(state.activeMobileStore, state.gasPref)) {
@@ -1032,6 +1043,12 @@ function renderMap(dataArray) {
     if (!markersLayer) return;
     markersLayer.clearLayers();
     storeMarkers = [];
+    // Forget the old markers, so code that looks a station up by state/city never gets a
+    // marker that is no longer on the map.
+    state.stores.forEach(s => { s.leafletMarker = null; });
+    // The Route tab passes copies of the stores (with a distance added); the card, the popup
+    // and the hover link look stations up in state.stores, so give the originals the marker too.
+    const isCopies = dataArray !== state.stores;
     filterStoresForCurrentGrade(dataArray, state.gasPref).forEach(store => {
         if (!store.lat || !store.lng) return;
 
@@ -1087,6 +1104,10 @@ function renderMap(dataArray) {
         }
         storeMarkers.push(marker);
         store.leafletMarker = marker;
+        if (isCopies) {
+            const original = findStore(store.state, store.city);
+            if (original) original.leafletMarker = marker;
+        }
     });
 
     if (typeof markersLayer.addLayers === 'function') markersLayer.addLayers(storeMarkers);
@@ -1305,11 +1326,7 @@ function renderStoresList(searchTerm) {
     if (!container) return;
     container.innerHTML = "";
 
-    let filtered = state.stores.filter(s =>
-        s.city.toLowerCase().includes(searchTerm) ||
-        s.address.toLowerCase().includes(searchTerm) ||
-        s.state.toLowerCase().includes(searchTerm)
-    );
+    let filtered = state.stores.filter(s => storeMatchesQuery(s, searchTerm));
     filtered = filterStoresForCurrentGrade(filtered, state.gasPref);
 
     if (map && filtered.length > 0) {
@@ -1407,7 +1424,7 @@ function renderNearbyPrices() {
             <div class="field nearby-control-group">
                 <label for="nearbyRadiusSelect">Radius</label>
                 <select id="nearbyRadiusSelect" class="select">
-                    ${[5, 10, 25, 50, 100].map(m => `<option value="${m}" ${m === state.nearbyRadiusMiles ? 'selected' : ''}>${m} mi</option>`).join('')}
+                    ${NEARBY_RADII.map(m => `<option value="${m}" ${m === state.nearbyRadiusMiles ? 'selected' : ''}>${m} mi</option>`).join('')}
                 </select>
             </div>
             <div class="field nearby-control-group">
@@ -1499,7 +1516,7 @@ function renderFavoriteStores() {
 // --- Tab Navigation ---
 
 const TAB_RENDERERS = {
-    search: () => renderStoresList(document.getElementById('searchInput')?.value.toLowerCase() || ''),
+    search: () => renderStoresList(document.getElementById('searchInput')?.value.toLowerCase().trim() || ''),
     lowest: () => renderLowestPrices(),
     nearby: () => renderNearbyPrices(),
     route: () => renderRoutePanel(),
@@ -1535,6 +1552,7 @@ function keepActiveTabVisible(tabName) {
 }
 
 function switchTab(tabName) {
+    const previousTab = state.currentTab;
     state.currentTab = tabName;
 
     Object.keys(TAB_RENDERERS).forEach(t => {
@@ -1548,8 +1566,12 @@ function switchTab(tabName) {
     keepActiveTabVisible(tabName);
 
     if (tabName !== 'route') {
-        clearRouteVisuals();
-        if (state.stores.length > 0) renderMap(state.stores);
+        // Only the Route tab changes which stations the map shows, so the markers need
+        // rebuilding only when leaving it (not on every tab render or search keystroke).
+        if (previousTab === 'route') {
+            clearRouteVisuals();
+            if (state.stores.length > 0) renderMap(state.stores);
+        }
         state.editingRouteId = null;
         state.editSnapshot = null;
     }
@@ -1803,10 +1825,7 @@ initSearch({
     getMap: () => map,
     onSelectStore: (store) => flyToStore(store),
     onSelectGeo: (result) => flyToGeoResult(result),
-    onSearchInput: (query) => {
-        switchTab('search');
-        renderStoresList(query);
-    }
+    onSearchInput: () => switchTab('search')
 });
 
 initRoutes({

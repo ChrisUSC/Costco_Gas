@@ -25,6 +25,7 @@ from scraper import (
     find_trend_baseline,
     write_pretty_top_level,
     atomic_write_json,
+    carry_forward_missing,
 )
 from paths import CA_STORES_FILE, snapshot_path
 
@@ -33,9 +34,8 @@ CA_FREQ_LATEST_FILE = snapshot_path("ca_freq_latest.json")
 CA_LATEST_FILE = snapshot_path("ca_latest.json")
 
 # True: only rewrite the latest file when a price actually changed (or it doesn't exist yet).
-#       Avoids a commit on every run, but the file's "timestamp" then means "last change",
-#       not "last check".
-# False: rewrite it every run (timestamp = last check, but one commit per run).
+#       The file's "timestamp" then means "last change", not "last check".
+# False: rewrite it every run (timestamp = last check).
 WRITE_LATEST_ONLY_ON_CHANGE = True
 
 
@@ -83,6 +83,17 @@ def run_ca_tracker(
         print(f"⚠️ REJECTED CA snapshot ({timestamp}): {reason}")
         print("Run's data looks incomplete; aborting save to avoid corrupting frequency history.")
         return False
+
+    # Keep stores that failed this run on the map with their last known price.
+    fetched, carried = carry_forward_missing(fetched, latest_known, stores)
+    if carried:
+        print(f"Carried forward the last known price for {carried} store(s) that returned none this run.")
+
+    # Pacific wall-clock timestamps repeat during the daylight-saving fall-back hour.
+    if history and timestamp <= max(history):
+        print(f"⚠️ Timestamp {timestamp} is not after the last history entry ({max(history)}); "
+              f"skipping this run's save.")
+        return True
 
     # Compute trend baseline (~72h lookback) from history as it stood before this run
     prev_prices, prev_timestamp = find_trend_baseline(history, timestamp)

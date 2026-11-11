@@ -187,7 +187,7 @@ export async function loadFavoriteRoute(id) {
     populateRouteInputsFromSaved(route);
 
     await findGasAlongRoute();
-    renderRoutePanel();
+    if (state.currentTab === 'route') renderRoutePanel();
 }
 
 export async function startEditRoute(id) {
@@ -206,7 +206,7 @@ export async function startEditRoute(id) {
     populateRouteInputsFromSaved(route);
 
     await findGasAlongRoute();
-    renderRoutePanel();
+    if (state.currentTab === 'route') renderRoutePanel();
 }
 
 export function cancelEditRoute() {
@@ -345,9 +345,12 @@ export async function findGasAlongRoute() {
             .filter(s => s.distance <= bufferMiles);
 
         state.lastRouteState = { originText, destText, bufferMiles, origin, destination, route, along };
-        renderRoutePanel();
+        // The user may have switched tabs while the route was loading; the result is kept
+        // and shown when they come back to the Route tab.
+        if (state.currentTab === 'route') renderRoutePanel();
     } catch (err) {
         console.error('Route search failed:', err);
+        if (state.currentTab !== 'route' || !resultsEl.isConnected) return;
         resultsEl.innerHTML = `
             <p class="route-error">${escapeHtml(err.message || "Couldn't calculate that route. Please try again.")}</p>
             <button type="button" class="btn btn-secondary btn-block" data-action="route-find">${icon('refresh', 16)} Try again</button>`;

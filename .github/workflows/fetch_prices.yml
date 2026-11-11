@@ -38,8 +38,10 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      # Only the US files: this job must never touch the CA frequency files, which
+      # ca_frequency_experiment.yml updates on its own schedule.
       - name: Download existing snapshots from R2
-        run: python pipeline/r2_sync.py download
+        run: python pipeline/r2_sync.py download us_latest.json us_history.json
         env:
           R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
@@ -55,7 +57,7 @@ jobs:
           command: python pipeline/scraper.py 3
 
       - name: Upload updated snapshots to R2
-        run: python pipeline/r2_sync.py upload
+        run: python pipeline/r2_sync.py upload us_latest.json us_history.json
         env:
           R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
