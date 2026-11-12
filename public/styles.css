@@ -270,6 +270,9 @@ body.dark-mode .select {
 /* Offline: the label says the prices are the saved copy */
 .last-updated.is-offline { color: var(--warning); font-weight: 600; }
 .last-updated.is-offline::before { background: var(--warning); }
+/* Out of date: no new prices for several hourly runs (utils.js PRICES_STALE_HOURS) */
+.last-updated.is-stale { color: var(--warning); font-weight: 600; white-space: normal; }
+.last-updated.is-stale::before { background: var(--warning); }
 
 /* --- Offline mode --- */
 /* The map's built-in outline (app.js updateOfflineBasemap) */

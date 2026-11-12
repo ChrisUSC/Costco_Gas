@@ -472,12 +472,15 @@ function sheetAwareCenter(latlng, zoom) {
 function refreshLastUpdatedLabel() {
     const el = document.getElementById('lastUpdated');
     if (!el || !state.latestTimestamp) return;
-    const { text, title } = formatLastUpdatedLabel(state.latestTimestamp);
+    const { text, title, stale } = formatLastUpdatedLabel(state.latestTimestamp);
     // Offline the prices are the saved copy: say so (this runs every minute, so the
-    // offline wording has to live here or it would revert).
-    el.innerText = state.offline ? `Offline · prices from ${text.replace(/^Updated /, '')}` : text;
+    // offline wording has to live here or it would revert). Offline wording wins over the
+    // out-of-date warning: the fix there is reconnecting, not waiting for the scraper.
+    const age = text.replace(/^Updated /, '').replace(/ · may be out of date$/, '');
+    el.innerText = state.offline ? `Offline · prices from ${age}` : text;
     el.title = title;
     el.classList.toggle('is-offline', state.offline);
+    el.classList.toggle('is-stale', stale && !state.offline);
 }
 
 // --- Shareable Store Links & Favorites ---

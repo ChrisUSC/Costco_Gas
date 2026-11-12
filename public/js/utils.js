@@ -312,9 +312,13 @@ export function getRelativeTimeLabel(timestampStr) {
     return `${Math.round(hours / 24)}d ago`;
 }
 
+// Prices are scraped hourly, so a snapshot this old means several runs in a row failed
+// or never started. The header label turns amber and says the prices may be out of date.
+export const PRICES_STALE_HOURS = 4;
+
 export function formatLastUpdatedLabel(timestampStr) {
     const age = timestampAge(timestampStr);
-    if (!age) return { text: 'Update time unknown', title: '' };
+    if (!age) return { text: 'Update time unknown', title: '', stale: false };
 
     const { date: d, minutes, hours } = age;
     const days = Math.round(hours / 24);
@@ -325,8 +329,13 @@ export function formatLastUpdatedLabel(timestampStr) {
     else if (hours < 36) text = `Updated ${hours} hr ago`;
     else text = `Updated ${days} day${days === 1 ? '' : 's'} ago`;
 
-    const title = d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
-    return { text, title };
+    let title = d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+    const stale = minutes >= PRICES_STALE_HOURS * 60;
+    if (stale) {
+        text += ' · may be out of date';
+        title = `Prices last updated ${title}. They normally update every hour, so they may be out of date.`;
+    }
+    return { text, title, stale };
 }
 
 export function getTrendArrow(current, previous, baselineLabel = 'the last update') {
