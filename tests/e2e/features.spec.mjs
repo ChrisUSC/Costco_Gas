@@ -151,4 +151,17 @@ test.describe('Back button and keyboard', () => {
         await page.goto('/');
         await expect(page.locator('#btn-premium')).toHaveAttribute('aria-pressed', 'true');
     });
+
+    test('the saved grade is highlighted from the first paint, before app.js runs', async ({ page }) => {
+        await page.goto('/');
+        await page.locator('#btn-premium').click();
+        await expect(page.locator('#btn-premium')).toHaveAttribute('aria-pressed', 'true');
+
+        // Block app.js so only the page's own markup and inline scripts have run.
+        await page.route('**/app.js', route => route.abort());
+        await page.goto('/', { waitUntil: 'domcontentloaded' });
+        await expect(page.locator('#btn-premium')).toHaveClass(/active/);
+        await expect(page.locator('#btn-regular')).not.toHaveClass(/active/);
+    });
 });
+

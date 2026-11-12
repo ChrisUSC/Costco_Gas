@@ -76,6 +76,28 @@
             <button type="button" class="gas-toggle-btn" id="btn-premium" data-gas-pref="premium" aria-pressed="false">Premium</button>
             <button type="button" class="gas-toggle-btn" id="btn-diesel" data-gas-pref="diesel" aria-pressed="false">Diesel</button>
         </div>
+        <script>
+            // Highlight the starting grade before first paint (app.js loads later and would
+            // briefly show Regular). Same order as the app: a ?grade= link, then the default
+            // from Settings, then the grade picked last time.
+            (function () {
+                var grades = ['regular', 'premium', 'diesel'];
+                var ok = function (g) { return grades.indexOf(g) !== -1; };
+                var grade = new URLSearchParams(location.search).get('grade');
+                if (!ok(grade)) {
+                    try {
+                        grade = localStorage.getItem('defaultGrade');
+                        if (!ok(grade)) grade = localStorage.getItem('gasPref');
+                    } catch (e) { grade = null; }
+                }
+                if (!ok(grade)) grade = 'regular';
+                grades.forEach(function (g) {
+                    var btn = document.getElementById('btn-' + g);
+                    btn.classList.toggle('active', g === grade);
+                    btn.setAttribute('aria-pressed', String(g === grade));
+                });
+            })();
+        </script>
 
         <button type="button" class="btn btn-secondary btn-near-me" data-action="find-me"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 11 22 2l-9 19-2-8-8-2z"/></svg> Near me</button>
         <button type="button" class="btn btn-icon" id="settingsBtn" data-action="open-settings" title="Settings" aria-label="Settings" aria-haspopup="dialog" aria-controls="settingsModal"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/></svg></button>
