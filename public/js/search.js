@@ -1,15 +1,12 @@
 // --- Autocomplete & Nominatim Geocoding ---
 
-import {
-    escapeHtml,
-    debounce,
-    getDistanceMiles,
-    formatAddress,
-    showToast,
-    storeMatchesQuery
-} from './utils.js';
-import { state } from './state.js';
+import { debounce, escapeHtml, showToast } from './dom.js';
+import { getDistanceMiles } from './geo.js';
 import { icon } from './icons.js';
+import { flyToGeoResult, flyToStore, map } from './map.js';
+import { state } from './state.js';
+import { formatAddress, storeMatchesQuery } from './stores.js';
+import { switchTab } from './tabs.js';
 
 let autocompleteItems = [];
 let activeAutocompleteIndex = -1;
@@ -18,16 +15,6 @@ let activeInputId = 'searchInput';
 let activeDropdownId = 'autocompleteDropdown';
 let currentAutocompleteAction = 'search'; // 'search' | 'routeOrigin' | 'routeDest'
 
-let searchContext = {
-    getMap: () => null,
-    onSelectStore: null,
-    onSelectGeo: null,
-    onSearchInput: null
-};
-
-export function initSearch(context) {
-    searchContext = { ...searchContext, ...context };
-}
 
 export const GEO_META_MAP = {
     postcode: { label: 'Zip Code' },
@@ -79,7 +66,6 @@ export function shortGeoName(result) {
 
 export function buildNominatimUrl(query, limit = 5) {
     let url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=${limit}&countrycodes=us&q=${encodeURIComponent(query)}`;
-    const map = searchContext.getMap();
     if (map) {
         const b = map.getBounds();
         url += `&viewbox=${b.getWest()},${b.getNorth()},${b.getEast()},${b.getSouth()}`;
@@ -91,7 +77,6 @@ export function getStoreMatches(query) {
     if (!query) return [];
     const matches = state.stores.filter(s => storeMatchesQuery(s, query));
 
-    const map = searchContext.getMap();
     if (map) {
         const center = map.getCenter();
         matches.sort((a, b) =>
@@ -230,9 +215,9 @@ export function selectAutocompleteItem(idx) {
 
     if (currentAutocompleteAction === 'search') {
         if (item.type === 'store') {
-            searchContext.onSelectStore?.(item.data);
+            flyToStore(item.data);
         } else {
-            searchContext.onSelectGeo?.(item.data);
+            flyToGeoResult(item.data);
         }
         document.getElementById('searchInput')?.blur();
     } else if (currentAutocompleteAction === 'routeOrigin') {
@@ -295,7 +280,7 @@ export function setupInputAutocomplete(inputId, dropdownId, actionType) {
 
         const query = e.target.value.toLowerCase().trim();
         if (actionType === 'search') {
-            searchContext.onSearchInput?.(query);
+            switchTab('search');
         }
 
         if (query.length === 0) {
@@ -344,4 +329,23 @@ export function setupInputAutocomplete(inputId, dropdownId, actionType) {
         if (chosen && chosen.label.toLowerCase() === query) return;
         if (query.length > 0) debouncedAutocomplete(query);
     });
+}
+
+// On narrow phones the search box shares its row with the grade toggle, so the
+// full placeholder is cut off ("Search city or z…"). Use a short one there.
+const SEARCH_PLACEHOLDER_FULL = 'Search city or zip';
+const SEARCH_PLACEHOLDER_SHORT = 'City or zip';
+const SEARCH_PLACEHOLDER_OFFLINE = 'Search stations'; // places need a connection
+
+export function applySearchPlaceholder() {
+    const input = document.getElementById('searchInput');
+    if (!input) return;
+    const narrow = window.matchMedia?.('(max-width: 480px)').matches;
+    input.placeholder = state.offline ? SEARCH_PLACEHOLDER_OFFLINE
+        : narrow ? SEARCH_PLACEHOLDER_SHORT : SEARCH_PLACEHOLDER_FULL;
+}
+
+export function initSearchPlaceholder() {
+    applySearchPlaceholder();
+    window.matchMedia?.('(max-width: 480px)').addEventListener?.('change', applySearchPlaceholder);
 }

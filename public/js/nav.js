@@ -1,10 +1,12 @@
 // --- URL State & Browser History ---
+
+import { GRADE_KEYS } from './prices.js';
+import { TAB_NAMES } from './state.js';
+
 // Tab, grade and state live in the query string (replaceState: they never add history
 // entries). Opening the station sheet or the price-history modal pushes an entry, so the
 // browser / Android Back button closes it instead of leaving the site.
 
-import { TAB_NAMES } from './state.js';
-import { GRADE_KEYS } from './utils.js';
 
 let handlers = {
     getView: () => ({}),        // -> { tab, grade, state, store }
@@ -21,9 +23,13 @@ export function readUrlParams() {
     return {
         tab: TAB_NAMES.includes(tab) ? tab : null,
         grade: GRADE_KEYS.includes(grade) ? grade : null,
-        state: /^[A-Z]{2}$/.test(stateCode) ? stateCode : null
+        state: /^[A-Z]{2}$/.test(stateCode) ? stateCode : null,
+        store: params.get('store') || null // CA_Turlock; checked against the stations once loaded
     };
 }
+
+// The parameters the page was opened with. Read once: the app rewrites the URL as it goes.
+export const initialUrl = readUrlParams();
 
 function buildUrl() {
     const view = handlers.getView();

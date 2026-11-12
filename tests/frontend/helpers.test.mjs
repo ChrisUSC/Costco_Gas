@@ -1,16 +1,18 @@
-// Unit tests for the pure helpers in public/js/utils.js (prices, distances, gas hours,
-// timestamps, formatting). Run with: npm run test:unit
+// Unit tests for the pure helpers in public/js (prices.js, geo.js, hours.js, time.js,
+// stores.js, dom.js, storage.js). Run with: npm run test:unit
 import { test, describe, mock, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
     getValidPrice, formatPriceDisplay, extractGradePrices, hasGradeData,
-    filterStoresForCurrentGrade, getVisibleStoreGrades, storeMatchesQuery,
-    getDistanceMiles, distanceToSegmentMiles, minDistanceToRouteMiles, getRouteBoundsPadded,
-    formatGasTime, getGasStatus, groupGasHours,
-    parseScraperTimestamp, getRelativeTimeLabel, formatLastUpdatedLabel, PRICES_STALE_HOURS,
-    getTrendArrow, directionsUrl, formatAddress, escapeHtml, loadJsonPref,
-} from '../../public/js/utils.js';
+    filterStoresForCurrentGrade, getVisibleStoreGrades, getTrendArrow,
+} from '../../public/js/prices.js';
+import { getDistanceMiles, distanceToSegmentMiles, minDistanceToRouteMiles, getRouteBoundsPadded } from '../../public/js/geo.js';
+import { formatGasTime, getGasStatus, groupGasHours } from '../../public/js/hours.js';
+import { parseScraperTimestamp, getRelativeTimeLabel, formatLastUpdatedLabel, PRICES_STALE_HOURS } from '../../public/js/time.js';
+import { storeMatchesQuery, directionsUrl, formatAddress } from '../../public/js/stores.js';
+import { escapeHtml } from '../../public/js/dom.js';
+import { loadJsonPref } from '../../public/js/storage.js';
 
 const store = (over = {}) => ({
     state: 'CA', city: 'Turlock', address: '2500 GEER RD, TURLOCK, CA 95380',
