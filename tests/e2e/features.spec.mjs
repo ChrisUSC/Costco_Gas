@@ -1,14 +1,6 @@
-import { test, expect, CHEAPEST, isPhone, storeLatLng } from './fixtures.mjs';
+import { test, expect, CHEAPEST, isPhone, openListOnPhone, storeLatLng } from './fixtures.mjs';
 
 const cards = (page) => page.locator('#sidebarContent .store-card');
-
-// On phones the list starts as a peeking bottom sheet: pull it up before using it.
-async function openListOnPhone(page, testInfo) {
-    if (!isPhone(testInfo)) return;
-    const grabber = page.locator('#sheetGrabber');
-    if (await grabber.getAttribute('aria-expanded') !== 'true') await grabber.click();
-    await expect(grabber).toHaveAttribute('aria-expanded', 'true');
-}
 
 test.describe('Nearby with location access already allowed', () => {
     const [lat, lng] = storeLatLng('CA', 'Turlock');

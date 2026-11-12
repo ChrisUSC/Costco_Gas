@@ -140,3 +140,12 @@ export { expect };
 
 // Phones show the list in a bottom sheet; some checks only apply to the wider layouts.
 export const isPhone = (testInfo) => testInfo.project.name === 'phone';
+
+// On phones the list starts as a peeking bottom sheet whose content can't be used (it is
+// inert): pull it up first, as a person would.
+export async function openListOnPhone(page, testInfo) {
+    if (!isPhone(testInfo)) return;
+    const grabber = page.locator('#sheetGrabber');
+    if (await grabber.getAttribute('aria-expanded') !== 'true') await grabber.click();
+    await expect(grabber).toHaveAttribute('aria-expanded', 'true');
+}

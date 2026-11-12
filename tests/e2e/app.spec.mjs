@@ -1,4 +1,4 @@
-import { test, expect, CHEAPEST, DIESEL_CITY, isPhone } from './fixtures.mjs';
+import { test, expect, CHEAPEST, DIESEL_CITY, openListOnPhone } from './fixtures.mjs';
 
 const lastUpdated = (page) => page.locator('#lastUpdated');
 const cards = (page) => page.locator('#sidebarContent .store-card');
@@ -52,8 +52,9 @@ test.describe('station lists', () => {
         await expect(first.locator('.card-price .trend-down')).toContainText('4¢');
     });
 
-    test('switching state in the leaderboard updates the list and the URL', async ({ page }) => {
+    test('switching state in the leaderboard updates the list and the URL', async ({ page }, testInfo) => {
         await page.goto('/?tab=lowest&state=CA');
+        await openListOnPhone(page, testInfo);
         await page.locator('#stateLeaderboardSelect').selectOption('TX');
         await expect(cards(page).first()).toHaveAttribute('data-city', CHEAPEST.TX);
         await expect(page).toHaveURL(/state=TX/);
@@ -84,11 +85,7 @@ test.describe('station details', () => {
 
     test('the price history chart opens from a station card', async ({ page }, testInfo) => {
         await page.goto('/?tab=lowest&state=CA');
-        if (isPhone(testInfo)) {
-            // The list starts as a peeking bottom sheet: pull it up first.
-            await page.locator('#sheetGrabber').click();
-            await expect(page.locator('#sheetGrabber')).toHaveAttribute('aria-expanded', 'true');
-        }
+        await openListOnPhone(page, testInfo);
         await cards(page).first().locator('[data-action="history"]').click();
         await expect(page.locator('#chartModal')).toBeVisible();
         await expect(page.locator('#chartTitle')).toContainText('Turlock');
