@@ -18,9 +18,17 @@ export function hasExplicitThemePref() {
 export const TAB_NAMES = ['nearby', 'lowest', 'route', 'search', 'favorites'];
 export const DIRECTIONS_APPS = ['google', 'apple', 'waze'];
 export const NEARBY_RADII = [5, 10, 25, 50, 100];
+// Default fuel grade on opening: 'last' remembers the grade picked last time.
+export const DEFAULT_GRADES = ['last', ...GRADE_KEYS];
 
 function oneOf(value, allowed, fallback) {
     return allowed.includes(value) ? value : fallback;
+}
+
+// The grade shown on opening: the default from Settings, or the last one picked.
+function initialGasPref() {
+    const def = oneOf(storageGet('defaultGrade'), DEFAULT_GRADES, 'last');
+    return def === 'last' ? oneOf(storageGet('gasPref'), GRADE_KEYS, 'regular') : def;
 }
 
 function loadBoolPref(key, fallback) {
@@ -63,7 +71,7 @@ export const state = {
 
     // User preferences (synced to localStorage)
     isDarkMode: initialDarkMode(),
-    gasPref: oneOf(storageGet('gasPref'), GRADE_KEYS, 'regular'),
+    gasPref: initialGasPref(),
     nearbyRadiusMiles: oneOf(parseFloat(storageGet('nearbyRadius')), NEARBY_RADII, 50),
     nearbySortMode: oneOf(storageGet('nearbySort'), ['price', 'distance'], 'price'),
     favoriteStoreKeys: new Set(loadJsonPref('favoriteStores', [])),
@@ -74,6 +82,7 @@ export const state = {
     colorPins: loadBoolPref('colorPins', false),
     directionsApp: oneOf(storageGet('directionsApp'), DIRECTIONS_APPS, 'google'),
     defaultTab: oneOf(storageGet('defaultTab'), TAB_NAMES, 'nearby'),
+    defaultGrade: oneOf(storageGet('defaultGrade'), DEFAULT_GRADES, 'last'),
     autoLocate: loadBoolPref('autoLocate', true),
     historyRangeDays: (() => {
         const val = parseInt(storageGet('historyRangeDays'), 10);

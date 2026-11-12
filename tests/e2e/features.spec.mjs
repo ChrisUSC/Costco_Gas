@@ -136,4 +136,19 @@ test.describe('Back button and keyboard', () => {
         }
         await expect(page.locator('body')).toHaveClass(/dark-mode/);
     });
+
+    test('a default fuel set in Settings is selected on opening', async ({ page }) => {
+        await page.goto('/');
+        await page.locator('#settingsBtn').click();
+        await page.locator('#settingsForm select[name="defaultGrade"]').selectOption('premium');
+        await expect(page.locator('#btn-premium')).toHaveAttribute('aria-pressed', 'true');
+        await page.keyboard.press('Escape');
+
+        // Picking another grade in the header doesn't change the default. (Open a fresh
+        // address: the current one now carries ?grade=regular, which would win.)
+        await page.locator('#btn-regular').click();
+        await expect(page.locator('#btn-regular')).toHaveAttribute('aria-pressed', 'true');
+        await page.goto('/');
+        await expect(page.locator('#btn-premium')).toHaveAttribute('aria-pressed', 'true');
+    });
 });
