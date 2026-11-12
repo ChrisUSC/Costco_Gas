@@ -198,6 +198,18 @@
                 </label>
                 <label class="settings-row">
                     <span class="settings-text">
+                        <span class="settings-label">Default fuel</span>
+                        <span class="settings-hint">The fuel grade shown when you open the app. "Last used" keeps whichever grade you picked last time. A shared link to a specific grade opens that grade instead.</span>
+                    </span>
+                    <select name="defaultGrade" class="select settings-select">
+                        <option value="last">Last used</option>
+                        <option value="regular">Regular</option>
+                        <option value="premium">Premium</option>
+                        <option value="diesel">Diesel</option>
+                    </select>
+                </label>
+                <label class="settings-row">
+                    <span class="settings-text">
                         <span class="settings-label">Use my location automatically</span>
                         <span class="settings-hint">On opening, use your location if you've allowed it, and guess your state from your internet connection (via ipapi.co). The Route tab also starts from your location. Turn off to do none of these; "Near me" and the route's locate button still work when you tap them.</span>
                     </span>

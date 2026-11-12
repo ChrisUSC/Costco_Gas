@@ -7,8 +7,9 @@ import { trapFocus } from './dom.js';
 import { popupStore, rebuildMarkersLayer, storePopupHtml, updatePinTiers } from './markers.js';
 import { popOverlay, pushOverlay } from './nav.js';
 import { closeHistory } from './overlays.js';
-import { applyTheme, refreshThemedViews } from './preferences.js';
+import { applyTheme, refreshThemedViews, setGasPref } from './preferences.js';
 import {
+    DEFAULT_GRADES,
     DIRECTIONS_APPS,
     getThemePref,
     setSetting,
@@ -32,6 +33,7 @@ function syncSettingsForm() {
     form.elements.colorPins.checked = state.colorPins;
     form.elements.autoLocate.checked = state.autoLocate;
     form.elements.defaultTab.value = state.defaultTab;
+    form.elements.defaultGrade.value = state.defaultGrade;
     form.querySelector(`input[name="directionsApp"][value="${state.directionsApp}"]`).checked = true;
     form.querySelector(`input[name="theme"][value="${getThemePref()}"]`).checked = true;
 }
@@ -86,6 +88,12 @@ function applySettingChange(name, input) {
             break;
         case 'defaultTab':
             if (TAB_NAMES.includes(input.value)) setSetting('defaultTab', input.value);
+            break;
+        case 'defaultGrade':
+            if (!DEFAULT_GRADES.includes(input.value)) return;
+            setSetting('defaultGrade', input.value);
+            // Picking a grade also switches to it now, so the change is visible straight away.
+            if (input.value !== 'last' && input.value !== state.gasPref) setGasPref(input.value);
             break;
         case 'autoLocate':
             setSetting('autoLocate', input.checked);
