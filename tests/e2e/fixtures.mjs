@@ -57,6 +57,30 @@ export function buildHistory() {
     };
 }
 
+// The parts of a Nominatim search result the app reads.
+function nominatimResult(name, { lat, lng }) {
+    const d = 0.05;
+    return {
+        lat: String(lat), lon: String(lng), display_name: `${name}, California, United States`,
+        type: 'city', addresstype: 'city', address: { city: name, state: 'California' },
+        boundingbox: [lat - d, lat + d, lng - d, lng + d].map(String),
+    };
+}
+
+// An OSRM /route response for a line through the given [lat, lng] points.
+function osrmResponse(points) {
+    return {
+        code: 'Ok',
+        routes: [{ distance: 40 * 1609.34, geometry: { type: 'LineString', coordinates: points.map(([lat, lng]) => [lng, lat]) } }],
+    };
+}
+
+// Coordinates of a station in the real store list.
+export function storeLatLng(stateCode, city) {
+    const s = stores[stateCode][city];
+    return [s.lat, s.lng];
+}
+
 async function serveFromNodeModules(route) {
     const url = new URL(route.request().url());
     const m = url.pathname.replace(/^\/npm\//, '/').match(/^\/((?:@[^/]+\/)?[^@/]+)@[^/]+\/(.+)$/);
@@ -78,8 +102,13 @@ async function serveFromNodeModules(route) {
 export const test = base.extend({
     // Override per test: test.use({ latest: { ageMinutes: 300 } }) or { status: 500 }.
     latest: [{}, { option: true }],
+    // Places the geocoder knows: { 'query text': { lat, lng, name } } (case-insensitive match).
+    places: [{}, { option: true }],
+    // A driving route for OSRM to return, as { points: [[lat, lng], ...] }; null makes routing
+    // fail. (An object, not a bare array: test.use() reads an array as [value, options].)
+    drivingRoute: [null, { option: true }],
 
-    page: async ({ page, latest }, use) => {
+    page: async ({ page, latest, places, drivingRoute }, use) => {
         page.errors = [];
         page.on('pageerror', (err) => page.errors.push(err.message));
         page.on('console', (msg) => { if (msg.type() === 'error') page.errors.push(msg.text()); });
@@ -87,8 +116,16 @@ export const test = base.extend({
         await page.route(/^https:\/\/(cdn\.jsdelivr\.net|unpkg\.com)\//, serveFromNodeModules);
         await page.route(/basemaps\.cartocdn\.com/, (r) => r.fulfill({ body: TILE, contentType: 'image/png' }));
         await page.route(/ipapi\.co/, (r) => r.fulfill({ body: 'CA', contentType: 'text/plain', headers: { 'Access-Control-Allow-Origin': '*' } }));
-        await page.route(/nominatim\.openstreetmap\.org/, (r) => r.fulfill({ json: [], headers: { 'Access-Control-Allow-Origin': '*' } }));
-        await page.route(/router\.project-osrm\.org/, (r) => r.abort());
+        await page.route(/nominatim\.openstreetmap\.org/, (r) => {
+            const q = (new URL(r.request().url()).searchParams.get('q') || '').toLowerCase();
+            const hits = Object.entries(places)
+                .filter(([name]) => name.toLowerCase().startsWith(q) || q.startsWith(name.toLowerCase()))
+                .map(([name, p]) => nominatimResult(name, p));
+            return r.fulfill({ json: hits, headers: { 'Access-Control-Allow-Origin': '*' } });
+        });
+        await page.route(/router\.project-osrm\.org/, (r) => drivingRoute
+            ? r.fulfill({ json: osrmResponse(drivingRoute.points), headers: { 'Access-Control-Allow-Origin': '*' } })
+            : r.abort());
 
         await page.route(/\/us_latest\.json/, (r) => latest.status
             ? r.fulfill({ status: latest.status, json: { error: 'stubbed failure' } })
@@ -103,3 +140,12 @@ export { expect };
 
 // Phones show the list in a bottom sheet; some checks only apply to the wider layouts.
 export const isPhone = (testInfo) => testInfo.project.name === 'phone';
+
+// On phones the list starts as a peeking bottom sheet whose content can't be used (it is
+// inert): pull it up first, as a person would.
+export async function openListOnPhone(page, testInfo) {
+    if (!isPhone(testInfo)) return;
+    const grabber = page.locator('#sheetGrabber');
+    if (await grabber.getAttribute('aria-expanded') !== 'true') await grabber.click();
+    await expect(grabber).toHaveAttribute('aria-expanded', 'true');
+}

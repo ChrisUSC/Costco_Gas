@@ -1,6 +1,7 @@
 // --- Centralized Application State & Storage Management ---
 
-import { loadJsonPref, storageGet, storageSet, storageRemove, GRADE_KEYS } from './utils.js';
+import { GRADE_KEYS } from './prices.js';
+import { loadJsonPref, storageGet, storageRemove, storageSet } from './storage.js';
 
 function initialDarkMode() {
     const saved = storageGet('theme');
@@ -111,27 +112,27 @@ export function findStore(stateCode, city) {
     return state.stores.find(s => s.state === stateCode && s.city === city);
 }
 
-export function setGasPref(pref) {
+export function saveGasPref(pref) {
     state.gasPref = pref;
     storageSet('gasPref', pref);
 }
 
-export function setDarkMode(isDark) {
+export function saveDarkMode(isDark) {
     state.isDarkMode = isDark;
     storageSet('theme', isDark ? 'dark' : 'light');
 }
 
-export function setNearbyRadius(miles) {
+export function saveNearbyRadius(miles) {
     state.nearbyRadiusMiles = parseFloat(miles);
     storageSet('nearbyRadius', state.nearbyRadiusMiles);
 }
 
-export function setNearbySort(mode) {
+export function saveNearbySort(mode) {
     state.nearbySortMode = mode;
     storageSet('nearbySort', mode);
 }
 
-export function setHistoryRangeDays(days) {
+export function saveHistoryRangeDays(days) {
     state.historyRangeDays = days;
     storageSet('historyRangeDays', days);
 }

@@ -34,7 +34,7 @@ jobs:
       run: pytest tests/ -v
 
   frontend:
-    name: Frontend (unit + browser)
+    name: Frontend (lint, unit + browser)
     runs-on: ubuntu-latest
 
     steps:
@@ -49,6 +49,9 @@ jobs:
 
     - name: Install test dependencies
       run: npm ci
+
+    - name: Lint (catches missing or misspelled imports between modules)
+      run: npm run lint
 
     - name: Unit tests and CDN integrity hashes
       run: npm run test:unit

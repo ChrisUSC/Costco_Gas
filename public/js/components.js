@@ -1,24 +1,20 @@
 // --- Reusable HTML Components & View Builders ---
 
+import { escapeHtml } from './dom.js';
+import { gasHoursDetailsHtml, gasStatusHtml } from './hours.js';
+import { icon } from './icons.js';
+import { isPhoneViewport } from './layout.js';
 import {
-    escapeHtml,
-    getMedal,
-    gasStatusHtml,
-    gasHoursDetailsHtml,
+    getTrendArrow,
     getVisibleStoreGrades,
-    gradeVal,
+    GRADE_INFO,
     gradePrevVal,
     gradeStr,
-    getTrendArrow,
-    directionsUrl,
-    formatAddress,
-    hasGradeData,
-    DIRECTIONS_APP_LABELS,
-    GRADE_INFO,
-    PHONE_MAX_WIDTH
-} from './utils.js';
-import { state, isFavoriteStore } from './state.js';
-import { icon } from './icons.js';
+    gradeVal,
+    hasGradeData
+} from './prices.js';
+import { isFavoriteStore, state } from './state.js';
+import { DIRECTIONS_APP_LABELS, directionsUrl, formatAddress } from './stores.js';
 
 export const DIRECTIONS_ICON = icon('directions', 16);
 
@@ -230,7 +226,7 @@ export function renderSavedRoutesHtml({ fromFavorites = false } = {}) {
 
 export function renderMobileStoreCardContent(store) {
     // Phones show details inside the list sheet; tablets use the floating card.
-    const contentEl = document.getElementById(window.innerWidth <= PHONE_MAX_WIDTH ? 'sheetDetailContent' : 'mobileStoreSheetContent');
+    const contentEl = document.getElementById(isPhoneViewport() ? 'sheetDetailContent' : 'mobileStoreSheetContent');
     if (!contentEl || !store) return;
 
     const isFav = isFavoriteStore(store.state, store.city);
@@ -261,4 +257,9 @@ export function renderMobileStoreCardContent(store) {
             ${shareButtonHtml(store)}
         </div>
     `;
+}
+
+// Rank badge for leaderboards; the top three get the accent treatment.
+export function getMedal(index) {
+    return `<span class="rank${index < 3 ? ' rank-top' : ''}" aria-label="Rank ${index + 1}">${index + 1}</span>`;
 }

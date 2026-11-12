@@ -56,16 +56,43 @@ public/ (HTML, JS, CSS, us_stores.json) ──► Cloudflare Pages static hostin
 ├── public/                     # Everything the browser loads (Cloudflare Pages output directory)
 │   ├── index.html              # App shell
 │   ├── styles.css              # Design tokens (colour, type, radius, shadow) + all styling, light/dark
-│   ├── app.js                  # Entry point: map, sidebar views, event handling
+│   ├── app.js                  # Entry point: starts the modules below in order (no logic of its own)
 │   ├── js/
-│   │   ├── utils.js            # Constants, price/grade helpers, distance math, gas hours, timestamps
-│   │   ├── state.js            # App state and localStorage preferences
-│   │   ├── components.js       # Store cards, mobile sheet, saved-route cards
-│   │   ├── icons.js            # Inline SVG icon set (used instead of emoji)
-│   │   ├── search.js           # Autocomplete and Nominatim geocoding
+│   │   │   # Helpers (all but layout.js are pure and unit-tested in tests/frontend)
+│   │   ├── prices.js           # Fuel grades, price parsing and formatting, trend arrows
+│   │   ├── hours.js            # Gas hours and open / closed status in each station's time zone
+│   │   ├── time.js             # Scraper timestamps and the "Updated … ago" wording
+│   │   ├── geo.js              # Distances and route-corridor geometry
+│   │   ├── stores.js           # Station records, search matching, addresses, directions links
+│   │   ├── storage.js          # localStorage access that never throws
+│   │   ├── layout.js           # Phone / tablet / desktop layout tiers
+│   │   │   # State and URL
+│   │   ├── state.js            # App state and saved preferences
+│   │   ├── nav.js              # URL query state and Back-button handling for overlays
+│   │   │   # Data
+│   │   ├── data.js             # Loading prices and stores, quiet refreshes, the "Updated" label
+│   │   ├── offline.js          # Offline mode, retries, service worker registration
+│   │   ├── location.js         # Browser geolocation, IP-based state guess, "Near me"
+│   │   │   # Map
+│   │   ├── map.js              # Leaflet map, tiles, moving the map, location markers, offline outline
+│   │   ├── markers.js          # Station pins: clustering, price colours, legend, popups
+│   │   ├── map-interactions.js # Double-tap zoom, page-zoom lock, "Search this area", hover links
+│   │   │   # Sidebar and panels
+│   │   ├── tabs.js             # Tab switching and rendering the active tab
+│   │   ├── lists.js            # Nearby, State lowest, All stations and Favorites lists
+│   │   ├── routes.js           # Route tab: OSRM routing, corridor filtering, saved routes
+│   │   ├── search.js           # Header search: autocomplete and Nominatim geocoding
+│   │   ├── sheet.js            # Phone bottom sheet, tablet sidebar, station details card
 │   │   ├── charts.js           # Price-history loading and Chart.js modal
-│   │   ├── routes.js           # OSRM routing, corridor filtering, saved routes
-│   │   └── nav.js              # URL query state and Back-button handling for the sheet and modal
+│   │   ├── overlays.js         # History modal entries and matching the page to Back / Forward
+│   │   ├── settings.js         # Settings panel
+│   │   ├── preferences.js      # Theme and fuel-grade toggle
+│   │   ├── station-actions.js  # Favorite and share buttons, opening ?store= links
+│   │   │   # Markup and events
+│   │   ├── components.js       # HTML for store cards, price tiles, saved-route cards
+│   │   ├── icons.js            # Inline SVG icon set (used instead of emoji)
+│   │   ├── dom.js              # HTML escaping, focus trap, toasts, debounce, reduced motion
+│   │   └── events.js           # One delegated click and keydown listener for the whole page
 │   ├── manifest.webmanifest    # Web app manifest (install to home screen)
 │   ├── sw.js                   # Service worker: offline copy of the app and the last prices
 │   ├── us-outline.json         # Simplified US state outlines for the offline map (US Census, via us-atlas)
@@ -102,7 +129,8 @@ public/ (HTML, JS, CSS, us_stores.json) ──► Cloudflare Pages static hostin
 ├── .github/dependabot.yml      # Weekly upgrade PRs for pip, npm and Actions
 ├── requirements.txt            # Pipeline dependencies (pinned)
 ├── requirements-dev.txt        # + pytest
-├── package.json                # Frontend test tooling and the pinned CDN library versions
+├── package.json                # Frontend test and lint tooling, and the pinned CDN library versions
+├── eslint.config.mjs           # Lint rules (undefined names, unused imports)
 ├── playwright.config.mjs       # Browser test config
 └── pytest.ini
 ```
@@ -114,6 +142,7 @@ The pipeline scripts resolve their paths from `pipeline/paths.py`, so they can b
 The frontend is plain HTML, CSS and ES modules with no build step.
 
 - **Design tokens:** every colour, radius, shadow and type size is a CSS variable defined at the top of `public/styles.css`, with a light set on `:root` and a dark set on `body.dark-mode`. Change a token rather than a component when adjusting the look.
+- **Modules:** each file in `public/js/` owns one part of the page (listed above). Modules import what they need directly, cycles included, so a module's top level must only declare things: all start-up calls live in `app.js`. `npm run lint` catches a missing or misspelled import, and button behaviour is wired through the `ACTIONS` table in `events.js` (`data-action="name"` in the markup).
 - **Icons:** `public/js/icons.js` holds one inline SVG set. Use `icon('name', size)` in templates instead of emoji, and give icon-only buttons an `aria-label`.
 - **Buttons and fields:** shared classes `btn` (`btn-primary`, `btn-tonal`, `btn-secondary`, `btn-ghost`, `btn-icon`), `input` and `select`.
 - **Font:** the system UI font stack, so no web font is downloaded.
@@ -282,6 +311,10 @@ pytest
 
 ```bash
 npm ci
+```
+
+```bash
+npm run lint         # ESLint: undefined names and unused imports across the modules
 ```
 
 ```bash

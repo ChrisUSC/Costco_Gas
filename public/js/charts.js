@@ -1,17 +1,10 @@
 // --- Lazy-Loaded Price History & Chart.js Modal ---
 
-import {
-    parseScraperTimestamp,
-    prefersReducedMotion,
-    extractGradePrices,
-    getValidPrice,
-    GRADE_KEYS,
-    GRADE_INFO,
-    escapeHtml,
-    trapFocus
-} from './utils.js';
+import { escapeHtml, prefersReducedMotion, trapFocus } from './dom.js';
 import { icon } from './icons.js';
-import { state, setHistoryRangeDays } from './state.js';
+import { extractGradePrices, getValidPrice, GRADE_INFO, GRADE_KEYS } from './prices.js';
+import { saveHistoryRangeDays, state } from './state.js';
+import { parseScraperTimestamp } from './time.js';
 
 let globalHistory = {};
 let priceChartInstance = null;
@@ -171,7 +164,7 @@ export function renderRangeControls() {
 
 export function setHistoryRange(days) {
     const numDays = parseInt(days, 10);
-    setHistoryRangeDays(isNaN(numDays) ? 30 : numDays);
+    saveHistoryRangeDays(isNaN(numDays) ? 30 : numDays);
     renderRangeControls();
     if (currentModalState && currentModalCity) {
         renderPriceChart(currentModalState, currentModalCity);

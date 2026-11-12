@@ -24,7 +24,7 @@ updates:
       interval: weekly
     groups:
       test-tooling:
-        patterns: ["@playwright/test"]
+        patterns: ["@playwright/test", "eslint", "@eslint/js", "globals"]
       cdn-libraries:
         patterns: ["leaflet", "leaflet.markercluster", "chart.js", "chartjs-adapter-date-fns"]
     ignore:

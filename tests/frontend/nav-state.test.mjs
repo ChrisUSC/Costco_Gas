@@ -24,12 +24,16 @@ const withSearch = (search) => {
 
 describe('readUrlParams', () => {
     test('reads a valid tab, grade and state', () => {
-        assert.deepEqual(withSearch('?tab=lowest&grade=diesel&state=tx'), { tab: 'lowest', grade: 'diesel', state: 'TX' });
+        assert.deepEqual(withSearch('?tab=lowest&grade=diesel&state=tx'), { tab: 'lowest', grade: 'diesel', state: 'TX', store: null });
     });
 
     test('ignores unknown or malformed values', () => {
-        assert.deepEqual(withSearch('?tab=admin&grade=e85&state=Texas'), { tab: null, grade: null, state: null });
-        assert.deepEqual(withSearch(''), { tab: null, grade: null, state: null });
+        assert.deepEqual(withSearch('?tab=admin&grade=e85&state=Texas'), { tab: null, grade: null, state: null, store: null });
+        assert.deepEqual(withSearch(''), { tab: null, grade: null, state: null, store: null });
+    });
+
+    test('keeps a shared ?store= link for later', () => {
+        assert.equal(withSearch('?store=CA_Turlock').store, 'CA_Turlock');
     });
 
     test('every tab name round-trips', () => {

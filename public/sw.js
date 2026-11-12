@@ -8,7 +8,7 @@
 // When you add a file under public/ that the app loads, add it to APP_FILES as well
 // (tests/test_service_worker.py checks this). Bump CACHE_VERSION to drop old caches.
 
-const CACHE_VERSION = 'v3';
+const CACHE_VERSION = 'v4';
 const CACHE = `costco-gas-${CACHE_VERSION}`;
 
 // The app itself. If any of these can't be fetched, installing fails and is retried on
@@ -21,12 +21,33 @@ const APP_FILES = [
     'app.js',
     'js/charts.js',
     'js/components.js',
+    'js/data.js',
+    'js/dom.js',
+    'js/events.js',
+    'js/geo.js',
+    'js/hours.js',
     'js/icons.js',
+    'js/layout.js',
+    'js/lists.js',
+    'js/location.js',
+    'js/map-interactions.js',
+    'js/map.js',
+    'js/markers.js',
     'js/nav.js',
+    'js/offline.js',
+    'js/overlays.js',
+    'js/preferences.js',
+    'js/prices.js',
     'js/routes.js',
     'js/search.js',
+    'js/settings.js',
+    'js/sheet.js',
     'js/state.js',
-    'js/utils.js',
+    'js/station-actions.js',
+    'js/storage.js',
+    'js/stores.js',
+    'js/tabs.js',
+    'js/time.js',
     'manifest.webmanifest',
     'us-outline.json',
     'icons/apple-touch-icon.png',

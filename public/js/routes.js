@@ -1,38 +1,20 @@
 // --- Route Feature: OSRM Driving Route, Corridor Filtering & Saved Routes ---
 
 import {
-    getDistanceMiles,
-    minDistanceToRouteMiles,
-    getRouteBoundsPadded,
-    escapeHtml,
-    showToast,
-    requestBrowserLocation,
-    getLocationIfGranted,
-    GRADE_INFO,
-    gradeVal,
-    hasGradeData
-} from './utils.js';
-import {
-    state,
-    saveFavoriteRoute,
-    updateFavoriteRoute,
-    removeFavoriteRoute
-} from './state.js';
-import { createStoreCard, renderSavedRoutesHtml, appendPagedCards, skeletonCardsHtml } from './components.js';
-import { geocodeAddress, setupInputAutocomplete } from './search.js';
+    appendPagedCards,
+    createStoreCard,
+    renderSavedRoutesHtml,
+    skeletonCardsHtml
+} from './components.js';
+import { escapeHtml, showToast } from './dom.js';
+import { getDistanceMiles, getRouteBoundsPadded, minDistanceToRouteMiles } from './geo.js';
 import { icon } from './icons.js';
-
-let routesContext = {
-    getMap: () => null,
-    getRouteLayer: () => null,
-    renderMap: () => {},
-    switchTab: () => {},
-    setMobileView: () => {}
-};
-
-export function initRoutes(context) {
-    routesContext = { ...routesContext, ...context };
-}
+import { getLocationIfGranted, requestBrowserLocation } from './location.js';
+import { map, routeLayer } from './map.js';
+import { renderMap } from './markers.js';
+import { GRADE_INFO, gradeVal, hasGradeData } from './prices.js';
+import { geocodeAddress, setupInputAutocomplete } from './search.js';
+import { removeFavoriteRoute, saveFavoriteRoute, state, updateFavoriteRoute } from './state.js';
 
 export async function fetchDrivingRoute(origin, destination) {
     const controller = new AbortController();
@@ -122,7 +104,7 @@ export function renderRoutePanel() {
     if (state.lastRouteState && state.lastRouteState.along) {
         renderRouteResults(state.lastRouteState);
         renderRouteOnMap(state.lastRouteState.route.coords, state.lastRouteState.origin, state.lastRouteState.destination);
-        routesContext.renderMap(state.lastRouteState.along.length > 0 ? state.lastRouteState.along : state.stores);
+        renderMap(state.lastRouteState.along.length > 0 ? state.lastRouteState.along : state.stores);
     }
 }
 
@@ -293,16 +275,15 @@ export function cancelEditRoute() {
     clearRouteVisuals();
     if (state.lastRouteState && state.lastRouteState.along) {
         renderRouteOnMap(state.lastRouteState.route.coords, state.lastRouteState.origin, state.lastRouteState.destination);
-        routesContext.renderMap(state.lastRouteState.along.length > 0 ? state.lastRouteState.along : state.stores);
+        renderMap(state.lastRouteState.along.length > 0 ? state.lastRouteState.along : state.stores);
     } else {
-        routesContext.renderMap(state.stores);
+        renderMap(state.stores);
     }
 
     renderRoutePanel();
 }
 
 export function clearRouteVisuals() {
-    const routeLayer = routesContext.getRouteLayer();
     if (routeLayer) routeLayer.clearLayers();
 }
 
@@ -340,8 +321,6 @@ export function renderRouteResults(routeState) {
 }
 
 export function renderRouteOnMap(routeCoords, origin, destination) {
-    const routeLayer = routesContext.getRouteLayer();
-    const map = routesContext.getMap();
     if (!routeLayer || !map) return;
 
     routeLayer.clearLayers();

@@ -1,4 +1,6 @@
 // --- Inline SVG icon set ---
+
+
 // One consistent stroke-icon family (Feather-style, 24px grid) instead of emoji, which render
 // differently on every platform. Icons inherit the text colour and are hidden from assistive
 // tech: the control that holds one always carries its own text or aria-label.
@@ -31,4 +33,3 @@ const PATHS = {
 export function icon(name, size = 18, cls = '') {
     return `<svg class="icon icon-${name}${cls ? ` ${cls}` : ''}" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${PATHS[name] || ''}</svg>`;
 }
-
