@@ -21,6 +21,7 @@ A live-updating map of Costco gas prices across the US. A scheduled scraper coll
 - 🥇 **Lowest**: a ranked state leaderboard, with 72-hour price trends shown as an arrow and the size of the move (`▼ 4¢`, `▲ 6¢`, `–`)
 - 📍 **Nearby**: stations within a 5–100 mi radius of you, a searched place or the map centre, sorted by price or distance
 - 🔗 Shareable links: `?store=STATE_City` opens a station, and `?tab=`, `?grade=` and `?state=` restore the view
+- ⚠️ The "Updated … ago" label turns amber and says the prices may be out of date when no new prices have arrived for 4 hours (they normally update hourly)
 - 📲 Installable to a phone or desktop home screen (web app manifest), and opens offline with the last prices it saw (service worker)
 - 📴 **Offline mode**: a built-in US outline replaces the map background, the header says the prices are saved, Route and place search are hidden, and prices refresh by themselves when the connection returns
 - ⚙️ Settings panel: clustering (on by default) and price colours (off by default), directions app (Google Maps, Apple Maps or Waze), light/dark/system theme, start-up tab, and automatic location on/off. Settings are saved in the browser.
@@ -90,14 +91,19 @@ public/ (HTML, JS, CSS, us_stores.json) ──► Cloudflare Pages static hostin
 │   └── snapshots/              # Local copies of R2 snapshots (git-ignored)
 │
 ├── tests/                      # pytest suite for the pipeline
+│   ├── frontend/               # node --test unit tests for public/js and the CDN hashes
+│   └── e2e/                    # Playwright browser tests (stubbed data and services)
 ├── .github/workflows/
 │   ├── fetch_prices.yml        # Scheduled price scrape (R2 download → scrape → upload)
 │   ├── discover.yml            # Weekly new-store discovery; opens a PR
 │   ├── ca_frequency_experiment.yml # Manual CA high-frequency run
 │   ├── seed_r2.yml             # Manual R2 connection test
-│   └── testing.yml             # Runs pytest on pushes and PRs to main
-├── requirements.txt            # Pipeline dependencies
+│   └── testing.yml             # Runs the pipeline and frontend tests on pushes and PRs to main
+├── .github/dependabot.yml      # Weekly upgrade PRs for pip, npm and Actions
+├── requirements.txt            # Pipeline dependencies (pinned)
 ├── requirements-dev.txt        # + pytest
+├── package.json                # Frontend test tooling and the pinned CDN library versions
+├── playwright.config.mjs       # Browser test config
 └── pytest.ini
 ```
 
@@ -260,6 +266,10 @@ npx wrangler deploy
 
 ## Testing
 
+Both suites run in GitHub Actions on every push and pull request to `main` (`testing.yml`).
+
+**Pipeline** (pytest):
+
 ```bash
 pip install -r requirements-dev.txt
 ```
@@ -267,3 +277,29 @@ pip install -r requirements-dev.txt
 ```bash
 pytest
 ```
+
+**Frontend** (Node 22). The site itself has no build step or npm dependencies; `package.json` only holds the test tooling.
+
+```bash
+npm ci
+```
+
+```bash
+npm run test:unit    # node --test: helpers in public/js, URL/settings state, CDN integrity hashes
+```
+
+```bash
+npx playwright install chromium
+```
+
+```bash
+npm run test:e2e     # Playwright: the real page on desktop and phone sizes
+```
+
+The browser tests serve `public/` locally and stub everything else (price snapshots built from `us_stores.json`, CDN libraries served from `node_modules`, map tiles, geocoding), so they need no network or R2 access.
+
+## Dependencies
+
+- **Python:** `requirements.txt` pins exact versions. Dependabot (`.github/dependabot.yml`) opens a grouped upgrade PR weekly, and the tests run on it.
+- **CDN libraries:** Leaflet, Leaflet.markercluster, Chart.js and its date adapter load from jsDelivr/unpkg at pinned versions with [Subresource Integrity](https://developer.mozilla.org/docs/Web/Security/Subresource_Integrity) hashes, so the browser refuses a file that doesn't match. The same versions are devDependencies in `package.json`, and `tests/frontend/cdn-integrity.test.mjs` checks each hash against the npm package. To upgrade one: bump it in `package.json`, run `npm install`, change the version in the `index.html` URL, and paste the hash the failing test prints.
+- **Cloudflare Pages:** with a `package.json` at the root, Pages may install these test dependencies before deploying. The site doesn't use them; set the `SKIP_DEPENDENCY_INSTALL` environment variable on the Pages project to skip the install.

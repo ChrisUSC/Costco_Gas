@@ -25,3 +25,8 @@ data/snapshots/
 *_history.json
 ca_freq_*.json
 *.r2tmp
+
+# Frontend test tooling
+node_modules/
+test-results/
+playwright-report/
