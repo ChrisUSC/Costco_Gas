@@ -8,7 +8,7 @@
 // When you add a file under public/ that the app loads, add it to APP_FILES as well
 // (tests/test_service_worker.py checks this). Bump CACHE_VERSION to drop old caches.
 
-const CACHE_VERSION = 'v2';
+const CACHE_VERSION = 'v3';
 const CACHE = `costco-gas-${CACHE_VERSION}`;
 
 // The app itself. If any of these can't be fetched, installing fails and is retried on
@@ -41,6 +41,8 @@ const APP_FILES = [
 const DATA_FILES = ['us_stores.json', 'us_latest.json', 'us_history.json'];
 
 // Versioned library URLs never change, so the cached copy can be used straight away.
+// index.html loads them with an integrity hash and crossorigin, so their responses are
+// CORS responses the browser can check (an opaque copy would fail the check).
 const CDN_HOSTS = ['unpkg.com', 'cdn.jsdelivr.net'];
 
 // How long to wait for fresh price data before falling back to the saved copy.
@@ -120,8 +122,9 @@ async function cacheFirst(req) {
     const cached = await cache.match(req);
     if (cached) return cached;
     const res = await fetch(req);
-    // Library scripts load without CORS, so the response is opaque (status 0).
-    if (res.ok || res.type === 'opaque') await cache.put(req, res.clone());
+    // Only cache a readable success. An opaque (no-CORS) copy can't pass the page's
+    // integrity check, so serving one later would block the script.
+    if (res.ok) await cache.put(req, res.clone());
     return res;
 }
 
