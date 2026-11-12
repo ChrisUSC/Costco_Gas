@@ -1,0 +1,43 @@
+# Weekly upgrade pull requests for the pinned dependencies. The test workflow runs on each
+# one, so a breaking release shows up as a failing check instead of a broken scrape.
+version: 2
+updates:
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      pipeline:
+        patterns: ["*"]
+    ignore:
+      # 9.1+ requires Python 3.12; the workflows run 3.11. Remove after upgrading Python.
+      - dependency-name: timezonefinder
+        versions: [">=9.1"]
+
+  # Test tooling, plus the CDN libraries index.html loads (pinned here so the tests can check
+  # their integrity hashes). A library bump fails tests/frontend/cdn-integrity.test.mjs
+  # until the URL and hash in public/index.html are updated to match; the test prints the
+  # new hash.
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      test-tooling:
+        patterns: ["@playwright/test"]
+      cdn-libraries:
+        patterns: ["leaflet", "leaflet.markercluster", "chart.js", "chartjs-adapter-date-fns"]
+    ignore:
+      # A major version of a map or chart library needs app changes, not just a bump.
+      - dependency-name: "leaflet*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "chart*"
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]

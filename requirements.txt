@@ -1,5 +1,8 @@
-requests
-urllib3
-beautifulsoup4
-timezonefinder
-boto3
+# Pipeline dependencies, pinned to exact versions so a new release can't break the hourly
+# scrape without warning. Dependabot (.github/dependabot.yml) proposes upgrades weekly and
+# the test workflow checks them before merging.
+requests==2.34.2
+urllib3==2.8.0
+beautifulsoup4==4.15.0
+timezonefinder==9.0.0  # 9.1+ needs Python 3.12; CI runs 3.11
+boto3==1.44.1
