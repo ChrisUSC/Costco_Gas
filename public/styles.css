@@ -1012,9 +1012,9 @@ body.dark-mode .segmented input:checked + span { background: var(--surface-3); }
     }
     .sheet-grabber-bar { width: 36px; height: 4px; border-radius: 4px; background: var(--border-strong); }
 
-    .tabs { padding: 0 4px; gap: 0; overflow-x: auto; scrollbar-width: none; }
-    .tabs::-webkit-scrollbar { display: none; }
-    .tab { min-height: 48px; padding: 0 4px; }
+    /* The strip never scrolls sideways: tabs share the width and labels shrink instead */
+    .tabs { padding: 0 4px; gap: 0; overflow: hidden; touch-action: pan-y; }
+    .tab { min-width: 0; min-height: 48px; padding: 0 4px; overflow: hidden; text-overflow: ellipsis; }
 
     .sidebar-content {
         padding: 12px 12px max(24px, env(safe-area-inset-bottom, 24px));
@@ -1079,7 +1079,8 @@ body.dark-mode .segmented input:checked + span { background: var(--surface-3); }
 @keyframes sheet-in { from { transform: translateY(100%); } }
 
 @media (max-width: 359px) {
-    .tab { font-size: var(--text-sm); }
+    .tabs { padding: 0 2px; }
+    .tab { font-size: var(--text-sm); padding: 0 2px; }
     .gas-toggle-btn { font-size: var(--text-sm); }
 }
 
