@@ -59,6 +59,9 @@ export function switchTab(tabName) {
         el.classList.toggle('active', isActive);
         el.setAttribute('aria-selected', String(isActive));
         el.tabIndex = isActive ? 0 : -1; // roving tabindex: arrow keys move between tabs
+        // A tab switched off in Settings still shows while it's open (typing in the
+        // search box opens All stations; a shared link can open any tab).
+        el.hidden = !isActive && state.hiddenTabs.includes(t);
     });
     keepActiveTabVisible(tabName);
 

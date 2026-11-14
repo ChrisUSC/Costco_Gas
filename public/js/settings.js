@@ -13,11 +13,13 @@ import {
     DIRECTIONS_APPS,
     getThemePref,
     setSetting,
+    setTabVisible,
     setThemePref,
     state,
-    TAB_NAMES
+    TAB_NAMES,
+    visibleTabs
 } from './state.js';
-import { renderCurrentTab } from './tabs.js';
+import { renderCurrentTab, switchTab } from './tabs.js';
 
 let lastFocusedBeforeSettings = null;
 
@@ -32,10 +34,23 @@ function syncSettingsForm() {
     form.elements.clusterMarkers.checked = state.clusterMarkers;
     form.elements.colorPins.checked = state.colorPins;
     form.elements.autoLocate.checked = state.autoLocate;
-    form.elements.defaultTab.value = state.defaultTab;
+    syncTabSettings(form);
     form.elements.defaultGrade.value = state.defaultGrade;
     form.querySelector(`input[name="directionsApp"][value="${state.directionsApp}"]`).checked = true;
     form.querySelector(`input[name="theme"][value="${getThemePref()}"]`).checked = true;
+}
+
+// The tab switches, and the "Start on tab" choices limited to the tabs that are shown.
+function syncTabSettings(form) {
+    const shown = visibleTabs();
+    form.querySelectorAll('input[name="showTab"]').forEach(input => {
+        input.checked = shown.includes(input.value);
+        input.disabled = input.checked && shown.length === 1; // keep at least one tab
+    });
+    [...form.elements.defaultTab.options].forEach(opt => {
+        opt.disabled = !shown.includes(opt.value);
+    });
+    form.elements.defaultTab.value = state.defaultTab;
 }
 
 export function openSettings({ fromHistory = false } = {}) {
@@ -87,7 +102,14 @@ function applySettingChange(name, input) {
             refreshThemedViews();
             break;
         case 'defaultTab':
+            if (state.hiddenTabs.includes(input.value)) return;
             if (TAB_NAMES.includes(input.value)) setSetting('defaultTab', input.value);
+            break;
+        case 'showTab':
+            setTabVisible(input.value, input.checked);
+            // Leave a tab that was just switched off (switchTab also updates the strip).
+            switchTab(state.hiddenTabs.includes(state.currentTab) ? visibleTabs()[0] : state.currentTab);
+            syncTabSettings(input.form);
             break;
         case 'defaultGrade':
             if (!DEFAULT_GRADES.includes(input.value)) return;

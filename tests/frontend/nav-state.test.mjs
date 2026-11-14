@@ -15,7 +15,7 @@ globalThis.localStorage = {
     removeItem: (k) => saved.delete(k),
 };
 const { readUrlParams } = await import('../../public/js/nav.js');
-const { state, favoriteKey, findStore, isFavoriteStore, toggleFavoriteStore, TAB_NAMES } = await import('../../public/js/state.js');
+const { state, favoriteKey, findStore, isFavoriteStore, setTabVisible, toggleFavoriteStore, TAB_NAMES, visibleTabs } = await import('../../public/js/state.js');
 
 const withSearch = (search) => {
     window.location = new URL(`https://example.test/${search}`);
@@ -63,6 +63,21 @@ describe('state', () => {
         assert.equal(state.colorPins, false);   // never saved: default off
         assert.equal(state.autoLocate, true);   // never saved: default on
         assert.equal(state.isDarkMode, false);  // follows the (light) system setting
+    });
+
+    test('All stations starts hidden; the other tabs are shown', () => {
+        assert.deepEqual(state.hiddenTabs, ['search']);
+        assert.deepEqual(visibleTabs(), ['nearby', 'lowest', 'route', 'favorites']);
+    });
+
+    test('hiding tabs saves the change, moves the start tab and keeps at least one tab', () => {
+        setTabVisible('nearby', false);
+        assert.deepEqual(JSON.parse(saved.get('hiddenTabs')), ['nearby', 'search']);
+        assert.equal(state.defaultTab, 'lowest');
+        for (const t of ['lowest', 'route', 'favorites']) setTabVisible(t, false);
+        assert.deepEqual(visibleTabs(), ['favorites']); // the last one can't be hidden
+        for (const t of TAB_NAMES) setTabVisible(t, true);
+        assert.deepEqual(state.hiddenTabs, []);
     });
 
     test('toggling a favorite saves the change', () => {
