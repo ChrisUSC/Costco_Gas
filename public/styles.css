@@ -1012,8 +1012,9 @@ body.dark-mode .segmented input:checked + span { background: var(--surface-3); }
     }
     .sheet-grabber-bar { width: 36px; height: 4px; border-radius: 4px; background: var(--border-strong); }
 
-    /* The strip never scrolls sideways: tabs share the width and labels shrink instead */
-    .tabs { padding: 0 4px; gap: 0; overflow: hidden; touch-action: pan-y; }
+    /* The strip never scrolls: tabs share the width and labels shrink instead.
+       A vertical swipe on it drags the sheet (sheet.js), like the grab bar. */
+    .tabs { padding: 0 4px; gap: 0; overflow: hidden; touch-action: none; }
     .tab { min-width: 0; min-height: 48px; padding: 0 4px; overflow: hidden; text-overflow: ellipsis; }
 
     .sidebar-content {

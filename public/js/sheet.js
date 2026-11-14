@@ -97,33 +97,39 @@ function setupSheetDrag() {
         return SHEET_STATES.reduce((best, st) => Math.abs(r[st] - y) < Math.abs(r[best] - y) ? st : best, 'peek');
     };
 
+    // The grab bar and the tab strip both drag the sheet. On the strip a short
+    // movement is still a tap, so the pointer is captured only once a drag starts.
+    const tabs = document.getElementById('sidebarTabs');
     let drag = null;
-    grabber.addEventListener('pointerdown', (e) => {
+    const startDrag = (handle) => (e) => {
         if (!isPhoneViewport() || (e.pointerType === 'mouse' && e.button !== 0)) return;
         const r = restingY();
-        drag = { startY: e.clientY, startPos: r[state.mobileViewMode], lastY: e.clientY, lastT: e.timeStamp, velocity: 0, moved: false };
-        grabber.setPointerCapture(e.pointerId);
-    });
-    grabber.addEventListener('pointermove', (e) => {
-        if (!drag) return;
+        drag = { handle, pointerId: e.pointerId, startY: e.clientY, startPos: r[state.mobileViewMode], lastY: e.clientY, lastT: e.timeStamp, velocity: 0, moved: false };
+        if (handle === grabber) grabber.setPointerCapture(e.pointerId);
+    };
+    const moveDrag = (e) => {
+        if (!drag || e.pointerId !== drag.pointerId) return;
         const dy = e.clientY - drag.startY;
         if (!drag.moved && Math.abs(dy) < 6) return;
-        if (!drag.moved) { drag.moved = true; sidebar.classList.add('dragging'); }
+        if (!drag.moved) {
+            drag.moved = true;
+            sidebar.classList.add('dragging');
+            if (!drag.handle.hasPointerCapture(e.pointerId)) drag.handle.setPointerCapture(e.pointerId);
+        }
         const dt = e.timeStamp - drag.lastT;
         if (dt > 0) drag.velocity = (e.clientY - drag.lastY) / dt; // px/ms, + is downward
         drag.lastY = e.clientY; drag.lastT = e.timeStamp;
         const r = restingY();
         const y = Math.min(r.peek, Math.max(0, drag.startPos + dy));
         sidebar.style.transform = `translateY(${y}px)`;
-    });
+    };
     const endDrag = (e) => {
-        if (!drag) return;
+        if (!drag || e.pointerId !== drag.pointerId) return;
         const d = drag; drag = null;
         sidebar.classList.remove('dragging');
         if (!d.moved) return; // a plain tap is handled by the click listener
-        d.suppressClick = true;
-        grabber.dataset.justDragged = '1';
-        setTimeout(() => delete grabber.dataset.justDragged, 0);
+        d.handle.dataset.justDragged = '1';
+        setTimeout(() => delete d.handle.dataset.justDragged, 0);
         const y = d.startPos + (e.clientY - d.startY);
         let target = nearest(y);
         if (Math.abs(d.velocity) > 0.5) { // a flick moves one step in its direction
@@ -133,8 +139,16 @@ function setupSheetDrag() {
         }
         setSheetState(target);
     };
-    grabber.addEventListener('pointerup', endDrag);
-    grabber.addEventListener('pointercancel', endDrag);
+    for (const handle of [grabber, tabs].filter(Boolean)) {
+        handle.addEventListener('pointerdown', startDrag(handle));
+        handle.addEventListener('pointermove', moveDrag);
+        handle.addEventListener('pointerup', endDrag);
+        handle.addEventListener('pointercancel', endDrag);
+    }
+    // A drag that started on a tab must not also switch to that tab.
+    tabs?.addEventListener('click', (e) => {
+        if (tabs.dataset.justDragged) { e.stopPropagation(); e.preventDefault(); }
+    }, true);
 
     // Tap / Enter / Space cycles peek -> half -> full -> peek; arrows move one step.
     grabber.addEventListener('click', () => {

@@ -151,6 +151,36 @@ test.describe('Back button and keyboard', () => {
         await expect(page.locator('#tab-lowest')).toBeHidden();
     });
 
+    test('on phones, swiping the tab strip moves the sheet; tapping a tab still switches', async ({ page }, testInfo) => {
+        test.skip(!isPhone(testInfo), 'phone bottom sheet only');
+        await page.goto('/');
+        const strip = page.locator('#sidebarTabs');
+        // The strip itself never scrolls (it used to shift 1px vertically under a swipe).
+        expect(await strip.evaluate((s) => s.scrollHeight - s.clientHeight)).toBe(0);
+
+        const box = await page.locator('#tab-route').boundingBox();
+        const x = box.x + box.width / 2;
+        const y = box.y + box.height / 2;
+        const cdp = await page.context().newCDPSession(page);
+        const touch = (type, ty) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x, y: ty }] });
+        // Paced like a finger: an instant swipe makes Chrome start a fling, and the
+        // next tap then only stops the fling instead of clicking.
+        await touch('touchStart', y);
+        for (let i = 1; i <= 12; i++) {
+            await touch('touchMove', y - i * 25);
+            await page.waitForTimeout(16);
+        }
+        await page.waitForTimeout(150);
+        await touch('touchEnd');
+        await expect(page.locator('#appContainer')).toHaveClass(/sheet-(half|full)/);
+        await expect(page.locator('#tab-route')).toHaveAttribute('aria-selected', 'false'); // a swipe isn't a tap
+
+        const lowest = await page.locator('#tab-lowest').boundingBox();
+        await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: lowest.x + lowest.width / 2, y: lowest.y + lowest.height / 2 }] });
+        await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+        await expect(page.locator('#tab-lowest')).toHaveAttribute('aria-selected', 'true');
+    });
+
     test('a default fuel set in Settings is selected on opening', async ({ page }) => {
         await page.goto('/');
         await page.locator('#settingsBtn').click();
