@@ -32,22 +32,6 @@ export function refreshCurrentDisplay() {
     switchTab(state.currentTab);
 }
 
-// The tab strip scrolls horizontally on narrow phones; keep the active tab in view.
-// (Adjusts the strip's own scrollLeft: scrollIntoView() would also scroll the
-// overflow:hidden app container when the sidebar is parked off-screen.)
-function keepActiveTabVisible(tabName) {
-    const strip = document.getElementById('sidebarTabs');
-    const tab = document.getElementById(`tab-${tabName}`);
-    if (!strip || !tab || strip.scrollWidth <= strip.clientWidth) return;
-    const left = tab.offsetLeft;
-    const right = left + tab.offsetWidth;
-    if (left < strip.scrollLeft) {
-        strip.scrollLeft = left;
-    } else if (right > strip.scrollLeft + strip.clientWidth) {
-        strip.scrollLeft = right - strip.clientWidth;
-    }
-}
-
 export function switchTab(tabName) {
     const previousTab = state.currentTab;
     state.currentTab = tabName;
@@ -63,7 +47,6 @@ export function switchTab(tabName) {
         // search box opens All stations; a shared link can open any tab).
         el.hidden = !isActive && state.hiddenTabs.includes(t);
     });
-    keepActiveTabVisible(tabName);
 
     if (tabName !== 'route') {
         // Only the Route tab changes which stations the map shows, so the markers need
