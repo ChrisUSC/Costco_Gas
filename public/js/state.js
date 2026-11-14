@@ -31,6 +31,32 @@ function initialGasPref() {
     return def === 'last' ? oneOf(storageGet('gasPref'), GRADE_KEYS, 'regular') : def;
 }
 
+// Tabs switched off in Settings. All stations starts hidden (the search box still
+// lists matching stations); at least one tab always stays shown.
+function initialHiddenTabs() {
+    // Someone who already chose to open on All stations keeps it.
+    const fallback = storageGet('defaultTab') === 'search' ? [] : ['search'];
+    const saved = loadJsonPref('hiddenTabs', fallback);
+    const hidden = Array.isArray(saved) ? TAB_NAMES.filter(t => saved.includes(t)) : fallback;
+    return hidden.length < TAB_NAMES.length ? hidden : [];
+}
+
+// The tabs shown in the tab strip, in order.
+export function visibleTabs() {
+    return TAB_NAMES.filter(t => !state.hiddenTabs.includes(t));
+}
+
+export function setTabVisible(tab, visible) {
+    if (!TAB_NAMES.includes(tab)) return;
+    const hidden = new Set(state.hiddenTabs);
+    if (visible) hidden.delete(tab); else hidden.add(tab);
+    if (hidden.size >= TAB_NAMES.length) return; // keep at least one tab
+    state.hiddenTabs = TAB_NAMES.filter(t => hidden.has(t));
+    storageSet('hiddenTabs', JSON.stringify(state.hiddenTabs));
+    // Don't open the app on a hidden tab.
+    if (state.hiddenTabs.includes(state.defaultTab)) setSetting('defaultTab', visibleTabs()[0]);
+}
+
 function loadBoolPref(key, fallback) {
     const v = storageGet(key);
     return v === null ? fallback : v === 'true';
@@ -72,7 +98,7 @@ export const state = {
     // User preferences (synced to localStorage)
     isDarkMode: initialDarkMode(),
     gasPref: initialGasPref(),
-    nearbyRadiusMiles: oneOf(parseFloat(storageGet('nearbyRadius')), NEARBY_RADII, 50),
+    nearbyRadiusMiles: oneOf(parseFloat(storageGet('nearbyRadius')), NEARBY_RADII, 10),
     nearbySortMode: oneOf(storageGet('nearbySort'), ['price', 'distance'], 'price'),
     favoriteStoreKeys: new Set(loadJsonPref('favoriteStores', [])),
     favoriteRoutes: loadJsonPref('favoriteRoutes', []),
@@ -81,6 +107,7 @@ export const state = {
     clusterMarkers: loadBoolPref('clusterMarkers', true),
     colorPins: loadBoolPref('colorPins', false),
     directionsApp: oneOf(storageGet('directionsApp'), DIRECTIONS_APPS, 'google'),
+    hiddenTabs: initialHiddenTabs(),
     defaultTab: oneOf(storageGet('defaultTab'), TAB_NAMES, 'nearby'),
     defaultGrade: oneOf(storageGet('defaultGrade'), DEFAULT_GRADES, 'last'),
     autoLocate: loadBoolPref('autoLocate', true),
@@ -96,6 +123,7 @@ export const state = {
     editingRouteId: null,
     editSnapshot: null
 };
+if (state.hiddenTabs.includes(state.defaultTab)) state.defaultTab = visibleTabs()[0];
 
 export function favoriteKey(stateCode, city) {
     return `${stateCode}_${city}`;

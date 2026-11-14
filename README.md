@@ -19,12 +19,12 @@ A live-updating map of Costco gas prices across the US. A scheduled scraper coll
 - 🔍 Search by city, address or zip code (store matches plus Nominatim geocoding)
 - 📈 Price-history chart per station with 7D / 30D / 90D / 1Y / All ranges
 - 🥇 **Lowest**: a ranked state leaderboard, with 72-hour price trends shown as an arrow and the size of the move (`▼ 4¢`, `▲ 6¢`, `–`)
-- 📍 **Nearby**: stations within a 5–100 mi radius of you, a searched place or the map centre, sorted by price or distance
+- 📍 **Nearby**: stations within a 5–100 mi radius (10 mi by default) of you, a searched place or the map centre, sorted by price or distance
 - 🔗 Shareable links: `?store=STATE_City` opens a station, and `?tab=`, `?grade=` and `?state=` restore the view
 - ⚠️ The "Updated … ago" label turns amber and says the prices may be out of date when no new prices have arrived for 4 hours (they normally update hourly)
 - 📲 Installable to a phone or desktop home screen (web app manifest), and opens offline with the last prices it saw (service worker)
 - 📴 **Offline mode**: a built-in US outline replaces the map background, the header says the prices are saved, Route and place search are hidden, and prices refresh by themselves when the connection returns
-- ⚙️ Settings panel: clustering (on by default) and price colours (off by default), directions app (Google Maps, Apple Maps or Waze), light/dark/system theme, start-up tab, and automatic location on/off. Settings are saved in the browser.
+- ⚙️ Settings panel: clustering (on by default) and price colours (off by default), directions app (Google Maps, Apple Maps or Waze), light/dark/system theme, which tabs to show (All stations is hidden by default), start-up tab, and automatic location on/off. Settings are saved in the browser.
 - 🌙 Light and dark themes with matching map tiles, following the system setting by default
 - ♿ Keyboard navigation with visible focus, 44px touch targets, reduced-motion support and text contrast that meets WCAG AA
 

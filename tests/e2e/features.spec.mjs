@@ -8,7 +8,7 @@ test.describe('Nearby with location access already allowed', () => {
 
     test('lists the cheapest stations near you, with distances', async ({ page }) => {
         await page.goto('/');
-        await expect(page.locator('.leaderboard-header')).toHaveText('Cheapest Regular within 50 mi');
+        await expect(page.locator('.leaderboard-header')).toHaveText('Cheapest Regular within 10 mi');
         await expect(cards(page).first()).toHaveAttribute('data-city', 'Turlock');
         await expect(cards(page).first().locator('.distance-badge')).toHaveText(/^0\.\d mi$/);
     });
@@ -135,6 +135,20 @@ test.describe('Back button and keyboard', () => {
             await expect(page.locator('#themeToggle')).toHaveAttribute('aria-pressed', 'true');
         }
         await expect(page.locator('body')).toHaveClass(/dark-mode/);
+    });
+
+    test('tabs can be shown or hidden in Settings; All stations starts hidden', async ({ page }) => {
+        await page.goto('/');
+        await expect(page.locator('#tab-search')).toBeHidden();
+        await page.locator('#settingsBtn').click();
+        await page.locator('#settingsForm label', { hasText: 'All stations' }).first().click();
+        await page.locator('#settingsForm label', { hasText: 'State lowest' }).first().click();
+        await page.keyboard.press('Escape');
+        await expect(page.locator('#tab-search')).toBeVisible();
+        await expect(page.locator('#tab-lowest')).toBeHidden();
+        await page.reload();
+        await expect(page.locator('#tab-search')).toBeVisible();
+        await expect(page.locator('#tab-lowest')).toBeHidden();
     });
 
     test('a default fuel set in Settings is selected on opening', async ({ page }) => {
