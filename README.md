@@ -108,12 +108,10 @@ public/ (HTML, JS, CSS, us_stores.json) ──► Cloudflare Pages static hostin
 ├── pipeline/                   # Python data pipeline
 │   ├── scraper.py              # Store discovery, metadata, price scraping and snapshot saving
 │   ├── r2_sync.py              # Download/upload snapshots, list and restore R2 backups
-│   ├── paths.py                # Central file locations used by the scripts
-│   ├── ca_frequency_runner.py  # High-frequency California price tracker (experiment)
-│   └── analyze_price_frequency.py # Reports how often prices change in a history file
+│   └── paths.py                # Central file locations used by the scripts
 │
 ├── data/
-│   ├── ca_stores.json          # California store list (used by option 2 and the CA experiment)
+│   ├── ca_stores.json          # California store list (used by option 2)
 │   ├── local_stores.json       # Small nearby subset for quick local runs (option 1)
 │   └── snapshots/              # Local copies of R2 snapshots (git-ignored)
 │
@@ -123,7 +121,6 @@ public/ (HTML, JS, CSS, us_stores.json) ──► Cloudflare Pages static hostin
 ├── .github/workflows/
 │   ├── fetch_prices.yml        # Scheduled price scrape (R2 download → scrape → upload)
 │   ├── discover.yml            # Weekly new-store discovery; opens a PR
-│   ├── ca_frequency_experiment.yml # Manual CA high-frequency run
 │   ├── seed_r2.yml             # Manual R2 connection test
 │   └── testing.yml             # Runs the pipeline and frontend tests on pushes and PRs to main
 ├── .github/dependabot.yml      # Weekly upgrade PRs for pip, npm and Actions
@@ -191,7 +188,7 @@ python pipeline/r2_sync.py download
 | `python pipeline/r2_sync.py restore <backup_key> [target]` | Download a backup into `data/snapshots/` |
 | `python pipeline/r2_sync.py test` | Check the bucket connection |
 
-With no file names, `download` and `upload` handle all US, CA, local and CA-frequency snapshots.
+With no file names, `download` and `upload` handle all US, CA and local snapshots.
 
 ### Built-in safety checks
 

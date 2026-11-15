@@ -26,8 +26,6 @@ DEFAULT_FILES = [
     "ca_history.json",
     "local_latest.json",
     "local_history.json",
-    "ca_freq_latest.json",
-    "ca_freq_history.json",
 ]
 
 
