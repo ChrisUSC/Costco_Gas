@@ -92,7 +92,7 @@ export const state = {
     currentTab: 'nearby', // 'nearby' | 'lowest' | 'route' | 'search' | 'favorites'
 
     // Mobile viewport & sheet state
-    mobileViewMode: 'map', // 'map' | 'list'
+    mobileViewMode: 'peek', // phone sheet: 'peek' | 'half' | 'full'
     activeMobileStore: null,
 
     // User preferences (synced to localStorage)

@@ -1,8 +1,8 @@
 // --- Scraper timestamps (Pacific time) and the "Updated … ago" wording ---
 
-export const SCRAPER_TIMEZONE = 'America/Los_Angeles';
+const SCRAPER_TIMEZONE = 'America/Los_Angeles';
 
-export function getTimeZoneOffsetMinutes(timeZone, utcGuess) {
+function getTimeZoneOffsetMinutes(timeZone, utcGuess) {
     const dtf = new Intl.DateTimeFormat('en-US', {
         timeZone, hour12: false,
         year: 'numeric', month: '2-digit', day: '2-digit',

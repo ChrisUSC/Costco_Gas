@@ -17,7 +17,7 @@ let lastFocusedBeforeModal = null;
 // Show a dot on every day (including unchanged ones) when the range has this many points or fewer.
 const SHOW_ALL_DOTS_MAX_POINTS = 45;
 
-export const HISTORY_RANGE_OPTIONS = [
+const HISTORY_RANGE_OPTIONS = [
     { label: '7D', days: 7 },
     { label: '30D', days: 30 },
     { label: '90D', days: 90 },
@@ -32,7 +32,7 @@ export function resetHistoryCache() {
     historyLoadPromise = null;
 }
 
-export function ensureHistoryLoaded() {
+function ensureHistoryLoaded() {
     if (historyLoaded) return Promise.resolve();
     if (historyLoadPromise) return historyLoadPromise;
 
@@ -144,7 +144,7 @@ function expandToDaily(points, start, end) {
     return out;
 }
 
-export function renderRangeControls() {
+function renderRangeControls() {
     let controls = document.getElementById('historyRangeControls');
     const chartContainer = document.querySelector('.chart-container');
     if (!chartContainer) return;
@@ -200,7 +200,7 @@ export async function openHistoryModal(stateCode, city) {
     renderPriceChart(stateCode, city);
 }
 
-export function renderPriceChart(stateCode, city) {
+function renderPriceChart(stateCode, city) {
     const key = `${stateCode}_${city}`;
     const chartContainer = document.querySelector('.chart-container');
     const history = globalHistory[key];

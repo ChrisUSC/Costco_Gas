@@ -260,6 +260,6 @@ export function renderMobileStoreCardContent(store) {
 }
 
 // Rank badge for leaderboards; the top three get the accent treatment.
-export function getMedal(index) {
+function getMedal(index) {
     return `<span class="rank${index < 3 ? ' rank-top' : ''}" aria-label="Rank ${index + 1}">${index + 1}</span>`;
 }

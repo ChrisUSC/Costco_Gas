@@ -75,11 +75,6 @@ function syncSheetA11y() {
     }
 }
 
-// Back-compat wrapper: 'list' opens the sheet, 'map' tucks it away to show the map.
-export function setMobileView(mode) {
-    setSheetState(mode === 'list' ? (state.mobileViewMode === 'full' ? 'full' : 'half') : 'peek');
-}
-
 function setupSheetDrag() {
     const sidebar = document.getElementById('sidebar');
     const grabber = document.getElementById('sheetGrabber');

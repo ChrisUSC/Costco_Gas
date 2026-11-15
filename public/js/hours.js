@@ -2,12 +2,12 @@
 
 import { escapeHtml } from './dom.js';
 
-export const GAS_DAYS_SUN_FIRST = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
-export const GAS_DAYS_MON_FIRST = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
-export const GAS_DAY_LABELS = { mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu', fri: 'Fri', sat: 'Sat', sun: 'Sun' };
-export const GAS_CLOSING_SOON_MINUTES = 60;
+const GAS_DAYS_SUN_FIRST = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+const GAS_DAYS_MON_FIRST = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+const GAS_DAY_LABELS = { mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu', fri: 'Fri', sat: 'Sat', sun: 'Sun' };
+const GAS_CLOSING_SOON_MINUTES = 60;
 
-export function gasTimeToMinutes(t) {
+function gasTimeToMinutes(t) {
     const [h, m] = t.split(':').map(Number);
     return h * 60 + m;
 }
@@ -19,7 +19,7 @@ export function formatGasTime(t) {
     return m ? `${h12}:${String(m).padStart(2, '0')} ${suffix}` : `${h12} ${suffix}`;
 }
 
-export function getStoreLocalNow(tz, now = new Date()) {
+function getStoreLocalNow(tz, now = new Date()) {
     if (!tz) return null;
     try {
         const parts = new Intl.DateTimeFormat('en-US', {
