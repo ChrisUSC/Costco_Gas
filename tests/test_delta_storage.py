@@ -123,7 +123,7 @@ def test_find_trend_baseline_with_deltas():
     assert baseline_prices["CA"]["Modesto"] == [4.40, 4.80, None]
 
 
-def test_verify_all_changes_triggers_confirmation(monkeypatch):
+def test_small_change_triggers_confirmation(monkeypatch):
     import scraper
 
     # Mock response from attempt_fetch
@@ -154,11 +154,10 @@ def test_verify_all_changes_triggers_confirmation(monkeypatch):
     locations = {"CA": {"Fresno": {"warehouse_id": "1"}}}
     last_known = {"CA": {"Fresno": [4.49, 4.89, None]}}
 
-    # With verify_all_changes=True, even a $0.04 move triggers confirmation re-checks
+    # Even a $0.04 move triggers confirmation re-checks
     result = scraper.get_gas_prices_ajax(
         locations,
         last_known_prices=last_known,
-        verify_all_changes=True,
     )
     assert confirm_called is True
     ts = next(iter(result))
@@ -167,7 +166,7 @@ def test_verify_all_changes_triggers_confirmation(monkeypatch):
     assert call_count >= 4
 
 
-def test_verify_all_changes_reverts_glitch_to_last_known(monkeypatch):
+def test_small_glitch_reverts_to_last_known(monkeypatch):
     import scraper
 
     # First fetch returns glitch (4.45), rechecks return actual price (4.49)
@@ -196,7 +195,6 @@ def test_verify_all_changes_reverts_glitch_to_last_known(monkeypatch):
     result = scraper.get_gas_prices_ajax(
         locations,
         last_known_prices=last_known,
-        verify_all_changes=True,
     )
     ts = next(iter(result))
     # Reverted back to 4.49!

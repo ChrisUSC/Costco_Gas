@@ -45,9 +45,7 @@ SCRAPER_TZ = ZoneInfo("America/Los_Angeles")
 # Compare current prices against a snapshot ~72h back so trend arrows reflect meaningful moves.
 TREND_LOOKBACK_HOURS = 72
 
-# Price-jump sanity check and multi-sample quorum settings.
-PRICE_JUMP_ABS_THRESHOLD = 0.30   # dollars
-PRICE_JUMP_PCT_THRESHOLD = 0.08   # 8%
+# Every price change is re-fetched until this many samples agree.
 MAX_RECHECK_ATTEMPTS = 5
 RECHECK_DELAY_RANGE = (2.0, 4.0)
 CONFIRMATION_QUORUM = 3
@@ -252,13 +250,9 @@ def save_data(
     data: dict,
     history_path: str,
     latest_path: str,
-    write_latest_only_on_change: bool = False,
 ) -> bool:
     """Appends only changed store prices to history_path (seeding a full snapshot if the
     history is empty) and writes the compact latest snapshot to latest_path.
-
-    With write_latest_only_on_change, latest_path is left alone when no price changed (and
-    it already exists), so its "timestamp" means "last change" rather than "last check".
 
     Returns False if nothing could be saved because the existing history is unreadable,
     True otherwise (including a deliberately skipped run, see below)."""
@@ -289,7 +283,6 @@ def save_data(
 
     previous_prices, previous_timestamp = find_trend_baseline(save_prices, timestamp_str)
 
-    changed = True
     if save_prices:
         current_active = reconstruct_store_prices_at(save_prices, timestamp_str)
         delta_prices = compute_price_deltas(sorted_states_data, current_active)
@@ -299,16 +292,11 @@ def save_data(
             total_chgs = sum(len(c) for c in delta_prices.values())
             print(f"Appended {total_chgs} store price changes -> {history_path}")
         else:
-            changed = False
             print(f"No price changes detected. {history_path} left untouched.")
     else:
         save_prices[timestamp_str] = sorted_states_data
         write_pretty_top_level(save_prices, history_path)
         print(f"Saved initial snapshot -> {history_path}")
-
-    if write_latest_only_on_change and not changed and os.path.exists(latest_path):
-        print(f"No changes; {latest_path} left untouched.")
-        return True
 
     latest_payload = {
         "timestamp": timestamp_str,
@@ -598,17 +586,6 @@ def enrich_store_list(state_urls: dict) -> dict:
     return {k: v for k, v in enriched_data.items() if v}
 
 
-def is_suspicious_jump(new_price: float | None, last_price: float | None) -> bool:
-    """True if new_price moved from last_price by >= PRICE_JUMP_ABS_THRESHOLD or >= PRICE_JUMP_PCT_THRESHOLD."""
-    if new_price is None or last_price is None:
-        return False
-    diff = round(abs(new_price - last_price), 2)
-    if diff == 0:
-        return False
-    pct = (diff / last_price) if last_price else float('inf')
-    return diff >= PRICE_JUMP_ABS_THRESHOLD or pct >= PRICE_JUMP_PCT_THRESHOLD
-
-
 def _prices_match(a: float | None, b: float | None, tol: float = PRICE_MATCH_TOLERANCE) -> bool:
     if a is None or b is None:
         return a is None and b is None
@@ -644,32 +621,20 @@ def confirm_or_revert_price(
     grade_prices: dict[str, float | None],
     last_grade_prices: dict[str, float | None],
     refetch_fn,
-    verify_all_changes: bool = False,
-    revert_unconfirmed: bool | None = None,
     max_attempts: int = MAX_RECHECK_ATTEMPTS,
     quorum: int = CONFIRMATION_QUORUM,
     initial_delay: bool = True,
 ) -> tuple[dict[str, float | None], bool]:
-    """Re-fetches up to max_attempts times when a price jump looks suspicious or
-    when verify_all_changes is enabled, requiring quorum agreeing recheck samples to confirm."""
-    if revert_unconfirmed is None:
-        revert_unconfirmed = verify_all_changes
-
-    if verify_all_changes:
-        suspicious = {
-            grade: not _prices_match(grade_prices.get(grade), last_grade_prices.get(grade))
-            for grade in GRADES
-        }
-    else:
-        suspicious = {
-            grade: is_suspicious_jump(grade_prices.get(grade), last_grade_prices.get(grade))
-            for grade in GRADES
-        }
+    """Re-fetches each grade whose price changed, up to max_attempts times, until quorum
+    recheck samples agree. A change that can't be confirmed reverts to the last known price."""
+    pending = {
+        grade: not _prices_match(grade_prices.get(grade), last_grade_prices.get(grade))
+        for grade in GRADES
+    }
 
     details = [f"{grade} {last_grade_prices.get(grade)}->{grade_prices.get(grade)}"
-               for grade in GRADES if suspicious[grade]]
-    action_label = "Price change" if verify_all_changes else "Suspicious jump"
-    print(f"  ⚠ {action_label} for {city}, {state}: {', '.join(details)}. Re-checking...")
+               for grade in GRADES if pending[grade]]
+    print(f"  ⚠ Price change for {city}, {state}: {', '.join(details)}. Re-checking...")
 
     samples: dict[str, list[float | None]] = {grade: [] for grade in GRADES}
     final_prices = dict(grade_prices)
@@ -682,32 +647,27 @@ def confirm_or_revert_price(
             continue
 
         for grade in GRADES:
-            if not suspicious[grade]:
+            if not pending[grade]:
                 continue
             samples[grade].append(recheck_prices.get(grade))
             has_quorum, quorum_val = _find_quorum(samples[grade], quorum=quorum)
             if has_quorum:
                 final_prices[grade] = quorum_val
-                suspicious[grade] = False
+                pending[grade] = False
             else:
                 final_prices[grade] = recheck_prices.get(grade)
 
-        if not any(suspicious.values()):
+        if not any(pending.values()):
             break
 
-    unconfirmed = any(suspicious.values())
+    unconfirmed = any(pending.values())
     if unconfirmed:
-        if revert_unconfirmed:
-            for grade in GRADES:
-                if suspicious[grade]:
-                    final_prices[grade] = last_grade_prices.get(grade)
-            print(f"  ⚠ {city}, {state}: couldn't confirm after {max_attempts} recheck(s) - "
-                  f"reverting to last known ({final_prices}), flagging as unconfirmed "
-                  f"[samples: {samples}]")
-        else:
-            print(f"  ⚠ {city}, {state}: couldn't confirm after {max_attempts} recheck(s) - "
-                  f"keeping most recent fetch ({final_prices}), flagging as unconfirmed "
-                  f"[samples: {samples}]")
+        for grade in GRADES:
+            if pending[grade]:
+                final_prices[grade] = last_grade_prices.get(grade)
+        print(f"  ⚠ {city}, {state}: couldn't confirm after {max_attempts} recheck(s) - "
+              f"reverting to last known ({final_prices}), flagging as unconfirmed "
+              f"[samples: {samples}]")
     else:
         print(f"  ✓ Resolved {city}, {state}: {final_prices}")
 
@@ -729,8 +689,6 @@ def load_latest_prices(latest_path: str) -> dict:
 def get_gas_prices_ajax(
     locations: dict,
     last_known_prices: dict | None = None,
-    verify_all_changes: bool = False,
-    revert_unconfirmed: bool | None = None,
 ) -> dict:
     """Concurrently fetches gas prices (regular, premium, diesel) from Costco's AJAX API.
     Uses a two-phase sweep:
@@ -804,12 +762,9 @@ def get_gas_prices_ajax(
                 for idx, grade in enumerate(GRADES)
             }
             has_baseline = last is not None and any(v is not None for v in last_grade_prices.values())
-            should_check = False
-            if has_baseline:
-                if verify_all_changes:
-                    should_check = any(not _prices_match(result.get(g), last_grade_prices.get(g)) for g in GRADES)
-                else:
-                    should_check = any(is_suspicious_jump(result.get(g), last_grade_prices.get(g)) for g in GRADES)
+            should_check = has_baseline and any(
+                not _prices_match(result.get(g), last_grade_prices.get(g)) for g in GRADES
+            )
 
             if should_check:
                 candidates.append((state, city, info, result, last_grade_prices))
@@ -830,8 +785,6 @@ def get_gas_prices_ajax(
                 c_raw_result,
                 c_last_grades,
                 refetch_fn,
-                verify_all_changes=verify_all_changes,
-                revert_unconfirmed=revert_unconfirmed,
                 max_attempts=MAX_RECHECK_ATTEMPTS,
                 quorum=CONFIRMATION_QUORUM,
                 initial_delay=need_initial_delay,
@@ -847,12 +800,9 @@ def get_gas_prices_ajax(
                     unconfirmed_jumps.append((c_state, c_city))
 
     if unconfirmed_jumps:
-        reverted = verify_all_changes if revert_unconfirmed is None else revert_unconfirmed
-        outcome = ("Reverted each to its last known price" if reverted
-                   else "Kept the freshest fetched value for each")
         print(
             f"⚠️  {len(unconfirmed_jumps)} store(s) had a price change that couldn't be "
-            f"confirmed by a recheck this run. {outcome} - worth a manual look if the "
+            f"confirmed by a recheck this run. Reverted each to its last known price - worth a manual look if the "
             f"same store keeps showing up here:"
         )
         for state, city in unconfirmed_jumps:
@@ -1028,22 +978,10 @@ def process_and_save(
     history_file: str,
     latest_file: str,
     label: str,
-    verify_all_changes: bool = True,
-    last_known: dict | None = None,
-    write_latest_only_on_change: bool = False,
-    fetch_prices=None,
 ) -> bool:
-    """Fetches prices for one dataset, validates completeness, and saves if healthy.
-
-    last_known defaults to the prices in latest_file; fetch_prices defaults to
-    get_gas_prices_ajax (callers and tests can substitute their own)."""
-    if last_known is None:
-        last_known = load_latest_prices(latest_file)
-    prices = (fetch_prices or get_gas_prices_ajax)(
-        locations,
-        last_known,
-        verify_all_changes=verify_all_changes,
-    )
+    """Fetches prices for one dataset, validates completeness, and saves if healthy."""
+    last_known = load_latest_prices(latest_file)
+    prices = get_gas_prices_ajax(locations, last_known)
     timestamp = next(iter(prices))
     fetched = prices[timestamp]
 
@@ -1058,7 +996,7 @@ def process_and_save(
     if carried:
         print(f"Carried forward the last known price for {carried} store(s) that returned none this run.")
     prices = {timestamp: merged}
-    if not save_data(prices, history_file, latest_file, write_latest_only_on_change):
+    if not save_data(prices, history_file, latest_file):
         return False
     print_lowest_prices(prices)
     return True

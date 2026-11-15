@@ -35,7 +35,7 @@ Cloudflare scheduled job (hourly) → GitHub Actions (fetch_prices.yml)
         │
         ▼
 pipeline/r2_sync.py download   ← previous snapshots from R2 into data/snapshots/
-pipeline/scraper.py 3          ← fetch prices from Costco, confirm suspicious jumps,
+pipeline/scraper.py 3          ← fetch prices from Costco, confirm price changes,
         │                         validate coverage, append changes to history
         ▼
 pipeline/r2_sync.py upload     → us_latest.json / us_history.json (+ daily backup) to R2
@@ -192,7 +192,7 @@ With no file names, `download` and `upload` handle all US, CA and local snapshot
 
 ### Built-in safety checks
 
-- **Price-jump confirmation:** a change of ≥$0.30 or ≥8% (or any change, in the default verify-all mode) is re-fetched with cache-busting until a quorum of samples agrees; unconfirmed changes revert to the last known price.
+- **Price-change confirmation:** any price change is re-fetched with cache-busting until a quorum of samples agrees; unconfirmed changes revert to the last known price.
 - **Snapshot validation:** a run is only saved if at least 85% of states and 75% of stores returned prices.
 - **No automatic store deletion:** stores that return no prices are listed in the run log but stay in the store list. Removing a store is a manual edit.
 - **Full-rebuild guard:** option `5` won't overwrite `public/us_stores.json` if the new list is more than 25% smaller.
