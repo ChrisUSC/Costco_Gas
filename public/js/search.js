@@ -16,7 +16,7 @@ let activeDropdownId = 'autocompleteDropdown';
 let currentAutocompleteAction = 'search'; // 'search' | 'routeOrigin' | 'routeDest'
 
 
-export const GEO_META_MAP = {
+const GEO_META_MAP = {
     postcode: { label: 'Zip Code' },
     city: { label: 'City' },
     town: { label: 'Town' },
@@ -34,12 +34,12 @@ export const GEO_META_MAP = {
     yes: { label: 'Address' }
 };
 
-export function getGeoMeta(result) {
+function getGeoMeta(result) {
     const type = result.addresstype || result.type || 'place';
     return GEO_META_MAP[type] || { label: 'Location' };
 }
 
-export function shortGeoName(result) {
+function shortGeoName(result) {
     const addr = result.address || {};
     let street = '';
     if (addr.house_number && addr.road) {
@@ -64,7 +64,7 @@ export function shortGeoName(result) {
     return stateVal ? `${main}, ${stateVal}` : main;
 }
 
-export function buildNominatimUrl(query, limit = 5) {
+function buildNominatimUrl(query, limit = 5) {
     let url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=${limit}&countrycodes=us&q=${encodeURIComponent(query)}`;
     if (map) {
         const b = map.getBounds();
@@ -73,7 +73,7 @@ export function buildNominatimUrl(query, limit = 5) {
     return url;
 }
 
-export function getStoreMatches(query) {
+function getStoreMatches(query) {
     if (!query) return [];
     const matches = state.stores.filter(s => storeMatchesQuery(s, query));
 
@@ -87,7 +87,7 @@ export function getStoreMatches(query) {
     return matches.slice(0, 5);
 }
 
-export async function getGeoMatches(query, { limit = 5, abortPrevious = true } = {}) {
+async function getGeoMatches(query, { limit = 5, abortPrevious = true } = {}) {
     try {
         let signal;
         if (abortPrevious) {
@@ -120,7 +120,7 @@ export async function geocodeAddress(query) {
     return { lat: parseFloat(best.lat), lng: parseFloat(best.lon), label: shortGeoName(best) };
 }
 
-export const debouncedAutocomplete = debounce(async (query) => {
+const debouncedAutocomplete = debounce(async (query) => {
     const storeMatches = getStoreMatches(query);
     renderAutocompleteDropdown(storeMatches, [], query, !state.offline);
 
@@ -132,7 +132,7 @@ export const debouncedAutocomplete = debounce(async (query) => {
     }
 }, 400);
 
-export function renderAutocompleteDropdown(storeMatches, geoMatches, query, isLoadingGeo) {
+function renderAutocompleteDropdown(storeMatches, geoMatches, query, isLoadingGeo) {
     const dropdown = document.getElementById(activeDropdownId);
     if (!dropdown) return;
 
@@ -189,7 +189,7 @@ export function renderAutocompleteDropdown(storeMatches, geoMatches, query, isLo
     dropdown.classList.add('active');
 }
 
-export function moveAutocompleteSelection(delta) {
+function moveAutocompleteSelection(delta) {
     const items = document.querySelectorAll(`#${activeDropdownId} .autocomplete-item`);
     if (items.length === 0) return;
     activeAutocompleteIndex = (activeAutocompleteIndex + delta + items.length) % items.length;
@@ -197,11 +197,11 @@ export function moveAutocompleteSelection(delta) {
     items[activeAutocompleteIndex].scrollIntoView({ block: 'nearest' });
 }
 
-export function getAutocompleteLabel(item) {
+function getAutocompleteLabel(item) {
     return item.type === 'store' ? `${item.data.city}, ${item.data.state}` : shortGeoName(item.data);
 }
 
-export function extractLocation(item) {
+function extractLocation(item) {
     return {
         lat: item.type === 'store' ? item.data.lat : parseFloat(item.data.lat),
         lng: item.type === 'store' ? item.data.lng : parseFloat(item.data.lon),
@@ -242,7 +242,7 @@ export function closeAutocompleteDropdown() {
     activeAutocompleteIndex = -1;
 }
 
-export async function resolveBestMatchAndAct(query) {
+async function resolveBestMatchAndAct(query) {
     if (!query) return;
 
     let best = null;

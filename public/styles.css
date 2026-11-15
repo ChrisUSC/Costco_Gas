@@ -28,7 +28,6 @@
 
     /* Brand & accent */
     --brand-blue: #005daa;
-    --brand-red: #e31837;
     --accent: #005daa;          /* filled controls */
     --accent-hover: #004a8a;
     --accent-text: #005daa;     /* links, selected text */
@@ -39,7 +38,6 @@
 
     /* Status */
     --positive: #0a7a52;
-    --positive-soft: #e3f5ec;
     --warning: #9a5600;
     --warning-soft: #fdf0d9;
 
@@ -107,7 +105,6 @@ body.dark-mode {
     --focus-ring: #8cc0ff;
 
     --positive: #3ecf8e;
-    --positive-soft: #10291f;
     --warning: #f2b544;
     --warning-soft: #2e2410;
 

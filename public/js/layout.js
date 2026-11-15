@@ -3,7 +3,7 @@
 
 // Phones (<= this width) show the station list as a draggable bottom sheet and station
 // details inside it. Keep in sync with the media queries in styles.css.
-export const PHONE_MAX_WIDTH = 599;
+const PHONE_MAX_WIDTH = 599;
 
 // Layout tiers (keep in sync with the media queries in styles.css):
 //   phone   <= 599px   map + draggable bottom sheet for the list

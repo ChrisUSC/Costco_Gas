@@ -61,7 +61,7 @@ def test_refresh_is_additive_and_keeps_stores_on_failure(tmp_path, monkeypatch):
         def raise_for_status(self):
             if not self.ok: raise s.requests.exceptions.RequestException("boom")
     class Sess:
-        def get(self, url, **kw): return R(url == "u1")
+        def get(self, url, **_): return R(url == "u1")
     monkeypatch.setattr(s, "create_session", lambda: Sess())
     monkeypatch.setattr(s, "extract_store_metadata", lambda html: {"gas_hours": EXPECTED, "phone": "x"})
     path = tmp_path / "stores.json"

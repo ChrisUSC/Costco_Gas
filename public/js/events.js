@@ -22,7 +22,6 @@ import { closeAutocompleteDropdown, selectAutocompleteItem } from './search.js';
 import { closeSettings, isSettingsOpen, openSettings, trapSettingsFocus } from './settings.js';
 import {
     closeMobileStoreCard,
-    setMobileView,
     setSheetState,
     setSidebarCollapsed
 } from './sheet.js';
@@ -126,7 +125,7 @@ const ACTIONS = {
         removeFavoriteRouteHandler(id);
         refreshCurrentDisplay();
     }),
-    'view-route-map': () => setMobileView('map')
+    'view-route-map': () => setSheetState('peek')
 };
 
 function withRouteId(el, fn) {

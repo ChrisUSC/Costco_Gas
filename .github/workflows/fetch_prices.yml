@@ -38,8 +38,7 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      # Only the US files: this job must never touch the CA frequency files, which
-      # ca_frequency_experiment.yml updates on its own schedule.
+      # Only the US files: the CA and local snapshots are for manual runs.
       - name: Download existing snapshots from R2
         run: python pipeline/r2_sync.py download us_latest.json us_history.json
         env:

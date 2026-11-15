@@ -16,7 +16,7 @@ import { GRADE_INFO, gradeVal, hasGradeData } from './prices.js';
 import { geocodeAddress, setupInputAutocomplete } from './search.js';
 import { removeFavoriteRoute, saveFavoriteRoute, state, updateFavoriteRoute } from './state.js';
 
-export async function fetchDrivingRoute(origin, destination) {
+async function fetchDrivingRoute(origin, destination) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 8000);
     try {
@@ -198,7 +198,7 @@ export function removeFavoriteRouteHandler(id) {
     }
 }
 
-export function populateRouteInputsFromSaved(route) {
+function populateRouteInputsFromSaved(route) {
     state.routeOriginLocation = { ...route.origin };
     state.routeDestLocation = { ...route.destination };
     const originEl = document.getElementById('routeOrigin');
@@ -287,7 +287,7 @@ export function clearRouteVisuals() {
     if (routeLayer) routeLayer.clearLayers();
 }
 
-export function renderRouteResults(routeState) {
+function renderRouteResults(routeState) {
     const el = document.getElementById('routeResultsContainer');
     if (!el) return;
     const gradeLabel = GRADE_INFO[state.gasPref].label;
@@ -320,7 +320,7 @@ export function renderRouteResults(routeState) {
         { key: `route|${routeState.originText}|${routeState.destText}|${bufferMiles}|${state.gasPref}` });
 }
 
-export function renderRouteOnMap(routeCoords, origin, destination) {
+function renderRouteOnMap(routeCoords, origin, destination) {
     if (!routeLayer || !map) return;
 
     routeLayer.clearLayers();

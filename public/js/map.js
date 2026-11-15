@@ -7,7 +7,7 @@ import { initMarkers } from './markers.js';
 import {
     closeMobileStoreCard,
     openMobileStoreCard,
-    setMobileView,
+    setSheetState,
     sheetAwareCenter
 } from './sheet.js';
 import { state } from './state.js';
@@ -97,7 +97,7 @@ export function flyToStore(store) {
 export function flyToGeoResult(result) {
     if (isMobileViewport()) {
         closeMobileStoreCard();
-        setMobileView('map');
+        setSheetState('peek');
     }
 
     const [south, north, west, east] = result.boundingbox.map(parseFloat);

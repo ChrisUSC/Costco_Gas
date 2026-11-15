@@ -23,7 +23,6 @@ data_backups/
 data/snapshots/
 *_latest.json
 *_history.json
-ca_freq_*.json
 *.r2tmp
 
 # Frontend test tooling
