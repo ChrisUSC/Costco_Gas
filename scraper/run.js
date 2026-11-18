@@ -5,14 +5,18 @@
 //                         message per chunk and records the run in runs/us/current.json.
 //   chunk    (queue)      fetches every store in its chunk once (retrying failures). Stores
 //                         whose price changed are queued as `verify` messages; the rest are
-//                         written to runs/us/<run>/p1-<n>.json.
+//                         written to runs/us/<run>/p1-<n>-v<verify messages>.json.
 //   verify   (queue)      re-fetches each changed store until a quorum agrees, or reverts it
 //                         to the last known price; writes runs/us/<run>/v-<id>.json.
-//   finalize (cron, :20)  merges the results, applies the coverage check, appends changes to
+//   finalize              merges the results, applies the coverage check, appends changes to
 //                         us_history.json, writes us_latest.json and deletes the run's files.
 //
-// A chunk or verify that hasn't finished by :20 just counts as missing stores, which the
-// coverage check and carry-forward already handle (a missing changed store keeps its old price).
+// Finalize runs as soon as the last chunk or verify message finishes (it lists the run's files
+// to see that every chunk, and every verify message the chunks asked for, has written one), so
+// a normal run is saved a couple of minutes after :00. Whoever finalizes first claims the run
+// with a conditional write to current.json, so it can't be saved twice. The :10 cron is the
+// backstop: if a message failed or got stuck, it finalizes with what arrived, and the missing
+// stores are handled by the coverage check and carry-forward (a changed store keeps its old price).
 import { fetchStorePrices } from "./costco.js";
 import {
   applyEntries, carryForwardMissing, computePriceDeltas, confirmOrRevert, countStores,
@@ -115,7 +119,52 @@ async function bootstrapShadow(bucket, prefix) {
 
 async function isCurrentRun(bucket, k, runId) {
   const pointer = await readJson(bucket, k.pointer);
-  return pointer?.runId === runId;
+  return pointer?.runId === runId && !pointer.finalizing;
+}
+
+const CHUNK_RESULT = /^p1-\d+-v(\d+)\.json$/;
+
+// True once every chunk and every verify message the chunks queued has written its result.
+// One R2 list per call; only file names are read.
+export function runComplete(runKeys, chunks) {
+  let chunksDone = 0;
+  let verifiesExpected = 0;
+  let verifiesDone = 0;
+  for (const key of runKeys) {
+    const name = key.slice(key.lastIndexOf("/") + 1);
+    const m = CHUNK_RESULT.exec(name);
+    if (m) {
+      chunksDone++;
+      verifiesExpected += Number(m[1]);
+    } else if (name.startsWith("v-")) {
+      verifiesDone++;
+    }
+  }
+  return chunksDone === chunks && verifiesDone >= verifiesExpected;
+}
+
+// Claims the run for finalizing by marking current.json, with a conditional write so only one
+// caller can win. A claim older than `staleAfterMs` (a finalize that crashed) can be taken over.
+async function claimRun(bucket, k, { runId, staleAfterMs, now }) {
+  const obj = await bucket.get(k.pointer);
+  if (!obj) return null;
+  const pointer = JSON.parse(await obj.text());
+  if (!pointer?.runId || (runId && pointer.runId !== runId)) return null;
+  if (pointer.finalizing && now() - Date.parse(pointer.finalizing) < staleAfterMs) return null;
+  const won = await bucket.put(k.pointer, JSON.stringify({ ...pointer, finalizing: now().toISOString() }), {
+    httpMetadata: { contentType: "application/json" },
+    onlyIf: { etagMatches: obj.etag },
+  });
+  return won ? pointer : null;
+}
+
+// Called after a chunk or verify result is written: finalizes if that was the last one.
+async function finalizeIfComplete(deps, runId) {
+  const k = keys(deps.prefix);
+  const pointer = await readJson(deps.bucket, k.pointer);
+  if (pointer?.runId !== runId || pointer.finalizing) return undefined;
+  if (!runComplete(await listKeys(deps.bucket, k.run(runId)), pointer.chunks)) return undefined;
+  return finalizeRun({ ...deps, runId, early: true });
 }
 
 export async function startRun({ bucket, queue, storeList, prefix = "", now = () => new Date(), log = console.log }) {
@@ -144,7 +193,8 @@ export async function startRun({ bucket, queue, storeList, prefix = "", now = ()
   return { runId, timestamp, chunks: messages.length };
 }
 
-export async function processChunk(body, { bucket, queue, fetch, sleep }) {
+export async function processChunk(body, deps) {
+  const { bucket, queue, fetch, sleep } = deps;
   const k = keys(body.prefix);
   if (!(await isCurrentRun(bucket, k, body.runId))) return { skipped: true };
 
@@ -186,11 +236,13 @@ export async function processChunk(body, { bucket, queue, fetch, sleep }) {
   if (verifies.length) await queue.sendBatch(verifies);
 
   const failed = stores.filter((_, i) => !found.has(i)).map((st) => [st.s, st.c]);
-  await putJson(bucket, `${k.run(body.runId)}p1-${body.index}.json`, { prices, failed, statuses, candidates: candidates.length });
-  return { fetched: found.size, failed: failed.length, candidates: candidates.length, statuses };
+  await putJson(bucket, `${k.run(body.runId)}p1-${body.index}-v${verifies.length}.json`, { prices, failed, statuses, candidates: candidates.length });
+  const finalized = await finalizeIfComplete(deps, body.runId);
+  return { fetched: found.size, failed: failed.length, candidates: candidates.length, statuses, finalized: finalized?.status };
 }
 
-export async function processVerify(body, { bucket, fetch, sleep }) {
+export async function processVerify(body, deps) {
+  const { bucket, fetch, sleep } = deps;
   const k = keys(body.prefix);
   if (!(await isCurrentRun(bucket, k, body.runId))) return { skipped: true };
 
@@ -216,7 +268,8 @@ export async function processVerify(body, { bucket, fetch, sleep }) {
     else if (differsFrom(final, st.last)) changes.push({ store: [st.s, st.c], from: st.last, to: final });
   }
   await putJson(bucket, `${k.run(body.runId)}v-${body.id}.json`, { prices, unconfirmed, changes, statuses });
-  return { confirmed: changes.length, unconfirmed: unconfirmed.length };
+  const finalized = await finalizeIfComplete(deps, body.runId);
+  return { confirmed: changes.length, unconfirmed: unconfirmed.length, finalized: finalized?.status };
 }
 
 // Prices in effect TREND_LOOKBACK_HOURS before `timestamp`, moved forward from the baseline
@@ -283,11 +336,15 @@ export async function saveSnapshot({ bucket, prefix = "", timestamp, prices, lat
   return { saved: true, changed };
 }
 
-export async function finalizeRun({ bucket, storeList, prefix = "", now = () => new Date(), log = console.log }) {
+// Saves the run. `early` is the call made when the last message finishes; without it (the
+// :10 cron) a claim older than STALE_CLAIM_MS is taken over, in case that call crashed.
+const STALE_CLAIM_MS = 5 * 60 * 1000;
+
+export async function finalizeRun({ bucket, storeList, prefix = "", runId, early = false, now = () => new Date(), log = console.log }) {
   const k = keys(prefix);
-  const pointer = await readJson(bucket, k.pointer);
-  if (!pointer?.runId) {
-    log("No run to finalize.");
+  const pointer = await claimRun(bucket, k, { runId, staleAfterMs: early ? Infinity : STALE_CLAIM_MS, now });
+  if (!pointer) {
+    if (!early) log("No run to finalize (already saved, or another step is saving it).");
     return { status: "no-run" };
   }
 
@@ -307,7 +364,7 @@ export async function finalizeRun({ bucket, storeList, prefix = "", now = () => 
     for (const [st, n] of Object.entries(part.statuses || {})) statuses[st] = (statuses[st] || 0) + n;
     const target = name.startsWith("v-") ? verified : fetched;
     for (const [state, cities] of Object.entries(part.prices || {})) Object.assign((target[state] ||= {}), cities);
-    if (name.startsWith("p1-")) {
+    if (CHUNK_RESULT.test(name)) {
       chunksDone++;
       candidates += part.candidates || 0;
       failed.push(...(part.failed || []));
@@ -319,7 +376,8 @@ export async function finalizeRun({ bucket, storeList, prefix = "", now = () => 
   for (const [state, cities] of Object.entries(verified)) Object.assign((fetched[state] ||= {}), cities);
 
   const summary = {
-    run: pointer.runId, timestamp: pointer.timestamp, chunksDone, chunks: pointer.chunks,
+    run: pointer.runId, timestamp: pointer.timestamp, finalizedBy: early ? "last message" : "cron backstop",
+    chunksDone, chunks: pointer.chunks,
     storesFetched: countStores(fetched), stores: storeList.length, statuses,
     priceChanges: changes, unconfirmed, failedStores: failed.map(([s, c]) => `${c}, ${s}`),
     unverifiedCandidates: candidates - changes.length - unconfirmed.length,

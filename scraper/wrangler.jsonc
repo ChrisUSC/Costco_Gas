@@ -3,15 +3,16 @@
 //         npx wrangler deploy -c scraper/wrangler.jsonc
 {
   "$schema": "../node_modules/wrangler/config-schema.json",
-  "name": "costco-gas-scraper",
+  "name": "costco-gas-scrape",
   "main": "index.js",
   "compatibility_date": "2026-06-30",
   "observability": {
     "enabled": true
   },
   "triggers": {
-    // :00 starts a run, :20 finalizes it (must match FINALIZE_CRON in index.js).
-    "crons": ["0 * * * *", "20 * * * *"]
+    // :00 starts a run. It is saved as soon as its last step finishes (about :02); the :10
+    // cron is a backstop for a step that failed (must match FINALIZE_CRON in index.js).
+    "crons": ["0 * * * *", "10 * * * *"]
   },
   "r2_buckets": [
     {

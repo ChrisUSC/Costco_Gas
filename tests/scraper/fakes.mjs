@@ -23,9 +23,10 @@ async function toBytes(value) {
   throw new Error(`fake R2 can't store ${typeof value}`);
 }
 
-function body(bytes) {
+function body(bytes, etag) {
   return {
     size: bytes.length,
+    etag,
     body: new ReadableStream({ start(c) { c.enqueue(bytes); c.close(); } }),
     text: async () => decoder.decode(bytes),
     json: async () => JSON.parse(decoder.decode(bytes)),
@@ -67,7 +68,7 @@ export class FakeBucket {
       const { offset = 0, length } = opts.range;
       bytes = bytes.slice(offset, length === undefined ? undefined : offset + length);
     }
-    return body(bytes);
+    return body(bytes, o.etag);
   }
 
   async put(key, value, opts = {}) {
