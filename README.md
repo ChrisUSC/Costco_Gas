@@ -49,6 +49,7 @@ public/ (HTML, JS, CSS, us_stores.json) ──► Cloudflare Pages static hostin
 - **Prices** never touch git. They live in R2 and are streamed to the site by the Pages middleware.
 - **Store list** (`public/us_stores.json`) is in git. A weekly workflow discovers new warehouses and opens a pull request for review.
 - **Schedule:** prices update hourly. A scheduled job on Cloudflare starts `fetch_prices.yml` through GitHub's `workflow_dispatch` API once an hour; the workflow has no schedule of its own. Overlapping runs queue instead of racing. Discovery runs Mondays at 08:00 UTC. Any workflow can also be started by hand from the Actions tab.
+- **Cloudflare scraper (alternative):** `scraper/` is a Worker that does the same hourly scrape on Cloudflare's free plan, with no GitHub Actions involved. It starts in shadow mode, writing its own copies under `worker-test/`, so it can run next to the GitHub workflow until it's trusted. See [Cloudflare scraper](#cloudflare-scraper).
 
 ## Project structure
 
@@ -105,6 +106,14 @@ public/ (HTML, JS, CSS, us_stores.json) ──► Cloudflare Pages static hostin
 ├── r2_snapshots.js             # R2 snapshot serving shared by the middleware and the Worker
 ├── wrangler.jsonc              # Worker config (static assets from public/, R2 binding)
 │
+├── scraper/                    # Hourly price scrape as a Cloudflare Worker (alternative to the Python job)
+│   ├── index.js                # Cron, queue and HTTP handlers; settings
+│   ├── run.js                  # The steps: start, chunk, verify, finalize; saving a snapshot
+│   ├── history.js              # Appends to / reads the end of us_history.json without parsing all of it
+│   ├── prices.js               # Safety rules ported from scraper.py (quorum, coverage, carry-forward)
+│   ├── costco.js               # One request to Costco's gas-price endpoint
+│   └── wrangler.jsonc          # Worker config: crons, queue, R2 binding, shadow-mode prefix
+│
 ├── pipeline/                   # Python data pipeline
 │   ├── scraper.py              # Store discovery, metadata, price scraping and snapshot saving
 │   ├── r2_sync.py              # Download/upload snapshots, list and restore R2 backups
@@ -117,6 +126,7 @@ public/ (HTML, JS, CSS, us_stores.json) ──► Cloudflare Pages static hostin
 │
 ├── tests/                      # pytest suite for the pipeline
 │   ├── frontend/               # node --test unit tests for public/js and the CDN hashes
+│   ├── scraper/                # node --test tests for scraper/ (fake R2, queue and Costco)
 │   └── e2e/                    # Playwright browser tests (stubbed data and services)
 ├── .github/workflows/
 │   ├── fetch_prices.yml        # Scheduled price scrape (R2 download → scrape → upload)
@@ -196,6 +206,47 @@ With no file names, `download` and `upload` handle all US, CA and local snapshot
 - **Snapshot validation:** a run is only saved if at least 85% of states and 75% of stores returned prices.
 - **No automatic store deletion:** stores that return no prices are listed in the run log but stay in the store list. Removing a store is a manual edit.
 - **Full-rebuild guard:** option `5` won't overwrite `public/us_stores.json` if the new list is more than 25% smaller.
+
+## Cloudflare scraper
+
+`scraper/` runs the hourly scrape inside Cloudflare's free plan instead of GitHub Actions. A free-plan Worker may use 10 ms of CPU and make 50 outbound requests per run, so the work is split up:
+
+```
+cron :00  start     read us_latest.json, split the stores into chunks of 20, queue one message each
+queue     chunk     fetch each store once (retrying failures); changed stores go to a verify message
+queue     verify    re-fetch changed stores until 3 readings agree, else keep the old price
+cron :20  finalize  merge results → coverage check → carry forward → append history → write latest
+```
+
+Results between steps live in R2 under `runs/us/` and are deleted after each run. The history file is several MB, too big to parse in 10 ms, so `history.js` checks the last entry is intact, then streams the existing bytes plus the new entry back to R2 (a conditional put, so overlapping runs can't drop each other's entries). The 72-hour trend baseline is moved forward from the one saved in `us_latest.json`, using the few history entries in between. The safety checks listed above all apply. A chunk or verify step that hasn't finished by :20 just counts as missing stores.
+
+It uses a Cloudflare Queue (free plan: 10,000 operations a day, about 2,500 used), two cron triggers (free plan: 5 per account) and the existing R2 bucket. The store list is bundled in at deploy time, so redeploy after `us_stores.json` changes (or connect the Worker to Workers Builds so every push deploys it).
+
+**Set up (once):**
+
+```bash
+npx wrangler queues create costco-gas-scrape
+```
+
+```bash
+npx wrangler deploy -c scraper/wrangler.jsonc
+```
+
+Then open `https://costco-gas-scraper.<your-subdomain>.workers.dev/probe`. It fetches six stores and reports whether Costco answers requests from Cloudflare. If it says they're blocked, stop here: this approach won't work, and the GitHub workflow carries on as before.
+
+**Shadow mode:** with `WRITE_PREFIX` set to `worker-test/` (the default), the Worker copies the live files once, then keeps its own `worker-test/us_latest.json` and `worker-test/us_history.json`, and never writes the live ones. Compare them with the live files over a few days. The site serves them at `/worker-test/us_latest.json`. Each run logs a summary (stores fetched, HTTP statuses, confirmed changes, rejections) under the Worker's **Logs** in the Cloudflare dashboard. `/status` shows the mode and any run in progress.
+
+**Switching over:**
+
+1. Turn off the Cloudflare scheduled job that starts `fetch_prices.yml`. Two scrapers must never write the live files at once.
+2. Set `"WRITE_PREFIX": ""` and `"ENABLE_PROBE": "0"` in `scraper/wrangler.jsonc`, then redeploy. The first live run reads the existing `us_latest.json` and `us_history.json`.
+3. Keep `fetch_prices.yml`. Starting it by hand from the Actions tab is the fallback while the Worker is off.
+
+To go back, set the prefix to `worker-test/` again (or remove the cron triggers), redeploy, and turn the GitHub scheduled job back on.
+
+To run a step without waiting for the cron, set a secret with `npx wrangler secret put RUN_TOKEN -c scraper/wrangler.jsonc`, then `POST /run?step=start` (or `step=finalize`) with `Authorization: Bearer <token>`.
+
+Weekly store discovery stays on GitHub Actions (`discover.yml`): it opens a pull request, which needs the repo.
 
 ## Data format
 
@@ -315,7 +366,7 @@ npm run lint         # ESLint: undefined names and unused imports across the mod
 ```
 
 ```bash
-npm run test:unit    # node --test: helpers in public/js, URL/settings state, CDN integrity hashes
+npm run test:unit    # node --test: helpers in public/js, URL/settings state, CDN integrity hashes, scraper/
 ```
 
 ```bash

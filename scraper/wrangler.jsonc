@@ -1,0 +1,44 @@
+// The hourly price scraper (scraper/index.js). Separate from the site Worker in the repo root.
+// Deploy: npx wrangler queues create costco-gas-scrape   (once)
+//         npx wrangler deploy -c scraper/wrangler.jsonc
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "costco-gas-scraper",
+  "main": "index.js",
+  "compatibility_date": "2026-06-30",
+  "observability": {
+    "enabled": true
+  },
+  "triggers": {
+    // :00 starts a run, :20 finalizes it (must match FINALIZE_CRON in index.js).
+    "crons": ["0 * * * *", "20 * * * *"]
+  },
+  "r2_buckets": [
+    {
+      "binding": "DATA_BUCKET",
+      "bucket_name": "costco-gas-data"
+    }
+  ],
+  "queues": {
+    "producers": [
+      {
+        "binding": "SCRAPE_QUEUE",
+        "queue": "costco-gas-scrape"
+      }
+    ],
+    "consumers": [
+      {
+        "queue": "costco-gas-scrape",
+        "max_batch_size": 1,
+        "max_retries": 2,
+        "max_concurrency": 3
+      }
+    ]
+  },
+  "vars": {
+    // "worker-test/" = shadow mode, writing its own copies next to the live files.
+    // Set to "" to take over us_latest.json / us_history.json.
+    "WRITE_PREFIX": "worker-test/",
+    "ENABLE_PROBE": "1"
+  }
+}

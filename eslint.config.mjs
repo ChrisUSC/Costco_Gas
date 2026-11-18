@@ -30,6 +30,11 @@ export default [
         languageOptions: { sourceType: 'module', globals: globals.worker },
     },
     {
+        // The price scraper Worker (scraper/), also run by the node tests in tests/scraper/.
+        files: ['scraper/**/*.js'],
+        languageOptions: { sourceType: 'module', globals: { ...globals.worker, FixedLengthStream: 'readonly' } },
+    },
+    {
         files: ['tests/**/*.mjs', '*.config.mjs'],
         languageOptions: { globals: globals.node },
     },
