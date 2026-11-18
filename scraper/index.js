@@ -13,7 +13,7 @@ import usStores from "../public/us_stores.json" with { type: "json" };
 import { fetchStorePrices } from "./costco.js";
 import { compactStores, finalizeRun, processChunk, processVerify, startRun } from "./run.js";
 
-const FINALIZE_CRON = "20 * * * *";
+const FINALIZE_CRON = "10 * * * *";
 const PROBE_STORES = 6;
 
 let storeList;

@@ -8,10 +8,10 @@
 //                         written to runs/us/<run>/p1-<n>.json.
 //   verify   (queue)      re-fetches each changed store until a quorum agrees, or reverts it
 //                         to the last known price; writes runs/us/<run>/v-<id>.json.
-//   finalize (cron, :20)  merges the results, applies the coverage check, appends changes to
+//   finalize (cron, :10)  merges the results, applies the coverage check, appends changes to
 //                         us_history.json, writes us_latest.json and deletes the run's files.
 //
-// A chunk or verify that hasn't finished by :20 just counts as missing stores, which the
+// A chunk or verify that hasn't finished by :10 just counts as missing stores, which the
 // coverage check and carry-forward already handle (a missing changed store keeps its old price).
 import { fetchStorePrices } from "./costco.js";
 import {

@@ -215,10 +215,10 @@ With no file names, `download` and `upload` handle all US, CA and local snapshot
 cron :00  start     read us_latest.json, split the stores into chunks of 20, queue one message each
 queue     chunk     fetch each store once (retrying failures); changed stores go to a verify message
 queue     verify    re-fetch changed stores until 3 readings agree, else keep the old price
-cron :20  finalize  merge results → coverage check → carry forward → append history → write latest
+cron :10  finalize  merge results → coverage check → carry forward → append history → write latest
 ```
 
-Results between steps live in R2 under `runs/us/` and are deleted after each run. The history file is several MB, too big to parse in 10 ms, so `history.js` checks the last entry is intact, then streams the existing bytes plus the new entry back to R2 (a conditional put, so overlapping runs can't drop each other's entries). The 72-hour trend baseline is moved forward from the one saved in `us_latest.json`, using the few history entries in between. The safety checks listed above all apply. A chunk or verify step that hasn't finished by :20 just counts as missing stores.
+Results between steps live in R2 under `runs/us/` and are deleted after each run. The history file is several MB, too big to parse in 10 ms, so `history.js` checks the last entry is intact, then streams the existing bytes plus the new entry back to R2 (a conditional put, so overlapping runs can't drop each other's entries). The 72-hour trend baseline is moved forward from the one saved in `us_latest.json`, using the few history entries in between. The safety checks listed above all apply. A chunk or verify step that hasn't finished by :10 just counts as missing stores.
 
 It uses a Cloudflare Queue (free plan: 10,000 operations a day, about 2,500 used), two cron triggers (free plan: 5 per account) and the existing R2 bucket. The store list is bundled in at deploy time, so redeploy after `us_stores.json` changes (or connect the Worker to Workers Builds so every push deploys it).
 
@@ -232,7 +232,7 @@ npx wrangler queues create costco-gas-scrape
 npx wrangler deploy -c scraper/wrangler.jsonc
 ```
 
-Then open `https://costco-gas-scraper.<your-subdomain>.workers.dev/probe`. It fetches six stores and reports whether Costco answers requests from Cloudflare. If it says they're blocked, stop here: this approach won't work, and the GitHub workflow carries on as before.
+Then open `https://costco-gas-scrape.<your-subdomain>.workers.dev/probe`. It fetches six stores and reports whether Costco answers requests from Cloudflare. If it says they're blocked, stop here: this approach won't work, and the GitHub workflow carries on as before.
 
 **Shadow mode:** with `WRITE_PREFIX` set to `worker-test/` (the default), the Worker copies the live files once, then keeps its own `worker-test/us_latest.json` and `worker-test/us_history.json`, and never writes the live ones. Compare them with the live files over a few days. The site serves them at `/worker-test/us_latest.json`. Each run logs a summary (stores fetched, HTTP statuses, confirmed changes, rejections) under the Worker's **Logs** in the Cloudflare dashboard. `/status` shows the mode and any run in progress.
 
