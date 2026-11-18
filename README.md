@@ -215,12 +215,15 @@ With no file names, `download` and `upload` handle all US, CA and local snapshot
 cron :00  start     read us_latest.json, split the stores into chunks of 20, queue one message each
 queue     chunk     fetch each store once (retrying failures); changed stores go to a verify message
 queue     verify    re-fetch changed stores until 3 readings agree, else keep the old price
-cron :10  finalize  merge results → coverage check → carry forward → append history → write latest
+last step finalize  merge results → coverage check → carry forward → append history → write latest
+cron :10  backstop  finalize now if a step failed or got stuck (otherwise nothing to do)
 ```
 
-Results between steps live in R2 under `runs/us/` and are deleted after each run. The history file is several MB, too big to parse in 10 ms, so `history.js` checks the last entry is intact, then streams the existing bytes plus the new entry back to R2 (a conditional put, so overlapping runs can't drop each other's entries). The 72-hour trend baseline is moved forward from the one saved in `us_latest.json`, using the few history entries in between. The safety checks listed above all apply. A chunk or verify step that hasn't finished by :10 just counts as missing stores.
+Results between steps live in R2 under `runs/us/` and are deleted after each run. The history file is several MB, too big to parse in 10 ms, so `history.js` checks the last entry is intact, then streams the existing bytes plus the new entry back to R2 (a conditional put, so overlapping runs can't drop each other's entries). The 72-hour trend baseline is moved forward from the one saved in `us_latest.json`, using the few history entries in between. The safety checks listed above all apply.
 
-It uses a Cloudflare Queue (free plan: 10,000 operations a day, about 2,500 used), two cron triggers (free plan: 5 per account) and the existing R2 bucket. The store list is bundled in at deploy time, so redeploy after `us_stores.json` changes (or connect the Worker to Workers Builds so every push deploys it).
+The chunk or verify step that finishes last sees that every result is in (one R2 list of the run's files) and saves the run straight away, normally about two minutes after :00. It claims the run first with a conditional write to `runs/us/current.json`, so it can't be saved twice. If a step fails or never finishes, the :10 cron saves the run with what arrived, and the missing stores are handled by the coverage check and carry-forward (a changed store that wasn't re-checked keeps its old price).
+
+It uses a Cloudflare Queue (free plan: 10,000 operations a day, about 2,500 used), two cron triggers (free plan: 5 per account) and the existing R2 bucket (about 80 writes and lists a run, roughly 56,000 a month of the free 1,000,000). The store list is bundled in at deploy time, so redeploy after `us_stores.json` changes (or connect the Worker to Workers Builds so every push deploys it).
 
 **Set up (once):**
 

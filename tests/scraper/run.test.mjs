@@ -29,20 +29,28 @@ function setup({ latest = {}, history } = {}) {
   });
 }
 
-// Runs one hour: start, every queued chunk/verify message, then finalize.
-async function runHour(bucket, answer, { prefix = "", perInvocation } = {}) {
+// Runs one hour: start, then every queued chunk/verify message (the last one saves the run),
+// then the :10 cron backstop. Returns the save result, whichever step made it.
+async function runHour(bucket, answer, { prefix = "", perInvocation, drop = () => false, stores = storeList } = {}) {
   const queue = new FakeQueue();
   const fetch = fakeCostco(answer);
-  const deps = { bucket, queue, fetch, sleep: noSleep, storeList, prefix, now: NOW, log: quiet };
+  const deps = { bucket, queue, fetch, sleep: noSleep, storeList: stores, prefix, now: NOW, log: quiet };
   await startRun(deps);
+  let early;
+  const saves = [];
+  const log = (line) => { if (line.startsWith("{")) saves.push(JSON.parse(line)); };
   for (let msgs = queue.take(); msgs.length; msgs = queue.take()) {
     for (const body of msgs) {
+      if (drop(body)) continue;
       fetch.requests = 0;
-      await (body.type === "verify" ? processVerify(body, deps) : processChunk(body, deps));
+      const out = await (body.type === "verify" ? processVerify(body, { ...deps, log }) : processChunk(body, { ...deps, log }));
       perInvocation?.push(fetch.requests);
+      if (out.finalized) early = { status: out.finalized, summary: saves.at(-1) };
     }
   }
-  return finalizeRun(deps);
+  const backstop = await finalizeRun({ ...deps, log });
+  if (early && backstop.status !== "no-run") throw new Error("run was saved twice");
+  return early ?? backstop;
 }
 
 test("an hour with no price changes updates the timestamp and leaves history alone", async () => {
@@ -173,4 +181,84 @@ test("the real store list fits in queue messages", () => {
   assert.ok(list.every((st) => st.s && st.c && /^\d+$/.test(st.w)));
   const message = JSON.stringify({ stores: list.slice(0, CHUNK_SIZE).map((st) => ({ ...st, last: [9.999, 9.999, 9.999] })) });
   assert.ok(message.length < 128 * 1024);
+});
+
+test("the last message to finish saves the run; the :10 cron then has nothing to do", async () => {
+  const bucket = setup();
+  const res = await runHour(bucket, (id) => (id === "123" ? [3.99, 4.49, null] : byId[id]));
+  assert.equal(res.status, "saved");
+  assert.equal(res.summary.finalizedBy, "last message");
+  assert.equal(bucket.puts.filter((k) => k === "us_latest.json").length, 1);
+  assert.deepEqual(bucket.json("us_history.json")[RUN_TS], { S2: { City3: [3.99, 4.49, null] } });
+});
+
+test("if a chunk never finishes, the :10 cron still finalizes the run", async () => {
+  const bucket = setup();
+  const latestBefore = bucket.text("us_latest.json");
+  // With 30 test stores, one missing chunk is a third of them: below the 75% store threshold.
+  const res = await runHour(bucket, (id) => byId[id], { drop: (body) => body.type === "chunk" && body.index === 1 });
+  assert.equal(res.summary.finalizedBy, "cron backstop");
+  assert.equal(res.status, "rejected");
+  assert.equal(bucket.text("us_latest.json"), latestBefore);
+  assert.deepEqual((await bucket.list({ prefix: "runs/" })).objects, []);
+});
+
+test("if a verify message never finishes, the changed store keeps its old price", async () => {
+  const bucket = setup();
+  const res = await runHour(bucket, (id) => (id === "123" ? [3.99, 4.49, null] : byId[id]), { drop: (body) => body.type === "verify" });
+  assert.equal(res.summary.finalizedBy, "cron backstop");
+  assert.deepEqual(bucket.json("us_latest.json").prices.S2.City3, basePrices.S2.City3);
+});
+
+test("only one caller can claim a run", async () => {
+  const bucket = setup();
+  const deps = { bucket, queue: new FakeQueue(), storeList, now: NOW, log: quiet };
+  await startRun(deps);
+  const [a, b] = await Promise.all([finalizeRun(deps), finalizeRun(deps)]);
+  assert.deepEqual([a.status, b.status].sort(), ["no-run", "rejected"]);
+});
+
+test("the cron takes over a claim left by a finalize that crashed", async () => {
+  const bucket = setup();
+  const deps = { bucket, queue: new FakeQueue(), fetch: fakeCostco((id) => byId[id]), sleep: noSleep, storeList, now: NOW, log: quiet };
+  await startRun(deps);
+  const msgs = deps.queue.take();
+  const pointer = bucket.json("runs/us/current.json");
+  for (const body of msgs.slice(0, -1)) await processChunk(body, deps);
+  bucket.set("runs/us/current.json", JSON.stringify({ ...pointer, finalizing: "2026-07-04T17:01:00Z" }));
+  await processChunk(msgs.at(-1), deps); // claimed already: skipped
+  const later = { ...deps, now: () => new Date("2026-07-04T17:10:00Z") };
+  const res = await finalizeRun(later);
+  assert.notEqual(res.status, "no-run");
+  const fresh = { ...deps, now: () => new Date("2026-07-04T17:03:00Z") };
+  await startRun(fresh);
+  bucket.set("runs/us/current.json", JSON.stringify({ ...bucket.json("runs/us/current.json"), finalizing: "2026-07-04T17:02:00Z" }));
+  assert.equal((await finalizeRun(fresh)).status, "no-run"); // a recent claim is left alone
+});
+
+test("R2 operations per hour stay far inside the free allowance", async () => {
+  // 600 stores (about the real list) with a handful of price changes.
+  const stores = [];
+  const prices = {};
+  for (let i = 0; i < 600; i++) {
+    const st = { s: `S${i % 50}`, c: `City${i}`, w: String(1000 + i) };
+    stores.push(st);
+    (prices[st.s] ||= {})[st.c] = [3 + (i % 90) / 100, 4, null];
+  }
+  const price = Object.fromEntries(stores.map((st) => [st.w, prices[st.s][st.c]]));
+  const bucket = new FakeBucket({
+    "us_latest.json": JSON.stringify({ timestamp: "2026-07-04 09:00", prices, previous: prices, previous_timestamp: "2026-07-01 09:00" }),
+    "us_history.json": pythonHistory({ "2026-06-01 00:00": prices }),
+  });
+  let classA = 0;
+  for (const m of ["put", "list"]) {
+    const orig = bucket[m].bind(bucket);
+    bucket[m] = (...a) => { classA++; return orig(...a); };
+  }
+  const changed = new Set(["1003", "1100", "1250", "1400", "1599"]);
+  const res = await runHour(bucket, (id) => (changed.has(id) ? [5, 5, null] : price[id]), { stores });
+  assert.equal(res.status, "saved");
+  // 720 runs a month against the free plan's 1,000,000 class A operations.
+  assert.ok(classA * 720 < 100000, `${classA} per run = ${classA * 720} a month`);
+  if (process.env.SHOW_R2_OPS) console.log(`R2 class A: ${classA} per run, ${classA * 720} a month`);
 });
