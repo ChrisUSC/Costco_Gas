@@ -14,8 +14,11 @@ and deployment settings.
   (download/upload/backup against R2), `paths.py` (all file locations).
 - `functions/_middleware.js`, `worker.js`, `r2_snapshots.js` — serve `*_latest.json` and
   `*_history.json` from R2. Both the Pages project and the Worker deploy on every push.
+- `scraper/` — the same hourly scrape as a Cloudflare Worker on the free plan (cron + Queue,
+  deployed with `npx wrangler deploy -c scraper/wrangler.jsonc`). `WRITE_PREFIX` in its
+  `wrangler.jsonc` decides whether it writes the live files or shadow copies under a prefix.
 - `tests/` — pytest for the pipeline; `tests/frontend/` (node --test) and `tests/e2e/`
-  (Playwright) for the site.
+  (Playwright) for the site; `tests/scraper/` (node --test) for the Worker scraper.
 - `data/` — `ca_stores.json` and `local_stores.json` for manual scraper runs (options 1 and 2);
   `data/snapshots/` is git-ignored.
 
@@ -85,3 +88,8 @@ option, point a temporary config at an existing Chromium with
   table and the safety-check list.
 - `fetch_prices.yml` is started hourly by a scheduled job on Cloudflare and must only touch
   `us_latest.json` and `us_history.json`.
+- Only one scraper may write the live `us_latest.json` / `us_history.json`: either the GitHub
+  workflow (started by the Cloudflare scheduled job) or `scraper/` with an empty `WRITE_PREFIX`.
+- `scraper/` mirrors the safety checks in `pipeline/scraper.py`; change both together. Each
+  Worker invocation must stay within the free plan's 10 ms CPU and 50 outbound requests, so
+  never parse the whole history file there.
