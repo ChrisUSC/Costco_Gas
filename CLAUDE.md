@@ -19,6 +19,10 @@ and deployment settings.
   `wrangler.jsonc` decides whether it writes the live files or shadow copies under a prefix.
 - `tests/` — pytest for the pipeline; `tests/frontend/` (node --test) and `tests/e2e/`
   (Playwright) for the site; `tests/scraper/` (node --test) for the Worker scraper.
+- `ios/` — native SwiftUI app with the site's features. `ios/CostcoGasKit/` is a Swift package
+  porting the logic in `public/js` (prices, hours, time, geo, stores, lists, history) with the
+  same test cases; `ios/CostcoGas/` is the app. The Xcode project is generated from
+  `ios/project.yml` with XcodeGen and isn't in git. `ios/README.md` has the details.
 - `data/` — `ca_stores.json` and `local_stores.json` for manual scraper runs (options 1 and 2);
   `data/snapshots/` is git-ignored.
 
@@ -33,6 +37,8 @@ npm run lint                                      # ESLint
 npm run test:unit                                 # node --test
 npm run test:e2e                                  # Playwright (desktop + phone)
 python pipeline/scraper.py 3                      # what the hourly job runs (hits costco.com)
+cd ios/CostcoGasKit && swift test                 # iOS logic tests (macOS)
+cd ios && xcodegen generate                       # make CostcoGas.xcodeproj
 ```
 
 Run pytest for pipeline changes and lint, unit and e2e for frontend changes before committing.
@@ -90,6 +96,9 @@ option, point a temporary config at an existing Chromium with
   `us_latest.json` and `us_history.json`.
 - Only one scraper may write the live `us_latest.json` / `us_history.json`: either the GitHub
   workflow (started by the Cloudflare scheduled job) or `scraper/` with an empty `WRITE_PREFIX`.
+- `ios/CostcoGasKit` mirrors the display rules in `public/js` (price formats, trends, open
+  status, the 4-hour stale threshold, list sorting, history series). Change both together;
+  `ios.yml` runs its tests and builds the app on a macOS runner when `ios/` changes.
 - `scraper/` mirrors the safety checks in `pipeline/scraper.py`; change both together. Each
   Worker invocation must stay within the free plan's 10 ms CPU and 50 outbound requests, so
   never parse the whole history file there.
