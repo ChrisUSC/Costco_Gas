@@ -75,6 +75,19 @@ function osrmResponse(points) {
     };
 }
 
+// An OSRM /table response: road distances taken as 1.2 x the straight line, in metres.
+function osrmTable(url) {
+    const u = new URL(url);
+    const points = decodeURIComponent(u.pathname.split('/').pop()).split(';').map(p => p.split(',').map(Number));
+    const pick = (name) => u.searchParams.get(name).split(';').map(Number);
+    const metres = ([lng1, lat1], [lng2, lat2]) => {
+        const rad = (d) => d * Math.PI / 180;
+        const h = Math.sin(rad(lat2 - lat1) / 2) ** 2 + Math.cos(rad(lat1)) * Math.cos(rad(lat2)) * Math.sin(rad(lng2 - lng1) / 2) ** 2;
+        return 1.2 * 6371000 * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
+    };
+    return { code: 'Ok', distances: pick('sources').map(i => pick('destinations').map(j => metres(points[i], points[j]))) };
+}
+
 // Coordinates of a station in the real store list.
 export function storeLatLng(stateCode, city) {
     const s = stores[stateCode][city];
@@ -123,8 +136,11 @@ export const test = base.extend({
                 .map(([name, p]) => nominatimResult(name, p));
             return r.fulfill({ json: hits, headers: { 'Access-Control-Allow-Origin': '*' } });
         });
-        await page.route(/router\.project-osrm\.org/, (r) => drivingRoute
+        await page.route(/router\.project-osrm\.org\/route\//, (r) => drivingRoute
             ? r.fulfill({ json: osrmResponse(drivingRoute.points), headers: { 'Access-Control-Allow-Origin': '*' } })
+            : r.abort());
+        await page.route(/router\.project-osrm\.org\/table\//, (r) => drivingRoute
+            ? r.fulfill({ json: osrmTable(r.request().url()), headers: { 'Access-Control-Allow-Origin': '*' } })
             : r.abort());
 
         await page.route(/\/us_latest\.json/, (r) => latest.status

@@ -12,7 +12,7 @@ import { formatGasTime, getGasStatus, groupGasHours } from '../../public/js/hour
 import { parseScraperTimestamp, getRelativeTimeLabel, formatLastUpdatedLabel, PRICES_STALE_HOURS } from '../../public/js/time.js';
 import { storeMatchesQuery, directionsUrl, formatAddress } from '../../public/js/stores.js';
 import { escapeHtml } from '../../public/js/dom.js';
-import { fillCost, GALLON_LIMITS, readCarSetting, ROAD_FACTOR, routeStopCosts } from '../../public/js/fillup.js';
+import { fillCost, GALLON_LIMITS, readCarSetting, ROAD_FACTOR, roadDetourMiles, routeStopCosts } from '../../public/js/fillup.js';
 import { loadJsonPref } from '../../public/js/storage.js';
 
 const store = (over = {}) => ({
@@ -279,6 +279,29 @@ describe('fill-up cost and best value along a route', () => {
         assert.ok(Math.abs(stops[1].extraVsBest - (stops[1].total - stops[0].total)) < 1e-9);
         const twin = store({ city: 'Twin', regVal: 4.30, distance: 2 });
         assert.equal(routeStopCosts([offRoute, twin], 'regular', opts)[1].isBest, true);
+    });
+
+    test('road detour miles: to the station and on to the destination, minus the direct route', () => {
+        const m = 1609.34;
+        // Rows: origin, station 1, station 2. Columns: station 1, station 2, destination.
+        const table = [
+            [10 * m, 30 * m, 50 * m],
+            [0, 21 * m, 41 * m],
+            [21 * m, 0, 22 * m],
+        ];
+        const miles = roadDetourMiles(table, 2, 50);
+        assert.ok(Math.abs(miles[0] - 1) < 1e-9);  // 10 + 41 - 50
+        assert.ok(Math.abs(miles[1] - 2) < 1e-9);  // 30 + 22 - 50
+        assert.deepEqual(roadDetourMiles([[null, 5 * m, 0], [0, 0, null], [0, 0, 5 * m]], 2, 9), [null, 1]);
+        assert.equal(roadDetourMiles([[1 * m, 9 * m], [0, 1 * m]], 1, 5)[0], 0); // 1 + 1 - 5: never negative
+        assert.deepEqual(roadDetourMiles(undefined, 2, 5), [null, null]);
+    });
+
+    test('a road detour, when known, replaces the estimate from the distance to the route', () => {
+        const measured = store({ city: 'Measured', regVal: 4.30, distance: 2, detourMiles: 7 });
+        const [stop] = routeStopCosts([measured], 'regular', opts);
+        assert.equal(stop.detourMiles, 7);
+        assert.ok(Math.abs(stop.detourCost - (7 / 25) * 4.30) < 1e-9);
     });
 
     test('stations without the grade are left out', () => {

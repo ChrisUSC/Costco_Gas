@@ -44,12 +44,27 @@ public enum FillUp {
         price * gallons
     }
 
+    /// The extra road miles a stop at each station adds to a trip, from an OSRM /table reply for
+    /// the points [origin, station 1 … station n, destination] with sources 0…n and destinations
+    /// 1…n+1 (distances in metres): origin → station + station → destination − the direct route.
+    /// Nil for a station the router couldn't reach.
+    public static func roadDetourMiles(distances: [[Double?]]?, stationCount: Int, routeMiles: Double) -> [Double?] {
+        (0..<stationCount).map { i in
+            guard let rows = distances, rows.count > i + 1,
+                  rows[0].count > i, rows[i + 1].count > stationCount,
+                  let toStation = rows[0][i], let toDestination = rows[i + 1][stationCount] else { return nil }
+            return max(0, (toStation + toDestination) / 1609.34 - routeMiles)
+        }
+    }
+
     /// Each station along a route with a price for the grade, best value first: the fill-up plus
-    /// the detour off the route to the station and back.
-    public static func routeStops(_ along: [StationDistance], grade: Grade, gallons: Double, mpg: Double) -> [RouteStopCost] {
+    /// the detour. The detour is the station's road detour in `roadDetours` (keyed by station id)
+    /// when known, else an estimate: off the route to the station and back, allowing for winding roads.
+    public static func routeStops(_ along: [StationDistance], grade: Grade, gallons: Double, mpg: Double,
+                                  roadDetours: [String: Double] = [:]) -> [RouteStopCost] {
         let stops = along.compactMap { item -> (StationDistance, Double, Double, Double, Double)? in
             guard let price = item.station.price(grade) else { return nil }
-            let detourMiles = 2 * item.distance * roadFactor
+            let detourMiles = roadDetours[item.id] ?? 2 * item.distance * roadFactor
             let detourCost = detourMiles / mpg * price
             let fill = fillCost(price: price, gallons: gallons)
             return (item, price, detourMiles, detourCost, fill)

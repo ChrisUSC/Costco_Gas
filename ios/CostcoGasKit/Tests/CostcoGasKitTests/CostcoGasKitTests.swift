@@ -170,6 +170,27 @@ final class FillUpTests: XCTestCase {
         XCTAssertTrue(stops([offRoute, twin])[1].isBest)
     }
 
+    func testRoadDetourMiles() throws {
+        let m = 1609.34
+        // Rows: origin, station 1, station 2. Columns: station 1, station 2, destination.
+        let table: [[Double?]] = [[10 * m, 30 * m, 50 * m], [0, 21 * m, 41 * m], [21 * m, 0, 22 * m]]
+        let miles = FillUp.roadDetourMiles(distances: table, stationCount: 2, routeMiles: 50)
+        XCTAssertEqual(try XCTUnwrap(miles[0]), 1, accuracy: 1e-9) // 10 + 41 - 50
+        XCTAssertEqual(try XCTUnwrap(miles[1]), 2, accuracy: 1e-9) // 30 + 22 - 50
+        let gaps = FillUp.roadDetourMiles(distances: [[nil, 5 * m, 0], [0, 0, nil], [0, 0, 5 * m]], stationCount: 2, routeMiles: 9)
+        XCTAssertNil(gaps[0])
+        XCTAssertEqual(try XCTUnwrap(gaps[1]), 1, accuracy: 1e-9)
+        XCTAssertEqual(FillUp.roadDetourMiles(distances: [[1 * m, 9 * m], [0, 1 * m]], stationCount: 1, routeMiles: 5)[0], 0)
+        XCTAssertEqual(FillUp.roadDetourMiles(distances: nil, stationCount: 2, routeMiles: 5).count, 2)
+    }
+
+    func testRoadDetourReplacesTheEstimate() throws {
+        let stop = try XCTUnwrap(FillUp.routeStops([offRoute], grade: .regular, gallons: 12, mpg: 25,
+                                                   roadDetours: [offRoute.id: 7]).first)
+        XCTAssertEqual(stop.detourMiles, 7)
+        XCTAssertEqual(stop.detourCost, 7.0 / 25 * 4.30, accuracy: 1e-9)
+    }
+
     func testStationsWithoutTheGradeAreLeftOut() {
         let noDiesel = stop("NoDiesel", GradePrices(regular: 4.00), offRoute: 1)
         XCTAssertTrue(stops([noDiesel], .diesel).isEmpty)

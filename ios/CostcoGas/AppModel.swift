@@ -33,6 +33,8 @@ struct RouteResult: Equatable {
     var destination: Place
     var route: DrivingRoute
     var along: [StationDistance]
+    /// Road miles a stop at each station adds, by station id (missing: use the estimate).
+    var roadDetours: [String: Double] = [:]
 }
 
 /// Something for the map to do once: move to a place, or fit points into view.
@@ -232,7 +234,8 @@ final class AppModel {
 
     /// The route's stations with a price, by best value (fill-up plus detour) or lowest price.
     func routeStops(_ result: RouteResult) -> [RouteStopCost] {
-        let stops = FillUp.routeStops(result.along, grade: grade, gallons: prefs.fillGallons, mpg: prefs.mpg)
+        let stops = FillUp.routeStops(result.along, grade: grade, gallons: prefs.fillGallons, mpg: prefs.mpg,
+                                      roadDetours: result.roadDetours)
         guard prefs.routeSort == .price else { return stops }
         return stops.sorted { $0.price != $1.price ? $0.price < $1.price : $0.total < $1.total }
     }
@@ -520,10 +523,17 @@ final class AppModel {
 
         let route = await RouteService.drivingRoute(from: origin.coordinate, to: destination.coordinate)
         let along = StationQueries.along(route: route.coords, stations: stations, bufferMiles: routeBuffer)
+        // The extra road miles each stop adds (a straight-line route has no roads to measure).
+        var roadDetours: [String: Double] = [:]
+        if !route.isApproximate {
+            roadDetours = await RouteService.roadDetours(from: origin.coordinate, to: destination.coordinate,
+                                                         stations: along, routeMiles: route.distanceMiles)
+        }
         routeOrigin = origin
         routeDest = destination
         routeResult = RouteResult(originText: originText, destText: destText, bufferMiles: routeBuffer,
-                                  origin: origin, destination: destination, route: route, along: along)
+                                  origin: origin, destination: destination, route: route, along: along,
+                                  roadDetours: roadDetours)
         if currentTab == .route { showRouteOnMap() }
     }
 
