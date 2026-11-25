@@ -52,6 +52,7 @@ and builds the app for the simulator on every push that touches `ios/`.
 | Favorites: stations and routes | `state.js` | `Preferences.swift` |
 | Search: stations plus Nominatim places | `search.js` | `SearchResultsView.swift`, `Geocoder` |
 | Station details: prices, open status in the station's time zone, 7-day hours, phone, share | `sheet.js`, `hours.js` | `StationDetailView.swift`, `GasHours` |
+| Live price when a station is opened: one request to Costco for that store, shown as live and never saved | (app only) | `LivePriceService`, `AppModel.fetchLivePrice` |
 | Directions in Google Maps, Apple Maps or Waze | `stores.js` | `directionsURL` |
 | Price-history chart, 7D / 30D / 90D / 1Y / All | `charts.js` | `PriceHistoryView.swift` (Swift Charts), `PriceHistory` |
 | "Updated … ago", amber after 4 hours | `time.js`, `data.js` | `UpdatedLabel`, `ScraperTime` |
@@ -62,6 +63,11 @@ and builds the app for the simulator on every push that touches `ios/`.
 | Phone bottom sheet, tablet sidebar | `sheet.js`, `layout.js` | `ContentView.swift` |
 
 Differences from the website:
+
+- Opening a station asks Costco for that store's current price (the same request the scrapers
+  make, once, without their re-check-until-a-quorum-agrees step). It replaces the hourly price
+  in the app only, at most every two minutes per station, and the details say when the live
+  price differs from the hourly one. If Costco can't be reached, the hourly price stays.
 
 - Offline, the map still uses Apple Maps tiles: areas you've already viewed stay cached, but
   the built-in US outline the website shows isn't used.

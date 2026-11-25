@@ -12,6 +12,18 @@ enum HistoryLoadState: Equatable {
 }
 
 /// A route search and its result (the website's state.lastRouteState).
+/// A station's price read straight from Costco when it was opened.
+struct LiveQuote: Equatable {
+    let prices: GradePrices
+    let fetchedAt: Date
+    /// The hourly price it replaced, to say what changed.
+    var hourly: GradePrices
+}
+
+enum LiveFetchState: Equatable {
+    case loading, failed
+}
+
 struct RouteResult: Equatable {
     var originText: String
     var destText: String
@@ -90,6 +102,10 @@ final class AppModel {
     private(set) var routeBusy = false
     var routeError: String?
     private(set) var editingRouteID: Int64?
+
+    // Live prices for opened stations, keyed by station id
+    private(set) var liveQuotes: [String: LiveQuote] = [:]
+    private(set) var liveFetch: [String: LiveFetchState] = [:]
 
     // Price history
     private(set) var history: PriceHistory?
@@ -191,7 +207,49 @@ final class AppModel {
             stations = buildStations(snapshot: snapshot, directory: directory)
             stationsByID = Dictionary(stations.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
         }
+        // Live prices read after this snapshot was made are newer: keep showing them.
+        let snapshotDate = ScraperTime.parse(snapshot.timestamp) ?? .distantPast
+        for (id, quote) in liveQuotes {
+            guard quote.fetchedAt > snapshotDate, let hourly = stationsByID[id]?.prices else {
+                liveQuotes[id] = nil
+                continue
+            }
+            liveQuotes[id]?.hourly = hourly
+            overlayLive(quote.prices, on: id)
+        }
         now = Date()
+    }
+
+    // MARK: - Live price for one station
+
+    /// Asks Costco for an opened station's current price. At most once every two minutes per
+    /// station, and not offline. The reading replaces the hourly price in the app only.
+    func fetchLivePrice(for station: Station) async {
+        guard let warehouseID = station.warehouseID, !offline, liveFetch[station.id] != .loading else { return }
+        if let quote = liveQuotes[station.id], Date().timeIntervalSince(quote.fetchedAt) < 120 { return }
+        liveFetch[station.id] = .loading
+        do {
+            let prices = try await LivePriceService.fetch(warehouseID: warehouseID)
+            let hourly = liveQuotes[station.id]?.hourly ?? (self.station(withID: station.id)?.prices ?? station.prices)
+            liveQuotes[station.id] = LiveQuote(prices: prices, fetchedAt: Date(), hourly: hourly)
+            liveFetch[station.id] = nil
+            overlayLive(prices, on: station.id)
+            now = Date()
+        } catch {
+            liveFetch[station.id] = .failed
+        }
+    }
+
+    /// Puts live prices on a station everywhere it's shown: lists, map pins and route results.
+    private func overlayLive(_ prices: GradePrices, on id: String) {
+        guard var updated = stationsByID[id], updated.prices != prices else { return }
+        updated.prices = prices
+        stationsByID[id] = updated
+        if let index = stations.firstIndex(where: { $0.id == id }) { stations[index] = updated }
+        if var result = routeResult, let index = result.along.firstIndex(where: { $0.id == id }) {
+            result.along[index] = StationDistance(station: updated, distance: result.along[index].distance)
+            routeResult = result
+        }
     }
 
     /// Fresh prices without disturbing the screen: the map stays put, the open station stays
