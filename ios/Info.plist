@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Keys Xcode can't generate from build settings. The rest (display name, location prompt,
+     orientations, launch screen) are INFOPLIST_KEY_* settings on the CostcoGas target. -->
+<plist version="1.0">
+<dict>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>CostcoGas</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>costcogas</string>
+			</array>
+		</dict>
+	</array>
+	<key>UIApplicationShortcutItems</key>
+	<array>
+		<dict>
+			<key>UIApplicationShortcutItemType</key>
+			<string>tab.nearby</string>
+			<key>UIApplicationShortcutItemTitle</key>
+			<string>Near me</string>
+			<key>UIApplicationShortcutItemIconSymbolName</key>
+			<string>location</string>
+		</dict>
+		<dict>
+			<key>UIApplicationShortcutItemType</key>
+			<string>tab.lowest</string>
+			<key>UIApplicationShortcutItemTitle</key>
+			<string>State lowest</string>
+			<key>UIApplicationShortcutItemIconSymbolName</key>
+			<string>trophy</string>
+		</dict>
+		<dict>
+			<key>UIApplicationShortcutItemType</key>
+			<string>tab.route</string>
+			<key>UIApplicationShortcutItemTitle</key>
+			<string>Gas along a route</string>
+			<key>UIApplicationShortcutItemIconSymbolName</key>
+			<string>point.topleft.down.to.point.bottomright.curvepath</string>
+		</dict>
+		<dict>
+			<key>UIApplicationShortcutItemType</key>
+			<string>tab.favorites</string>
+			<key>UIApplicationShortcutItemTitle</key>
+			<string>Favorites</string>
+			<key>UIApplicationShortcutItemIconSymbolName</key>
+			<string>star</string>
+		</dict>
+	</array>
+</dict>
+</plist>

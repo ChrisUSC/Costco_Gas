@@ -126,7 +126,7 @@ public/ (HTML, JS, CSS, us_stores.json) ──► Cloudflare Pages static hostin
 │   └── snapshots/              # Local copies of R2 snapshots (git-ignored)
 │
 ├── ios/                        # Native iOS app (SwiftUI); see ios/README.md
-│   ├── project.yml             # XcodeGen spec (the .xcodeproj is generated, not in git)
+│   ├── CostcoGas.xcodeproj     # Open in Xcode 16+ and press Run
 │   ├── CostcoGasKit/           # Swift package: the public/js logic ported to Swift, with tests
 │   └── CostcoGas/              # The app: map, lists, route, search, chart, settings
 │

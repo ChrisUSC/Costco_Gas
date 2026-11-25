@@ -8,20 +8,14 @@ Requires iOS 17 and Xcode 16 or later.
 
 ## Running it
 
-```bash
-brew install xcodegen
-```
+Open `ios/CostcoGas.xcodeproj` in Xcode, pick an iPhone simulator and press Run.
 
-```bash
-cd ios && xcodegen generate && open CostcoGas.xcodeproj
-```
+To run on your own phone, select the CostcoGas target, then under **Signing & Capabilities**
+choose your team and change the bundle identifier (`com.example.costcogas`) to one of your own.
 
-Pick an iPhone simulator and press Run. To run on your own phone, choose your team under
-**Signing & Capabilities** and change the bundle identifier (`com.example.costcogas` in
-`project.yml`) to one of your own.
-
-The Xcode project is generated from `project.yml` and is git-ignored, so change settings there
-and run `xcodegen generate` again.
+The project uses Xcode 16's folder-synced groups: any file added under `ios/CostcoGas/` is part
+of the app automatically. Info.plist keys are build settings on the target, apart from URL
+types and quick actions, which are in `ios/Info.plist`.
 
 ## Tests
 
@@ -51,7 +45,7 @@ and builds the app for the simulator on every push that touches `ios/`.
 | Offline: last prices and history saved on the device, Route and place search hidden, refresh when the connection returns | `sw.js`, `offline.js` | `SnapshotClient`, `AppModel` |
 | Settings: clustering, price colours, directions app, theme, visible tabs, start-up tab and grade, automatic location | `settings.js` | `SettingsView.swift` |
 | Shared links `?store=`, `?tab=`, `?grade=`, `?state=` | `nav.js`, `station-actions.js` | `DeepLink` (also `costcogas://open?store=CA_Turlock`) |
-| Home-screen shortcuts | `manifest.webmanifest` | Quick actions in `project.yml` |
+| Home-screen shortcuts | `manifest.webmanifest` | Quick actions in `Info.plist` |
 | Phone bottom sheet, tablet sidebar | `sheet.js`, `layout.js` | `ContentView.swift` |
 
 Differences from the website:
@@ -67,7 +61,8 @@ Differences from the website:
 
 ```
 ios/
-├── project.yml                 # XcodeGen spec: targets, Info.plist keys, quick actions
+├── CostcoGas.xcodeproj         # Open this in Xcode
+├── Info.plist                  # URL scheme and quick actions (other keys are build settings)
 ├── CostcoGasKit/               # Swift package, Foundation only (runs with `swift test`)
 │   ├── Sources/CostcoGasKit/
 │   │   ├── Prices.swift        # Grades, price parsing and formatting, trends   (prices.js)

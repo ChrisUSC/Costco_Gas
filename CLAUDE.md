@@ -21,8 +21,8 @@ and deployment settings.
   (Playwright) for the site; `tests/scraper/` (node --test) for the Worker scraper.
 - `ios/` — native SwiftUI app with the site's features. `ios/CostcoGasKit/` is a Swift package
   porting the logic in `public/js` (prices, hours, time, geo, stores, lists, history) with the
-  same test cases; `ios/CostcoGas/` is the app. The Xcode project is generated from
-  `ios/project.yml` with XcodeGen and isn't in git. `ios/README.md` has the details.
+  same test cases; `ios/CostcoGas/` is the app. `ios/CostcoGas.xcodeproj` uses folder-synced
+  groups, so new files under `ios/CostcoGas/` need no project edit. `ios/README.md` has details.
 - `data/` — `ca_stores.json` and `local_stores.json` for manual scraper runs (options 1 and 2);
   `data/snapshots/` is git-ignored.
 
@@ -38,7 +38,6 @@ npm run test:unit                                 # node --test
 npm run test:e2e                                  # Playwright (desktop + phone)
 python pipeline/scraper.py 3                      # what the hourly job runs (hits costco.com)
 cd ios/CostcoGasKit && swift test                 # iOS logic tests (macOS)
-cd ios && xcodegen generate                       # make CostcoGas.xcodeproj
 ```
 
 Run pytest for pipeline changes and lint, unit and e2e for frontend changes before committing.
