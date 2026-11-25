@@ -65,7 +65,9 @@ private struct RouteResultsSection: View {
     let result: RouteResult
 
     var body: some View {
-        let sorted = StationQueries.sortAlong(result.along, grade: model.grade)
+        @Bindable var prefs = model.prefs
+        // Best value: your usual fill-up plus the detour off the route (FillUp in the Kit).
+        let stops = model.routeStops(result)
         Section {
             if result.route.isApproximate {
                 Label("Live routing was unavailable, so this is an approximate straight-line path, not a real driving route.",
@@ -74,18 +76,26 @@ private struct RouteResultsSection: View {
                     .foregroundStyle(.orange)
             }
             Button { model.showRouteOnMap() } label: { Label("View route on map", systemImage: "map") }
-            if sorted.isEmpty {
+            if stops.isEmpty {
                 Text("No Costco gas stations found within \(Int(result.bufferMiles)) miles of this route.")
                     .foregroundStyle(.secondary)
             } else {
-                ForEach(Array(sorted.enumerated()), id: \.element.id) { index, item in
-                    StationRow(station: item.station, rank: index + 1, distance: item.distance, distanceSuffix: " off route")
+                Picker("Sort by", selection: $prefs.routeSort) {
+                    ForEach(RouteSort.allCases) { Text($0.label).tag($0) }
+                }
+                ForEach(Array(stops.enumerated()), id: \.element.id) { index, stop in
+                    StationRow(station: stop.station, rank: index + 1, distance: stop.offRoute,
+                               distanceSuffix: " off route", routeCost: stop)
                 }
             }
         } header: {
             VStack(alignment: .leading, spacing: 2) {
-                ListHeader(text: "\(Int(result.route.distanceMiles.rounded())) mi route · \(sorted.count) station\(sorted.count == 1 ? "" : "s") found")
-                if !sorted.isEmpty { ListHeader(text: "Cheapest \(model.grade.label) along the way") }
+                ListHeader(text: "\(Int(result.route.distanceMiles.rounded())) mi route · \(stops.count) station\(stops.count == 1 ? "" : "s") found")
+                if !stops.isEmpty {
+                    ListHeader(text: prefs.routeSort == .value
+                        ? "Best value for \(formatNumber(prefs.fillGallons)) gal \(model.grade.label), detour included"
+                        : "Cheapest \(model.grade.label) along the way")
+                }
             }
         }
     }

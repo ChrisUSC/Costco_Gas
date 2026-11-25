@@ -25,9 +25,10 @@ final class Preferences {
     var nearbySort: NearbySort { didSet { defaults.set(nearbySort.rawValue, forKey: "nearbySort") } }
     var historyRange: HistoryRange { didSet { defaults.set(historyRange.rawValue, forKey: "historyRangeDays") } }
 
-    // Your car, for the fill-up cost and "worth the drive" comparison (FillUp in the Kit)
-    var tankGallons: Double { didSet { defaults.set(tankGallons, forKey: "tankGallons") } }
+    // Your usual fill-up and car, for fill-up costs and the best value along a route (FillUp)
+    var fillGallons: Double { didSet { defaults.set(fillGallons, forKey: "fillGallons") } }
     var mpg: Double { didSet { defaults.set(mpg, forKey: "mpg") } }
+    var routeSort: RouteSort { didSet { defaults.set(routeSort.rawValue, forKey: "routeSort") } }
 
     // Favorites
     var favoriteStations: Set<String> { didSet { defaults.set(Array(favoriteStations).sorted(), forKey: "favoriteStores") } }
@@ -60,8 +61,9 @@ final class Preferences {
         historyRange = defaults.object(forKey: "historyRangeDays") == nil
             ? .month
             : (HistoryRange(rawValue: defaults.integer(forKey: "historyRangeDays")) ?? .month)
-        tankGallons = FillUp.clamped(defaults.object(forKey: "tankGallons") as? Double,
-                                     to: FillUp.tankRange, fallback: FillUp.defaultTankGallons)
+        fillGallons = FillUp.clamped(defaults.object(forKey: "fillGallons") as? Double,
+                                     to: FillUp.gallonRange, fallback: FillUp.defaultGallons)
+        routeSort = string("routeSort").flatMap(RouteSort.init(rawValue:)) ?? .value
         mpg = FillUp.clamped(defaults.object(forKey: "mpg") as? Double, to: FillUp.mpgRange, fallback: FillUp.defaultMPG)
         favoriteStations = Set(defaults.stringArray(forKey: "favoriteStores") ?? [])
         favoriteRoutes = defaults.data(forKey: "favoriteRoutes")

@@ -1,6 +1,6 @@
 // --- Centralized Application State & Storage Management ---
 
-import { DEFAULT_MPG, DEFAULT_TANK_GALLONS, MPG_LIMITS, readCarSetting, TANK_LIMITS } from './fillup.js';
+import { DEFAULT_FILL_GALLONS, DEFAULT_MPG, GALLON_LIMITS, MPG_LIMITS, readCarSetting, ROUTE_SORTS } from './fillup.js';
 import { GRADE_KEYS } from './prices.js';
 import { loadJsonPref, storageGet, storageRemove, storageSet } from './storage.js';
 
@@ -112,9 +112,10 @@ export const state = {
     defaultTab: oneOf(storageGet('defaultTab'), TAB_NAMES, 'nearby'),
     defaultGrade: oneOf(storageGet('defaultGrade'), DEFAULT_GRADES, 'last'),
     autoLocate: loadBoolPref('autoLocate', true),
-    // Your car, for the fill-up cost and "worth the drive" comparison (fillup.js).
-    tankGallons: readCarSetting(storageGet('tankGallons'), TANK_LIMITS, DEFAULT_TANK_GALLONS),
+    // Your usual fill-up and car, for fill-up costs and the best value along a route (fillup.js).
+    fillGallons: readCarSetting(storageGet('fillGallons'), GALLON_LIMITS, DEFAULT_FILL_GALLONS),
     mpg: readCarSetting(storageGet('mpg'), MPG_LIMITS, DEFAULT_MPG),
+    routeSort: oneOf(storageGet('routeSort'), ROUTE_SORTS, 'value'),
     historyRangeDays: (() => {
         const val = parseInt(storageGet('historyRangeDays'), 10);
         return isNaN(val) ? 30 : val;

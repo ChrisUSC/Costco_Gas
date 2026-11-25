@@ -547,11 +547,11 @@ body.dark-mode .theme-icon-moon { display: none; }
 }
 .card-meta:empty { display: none; }
 .distance-badge { color: var(--text-muted); font-weight: 500; white-space: nowrap; }
-/* "Saves $2.10" on Nearby cards: the fill-up compared with the nearest station (fillup.js) */
-.value-badge { font-weight: 600; white-space: nowrap; }
-.value-badge.is-good { color: var(--positive); }
-.value-badge.is-bad { color: var(--danger); }
-.value-badge.is-neutral { color: var(--text-muted); }
+/* Route results: fill-up plus detour, against the best value (fillup.js) */
+.route-cost { margin-top: 4px; font-size: var(--text-sm); color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.route-cost-best { color: var(--positive); font-weight: 600; }
+.route-cost-extra { color: var(--text); font-weight: 600; }
+.route-sort { margin: 12px 0 4px; }
 
 /* Fill-up cost on the station details and map popup */
 .fillup {
@@ -562,10 +562,6 @@ body.dark-mode .theme-icon-moon { display: none; }
 }
 .fillup-row { display: flex; justify-content: space-between; gap: 12px; color: var(--text-muted); }
 .fillup-val { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.fillup-verdict { font-weight: 600; color: var(--text); }
-.fillup-verdict.is-good { color: var(--positive); }
-.fillup-verdict.is-bad { color: var(--danger); }
-.fillup-hint { color: var(--text-muted); }
 .fillup-edit { align-self: flex-start; padding-left: 0; padding-right: 0; font-size: var(--text-xs); color: var(--accent-text); }
 
 .rank {

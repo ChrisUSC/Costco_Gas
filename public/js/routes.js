@@ -4,17 +4,19 @@ import {
     appendPagedCards,
     createStoreCard,
     renderSavedRoutesHtml,
+    routeCostHtml,
     skeletonCardsHtml
 } from './components.js';
 import { escapeHtml, showToast } from './dom.js';
+import { ROUTE_SORTS, routeStopCosts } from './fillup.js';
 import { getDistanceMiles, getRouteBoundsPadded, minDistanceToRouteMiles } from './geo.js';
 import { icon } from './icons.js';
 import { getLocationIfGranted, requestBrowserLocation } from './location.js';
 import { map, routeLayer } from './map.js';
 import { renderMap } from './markers.js';
-import { GRADE_INFO, gradeVal, hasGradeData } from './prices.js';
+import { GRADE_INFO } from './prices.js';
 import { geocodeAddress, setupInputAutocomplete } from './search.js';
-import { removeFavoriteRoute, saveFavoriteRoute, state, updateFavoriteRoute } from './state.js';
+import { removeFavoriteRoute, saveFavoriteRoute, setSetting, state, updateFavoriteRoute } from './state.js';
 
 async function fetchDrivingRoute(origin, destination) {
     const controller = new AbortController();
@@ -293,31 +295,49 @@ function renderRouteResults(routeState) {
     const gradeLabel = GRADE_INFO[state.gasPref].label;
     const { along, route, bufferMiles } = routeState;
 
-    const sorted = along
-        .filter(s => hasGradeData(s, state.gasPref))
-        .sort((a, b) => gradeVal(a, state.gasPref) - gradeVal(b, state.gasPref));
+    // Best value: your usual fill-up plus the detour off the route (fillup.js).
+    const stops = routeStopCosts(along, state.gasPref, { gallons: state.fillGallons, mpg: state.mpg });
+    if (state.routeSort === 'price') stops.sort((a, b) => a.price - b.price || a.total - b.total);
 
     let html = '';
     if (route.isApproximate) {
         html += `<p class="route-warning">${icon('alert', 16)} <span>Live routing was unavailable, so this is an approximate straight-line path, not a real driving route.</span></p>`;
     }
     html += `
-        <div class="route-summary">${Math.round(route.distanceMiles)} mi route &middot; ${sorted.length} station${sorted.length === 1 ? '' : 's'} found</div>
+        <div class="route-summary">${Math.round(route.distanceMiles)} mi route &middot; ${stops.length} station${stops.length === 1 ? '' : 's'} found</div>
         <button type="button" class="btn btn-secondary btn-block view-route-map-btn" data-action="view-route-map">
             ${icon('map', 16)} View route on map
         </button>
     `;
     el.innerHTML = html;
 
-    if (sorted.length === 0) {
+    if (stops.length === 0) {
         el.innerHTML += `<p class="empty-msg">No Costco gas stations found within ${bufferMiles} miles of this route.</p>`;
         return;
     }
 
-    el.innerHTML += `<div class="leaderboard-header">Cheapest ${gradeLabel} along the way</div>`;
-    appendPagedCards(el, sorted,
-        (store, index) => createStoreCard(store, { highlight: state.gasPref, index, showDistance: true, distanceSuffix: ' off route' }),
-        { key: `route|${routeState.originText}|${routeState.destText}|${bufferMiles}|${state.gasPref}` });
+    el.innerHTML += `
+        <div class="field route-sort">
+            <label for="routeSortSelect">Sort by</label>
+            <select id="routeSortSelect" class="select">
+                <option value="value" ${state.routeSort === 'value' ? 'selected' : ''}>Best value (detour included)</option>
+                <option value="price" ${state.routeSort === 'price' ? 'selected' : ''}>Lowest price</option>
+            </select>
+        </div>
+        <div class="leaderboard-header">${state.routeSort === 'value'
+            ? `Best value for ${+state.fillGallons.toFixed(1)} gal ${gradeLabel}, detour included`
+            : `Cheapest ${gradeLabel} along the way`}</div>`;
+    appendPagedCards(el, stops,
+        (stop, index) => createStoreCard(stop.store, {
+            highlight: state.gasPref, index, showDistance: true, distanceSuffix: ' off route', extraHtml: routeCostHtml(stop)
+        }),
+        { key: `route|${routeState.originText}|${routeState.destText}|${bufferMiles}|${state.gasPref}|${state.routeSort}|${state.fillGallons}|${state.mpg}` });
+}
+
+export function setRouteSort(value) {
+    if (!ROUTE_SORTS.includes(value)) return;
+    setSetting('routeSort', value);
+    if (state.lastRouteState?.along) renderRouteResults(state.lastRouteState);
 }
 
 function renderRouteOnMap(routeCoords, origin, destination) {

@@ -1,7 +1,7 @@
 // --- Reusable HTML Components & View Builders ---
 
 import { escapeHtml } from './dom.js';
-import { fillUpEstimate, fillUpVerdict } from './fillup.js';
+import { fillCost } from './fillup.js';
 import { gasHoursDetailsHtml, gasStatusHtml } from './hours.js';
 import { icon } from './icons.js';
 import { isPhoneViewport } from './layout.js';
@@ -110,41 +110,28 @@ export function priceTilesHtml(store, featured) {
     }).join('');
 }
 
-// --- Fill-up cost: "is it worth the drive?" (rules in fillup.js) ---
-function currentFillUpEstimate(store) {
-    return fillUpEstimate(store, state.gasPref, {
-        stores: state.stores, from: state.userLocation, tankGallons: state.tankGallons, mpg: state.mpg
-    });
-}
-
+// --- Fill-up cost (rules in fillup.js) ---
 const money = (n) => `$${n.toFixed(2)}`;
 const trimNumber = (n) => String(+n.toFixed(1));
 
-// The fill-up block on the station details and map popup.
+// Your usual fill-up at this station, on the station details and map popup.
 export function fillUpHtml(store) {
-    const est = currentFillUpEstimate(store);
-    if (!est) return '';
-    const gradeLabel = GRADE_INFO[state.gasPref].label;
-    let html = `<div class="fillup-row"><span>Fill-up · ${trimNumber(state.tankGallons)} gal ${gradeLabel}</span><span class="fillup-val">${money(est.fillCost)}</span></div>`;
-    if (est.driveCost !== null) {
-        const miles = est.driveMiles < 1 ? 'under 1 mi' : `about ${Math.round(est.driveMiles)} mi`;
-        html += `<div class="fillup-row"><span>Drive there and back · ${miles}</span><span class="fillup-val">${money(est.driveCost)}</span></div>`;
-    }
-    const verdict = fillUpVerdict(est);
-    if (verdict) {
-        html += `<div class="fillup-verdict is-${verdict.tone}">${escapeHtml(verdict.text)}</div>`;
-    } else if (est.driveCost === null) {
-        html += `<div class="fillup-hint">Share your location or search for a place to see whether it's worth the drive.</div>`;
-    }
-    html += `<button type="button" class="btn btn-ghost fillup-edit" data-action="open-settings">${trimNumber(state.tankGallons)} gal tank · ${trimNumber(state.mpg)} mpg · Change</button>`;
-    return `<div class="fillup" role="group" aria-label="Fill-up cost">${html}</div>`;
+    if (!hasGradeData(store, state.gasPref)) return '';
+    const cost = fillCost(gradeVal(store, state.gasPref), state.fillGallons);
+    return `
+        <div class="fillup" role="group" aria-label="Fill-up cost">
+            <div class="fillup-row"><span>Fill-up · ${trimNumber(state.fillGallons)} gal ${GRADE_INFO[state.gasPref].label}</span><span class="fillup-val">${money(cost)}</span></div>
+            <button type="button" class="btn btn-ghost fillup-edit" data-action="open-settings">${trimNumber(state.fillGallons)} gal · ${trimNumber(state.mpg)} mpg · Change</button>
+        </div>`;
 }
 
-// "Saves $2.10" on a Nearby card, compared with the nearest station.
-function fillUpBadgeHtml(store) {
-    const verdict = fillUpVerdict(currentFillUpEstimate(store));
-    if (!verdict) return '';
-    return `<span class="value-badge is-${verdict.tone}" title="${escapeHtml(verdict.text)}, including the drive there and back">${escapeHtml(verdict.short)}</span>`;
+// On a Route result: "Fill-up $59.88 + detour $0.40" and how it compares with the best value.
+export function routeCostHtml(stop) {
+    const verdict = stop.isBest
+        ? `<span class="route-cost-best">Best value</span>`
+        : `<span class="route-cost-extra">+${money(stop.extraVsBest)} vs best</span>`;
+    const detour = stop.detourCost >= 0.005 ? ` + detour ${money(stop.detourCost)}` : ' · no detour';
+    return `<div class="route-cost">Fill-up ${money(stop.fillCost)}${detour} · ${verdict}</div>`;
 }
 
 // Tap-to-call link, shared by the map popup and the station details card.
@@ -169,7 +156,7 @@ export function shareButtonHtml(store, cls = '') {
 }
 
 // List card: the selected grade's price is the hero; the other grades sit quietly beneath.
-export function createStoreCard(store, { highlight = null, index = null, showDistance = false, distanceSuffix = '', showValue = false } = {}) {
+export function createStoreCard(store, { highlight = null, index = null, showDistance = false, distanceSuffix = '', extraHtml = '' } = {}) {
     const div = document.createElement('div');
     div.className = 'store-card';
     div.dataset.action = 'fly-to-store';
@@ -206,7 +193,8 @@ export function createStoreCard(store, { highlight = null, index = null, showDis
             <div class="card-id">
                 <h3>${escapeHtml(store.city)}, ${escapeHtml(store.state)}</h3>
                 <div class="address">${escapeHtml(formatAddress(store.address))}</div>
-                <div class="card-meta">${gasStatusHtml(store)}${distanceHtml}${showValue ? fillUpBadgeHtml(store) : ''}</div>
+                <div class="card-meta">${gasStatusHtml(store)}${distanceHtml}</div>
+                ${extraHtml}
             </div>
             <div class="card-price ${featuredHasPrice ? '' : 'is-missing'}">
                 <span class="card-price-label">${GRADE_INFO[featured].label}</span>

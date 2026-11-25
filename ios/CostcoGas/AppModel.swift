@@ -225,14 +225,16 @@ final class AppModel {
 
     // MARK: - Fill-up cost
 
-    /// The fill-up at a station and the drive there and back from where Nearby is centred.
-    func fillUpEstimate(for station: Station) -> FillUpEstimate? {
-        FillUp.estimate(for: station, grade: grade, among: stations, from: nearbyCenter,
-                        tankGallons: prefs.tankGallons, mpg: prefs.mpg)
+    /// What your usual fill-up costs at a station, for the selected grade.
+    func fillCost(for station: Station) -> Double? {
+        station.price(grade).map { FillUp.fillCost(price: $0, gallons: prefs.fillGallons) }
     }
 
-    func fillUpVerdict(for station: Station) -> FillUpVerdict? {
-        FillUp.verdict(fillUpEstimate(for: station))
+    /// The route's stations with a price, by best value (fill-up plus detour) or lowest price.
+    func routeStops(_ result: RouteResult) -> [RouteStopCost] {
+        let stops = FillUp.routeStops(result.along, grade: grade, gallons: prefs.fillGallons, mpg: prefs.mpg)
+        guard prefs.routeSort == .price else { return stops }
+        return stops.sorted { $0.price != $1.price ? $0.price < $1.price : $0.total < $1.total }
     }
 
     // MARK: - Live price for one station

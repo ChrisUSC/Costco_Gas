@@ -4,7 +4,7 @@ import { isChartModalOpen } from './charts.js';
 import { renderMobileStoreCardContent } from './components.js';
 import { loadStatus } from './data.js';
 import { trapFocus } from './dom.js';
-import { MPG_LIMITS, readCarSetting, TANK_LIMITS } from './fillup.js';
+import { GALLON_LIMITS, MPG_LIMITS, readCarSetting } from './fillup.js';
 import { popupStore, rebuildMarkersLayer, storePopupHtml, updatePinTiers } from './markers.js';
 import { popOverlay, pushOverlay } from './nav.js';
 import { closeHistory } from './overlays.js';
@@ -35,7 +35,7 @@ function syncSettingsForm() {
     form.elements.clusterMarkers.checked = state.clusterMarkers;
     form.elements.colorPins.checked = state.colorPins;
     form.elements.autoLocate.checked = state.autoLocate;
-    form.elements.tankGallons.value = state.tankGallons;
+    form.elements.fillGallons.value = state.fillGallons;
     form.elements.mpg.value = state.mpg;
     syncTabSettings(form);
     form.elements.defaultGrade.value = state.defaultGrade;
@@ -123,9 +123,9 @@ function applySettingChange(name, input) {
         case 'autoLocate':
             setSetting('autoLocate', input.checked);
             break;
-        case 'tankGallons':
+        case 'fillGallons':
         case 'mpg': {
-            const limits = name === 'mpg' ? MPG_LIMITS : TANK_LIMITS;
+            const limits = name === 'mpg' ? MPG_LIMITS : GALLON_LIMITS;
             const value = readCarSetting(input.value, limits, null);
             if (value === null) { // out of range or empty: put back the saved value
                 input.value = state[name];

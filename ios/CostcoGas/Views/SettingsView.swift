@@ -20,8 +20,8 @@ struct SettingsView: View {
                 }
 
                 Section {
-                    Stepper(value: $prefs.tankGallons, in: FillUp.tankRange, step: 1) {
-                        LabeledContent("Tank size", value: "\(formatNumber(prefs.tankGallons)) gal")
+                    Stepper(value: $prefs.fillGallons, in: FillUp.gallonRange, step: 1) {
+                        LabeledContent("Gallons per fill-up", value: "\(formatNumber(prefs.fillGallons)) gal")
                     }
                     Stepper(value: $prefs.mpg, in: FillUp.mpgRange, step: 1) {
                         LabeledContent("Fuel economy", value: "\(formatNumber(prefs.mpg)) mpg")
@@ -29,7 +29,7 @@ struct SettingsView: View {
                 } header: {
                     Text("Your car")
                 } footer: {
-                    Text("Used to show what a fill-up costs and whether a cheaper station is worth the drive, counting the gas used to get there and back.")
+                    Text("How much you usually buy, and your car's mileage. Used to show what your usual fill-up costs, and on the Route tab which station is the best value once the detour off your route is counted.")
                 }
 
                 Section("Directions") {

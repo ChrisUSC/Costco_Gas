@@ -38,16 +38,6 @@ extension Grade {
     }
 }
 
-extension FillUpVerdict.Tone {
-    var color: Color {
-        switch self {
-        case .good: return .green
-        case .bad: return .red
-        case .neutral: return .secondary
-        }
-    }
-}
-
 extension GasStatus.Kind {
     var color: Color {
         switch self {

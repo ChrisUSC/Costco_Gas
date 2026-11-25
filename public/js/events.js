@@ -15,6 +15,7 @@ import {
     loadFavoriteRoute,
     removeFavoriteRouteHandler,
     saveCurrentRouteAsFavorite,
+    setRouteSort,
     startEditRoute,
     useMyLocationForRoute
 } from './routes.js';
@@ -81,6 +82,8 @@ export function setupEventListeners() {
                 setNearbyRadius(e.target.value);
             } else if (e.target.id === 'nearbySortSelect') {
                 setNearbySort(e.target.value);
+            } else if (e.target.id === 'routeSortSelect') {
+                setRouteSort(e.target.value);
             }
         });
     }

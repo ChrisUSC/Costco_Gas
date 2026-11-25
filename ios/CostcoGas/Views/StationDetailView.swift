@@ -43,8 +43,8 @@ struct StationDetailView: View {
                 LivePriceFooter(station: s)
             }
 
-            if let fillUp = model.fillUpEstimate(for: s) {
-                FillUpSection(estimate: fillUp)
+            if let cost = model.fillCost(for: s) {
+                FillUpSection(cost: cost)
             }
 
             Section {
@@ -145,32 +145,19 @@ private struct LivePriceFooter: View {
     }
 }
 
-/// What a fill-up costs here, the drive there and back, and whether it beats the nearest station.
+/// What your usual fill-up costs here.
 private struct FillUpSection: View {
     @Environment(AppModel.self) private var model
-    let estimate: FillUpEstimate
+    let cost: Double
 
     var body: some View {
         Section {
-            LabeledContent("Fill-up · \(formatNumber(model.prefs.tankGallons)) gal \(model.grade.label)",
-                           value: formatPrice(estimate.fillCost))
-            if let driveCost = estimate.driveCost, let miles = estimate.driveMiles {
-                LabeledContent("Drive there and back · \(miles < 1 ? "under 1 mi" : "about \(Int(miles.rounded())) mi")",
-                               value: formatPrice(driveCost))
-            }
-            if let verdict = FillUp.verdict(estimate) {
-                Text(verdict.text)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(verdict.tone == .neutral ? Color.primary : verdict.tone.color)
-            } else if estimate.driveCost == nil {
-                Text("Share your location or search for a place to see whether it's worth the drive.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
+            LabeledContent("Fill-up · \(formatNumber(model.prefs.fillGallons)) gal \(model.grade.label)",
+                           value: formatPrice(cost))
         } header: {
             ListHeader(text: "Fill-up cost")
         } footer: {
-            Button("\(formatNumber(model.prefs.tankGallons)) gal tank · \(formatNumber(model.prefs.mpg)) mpg · Change") {
+            Button("\(formatNumber(model.prefs.fillGallons)) gal · \(formatNumber(model.prefs.mpg)) mpg · Change") {
                 model.showSettings = true
             }
             .font(.footnote)

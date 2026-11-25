@@ -11,8 +11,8 @@ struct StationRow: View {
     var rank: Int?
     var distance: Double?
     var distanceSuffix = ""
-    /// Show "Saves $2.10" against the nearest station (Nearby list).
-    var showValue = false
+    /// On Route results: the fill-up plus detour, against the best value.
+    var routeCost: RouteStopCost?
 
     var body: some View {
         let grade = model.grade
@@ -48,18 +48,15 @@ struct StationRow: View {
                                 .foregroundStyle(.secondary)
                         }
                         GasStatusLabel(station: station, now: model.now)
-                        if showValue, let verdict = model.fillUpVerdict(for: station) {
-                            Text(verdict.short)
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(verdict.tone.color)
-                                .accessibilityLabel("\(verdict.text), including the drive there and back")
-                        }
                     }
                     let others = station.visibleGrades.filter { $0 != grade }
                     if !others.isEmpty {
                         Text(others.map { "\($0.label) \(formatPrice(station.price($0)))" }.joined(separator: " · "))
                             .font(.caption)
                             .foregroundStyle(.secondary)
+                    }
+                    if let cost = routeCost {
+                        RouteCostLine(cost: cost)
                     }
                 }
                 Spacer(minLength: 8)
@@ -110,5 +107,26 @@ struct StationRow: View {
                 Label("Share", systemImage: "square.and.arrow.up")
             }
         }
+    }
+}
+
+/// "Fill-up $59.88 + detour $0.40 · Best value" (or "+$0.85 vs best") on a Route result.
+struct RouteCostLine: View {
+    let cost: RouteStopCost
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Text("Fill-up \(formatPrice(cost.fillCost))" + (cost.detourCost >= 0.005 ? " + detour \(formatPrice(cost.detourCost))" : " · no detour"))
+                .foregroundStyle(.secondary)
+            Text("·").foregroundStyle(.secondary)
+            if cost.isBest {
+                Text("Best value").fontWeight(.semibold).foregroundStyle(.green)
+            } else {
+                Text("+\(formatPrice(cost.extraVsBest)) vs best").fontWeight(.semibold)
+            }
+        }
+        .font(.caption.monospacedDigit())
+        .lineLimit(1)
+        .minimumScaleFactor(0.8)
     }
 }
