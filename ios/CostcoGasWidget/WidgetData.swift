@@ -40,7 +40,7 @@ final class WidgetLocation: NSObject, CLLocationManagerDelegate {
     private let manager = CLLocationManager()
     nonisolated(unsafe) private var continuation: CheckedContinuation<CLLocation?, Never>?
     nonisolated private let lock = NSLock()
-    private static let savedKey = "lastLocation"
+    nonisolated private static let savedKey = "lastLocation"
 
     func current() async -> LatLng? {
         guard manager.isAuthorizedForWidgetUpdates else { return Self.saved() }
