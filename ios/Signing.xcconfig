@@ -1,0 +1,15 @@
+// Code signing for running the app on your own iPhone.
+//
+// Your team and bundle identifier go in Local.xcconfig next to this file. It's git-ignored,
+// so pulling new code never conflicts with them. run-on-phone.sh creates it the first time;
+// to set it up by hand, create ios/Local.xcconfig containing:
+//
+//   DEVELOPMENT_TEAM = ABCDE12345
+//   PRODUCT_BUNDLE_IDENTIFIER = com.yourname.costcogas
+//
+// Change these there, not in Xcode's Signing & Capabilities tab (that edits the project file).
+
+PRODUCT_BUNDLE_IDENTIFIER = com.example.costcogas
+DEVELOPMENT_TEAM =
+
+#include? "Local.xcconfig"

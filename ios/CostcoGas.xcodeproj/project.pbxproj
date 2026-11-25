@@ -15,6 +15,7 @@
 		C6A500000000000000000003 /* CostcoGas.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CostcoGas.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C6A500000000000000000004 /* us_stores.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = us_stores.json; path = ../public/us_stores.json; sourceTree = "<group>"; };
 		C6A500000000000000000005 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		C6A500000000000000000007 /* Signing.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Signing.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -42,6 +43,7 @@
 			children = (
 				C6A500000000000000000002 /* CostcoGas */,
 				C6A500000000000000000005 /* Info.plist */,
+				C6A500000000000000000007 /* Signing.xcconfig */,
 				C6A500000000000000000004 /* us_stores.json */,
 				C6A500000000000000000006 /* Products */,
 			);
@@ -259,12 +261,12 @@
 		};
 		C6A500000000000000000503 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = C6A500000000000000000007 /* Signing.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Info.plist;
@@ -281,7 +283,6 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.example.costcogas;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -291,12 +292,12 @@
 		};
 		C6A500000000000000000504 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = C6A500000000000000000007 /* Signing.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Info.plist;
@@ -313,7 +314,6 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.example.costcogas;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;

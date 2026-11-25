@@ -109,19 +109,6 @@ private struct MapLayer: View {
         .ignoresSafeArea()
         .overlay(alignment: .top) {
             VStack(spacing: 8) {
-                if model.showSearchThisArea {
-                    Button {
-                        model.searchMapArea()
-                    } label: {
-                        Label("Search this area", systemImage: "magnifyingglass")
-                            .font(.subheadline.weight(.semibold))
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 8)
-                            .background(Color(uiColor: .systemBackground), in: Capsule())
-                    }
-                    .buttonStyle(.plain)
-                    .shadow(radius: 3, y: 1)
-                }
                 if model.prefs.colorPins, let legend = model.legend {
                     PriceLegend(scale: legend, grade: model.grade)
                 }

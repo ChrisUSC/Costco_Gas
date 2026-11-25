@@ -10,8 +10,21 @@ Requires iOS 17 and Xcode 16 or later.
 
 Open `ios/CostcoGas.xcodeproj` in Xcode, pick an iPhone simulator and press Run.
 
-To run on your own phone, select the CostcoGas target, then under **Signing & Capabilities**
-choose your team and change the bundle identifier (`com.example.costcogas`) to one of your own.
+### On your iPhone, in one command
+
+Plug in the phone (unlocked, Developer Mode on), then:
+
+```bash
+ios/run-on-phone.sh
+```
+
+It pulls the latest code, builds, installs and opens the app. `--no-pull` skips the pull. The
+first run asks for your bundle identifier, finds your team from your Apple Development
+certificate, and saves both in `ios/Local.xcconfig`. That file is git-ignored, so pulls never
+conflict with your signing settings. Set signing there (see `ios/Signing.xcconfig`), not in
+Xcode's Signing & Capabilities tab, which edits the project file.
+
+With a free Apple ID the app stops opening after 7 days; run the script again to reinstall.
 
 The project uses Xcode 16's folder-synced groups: any file added under `ios/CostcoGas/` is part
 of the app automatically. Info.plist keys are build settings on the target, apart from URL
@@ -33,7 +46,7 @@ and builds the app for the simulator on every push that touches `ios/`.
 |---|---|---|
 | Map with clustering, dots, then price pills; price colours with a legend | `map.js`, `markers.js` | `Map/StationMapView.swift`, `Map/AnnotationViews.swift` |
 | Regular / Premium / Diesel (Diesel shows only stations selling it) | `preferences.js` | `PanelView.swift`, `StationQueries.forGrade` |
-| Nearby (5–100 mi, price or distance), "Search this area" | `lists.js`, `map-interactions.js` | `StationListsView.swift` |
+| Nearby (5–100 mi, price or distance) | `lists.js` | `StationListsView.swift` |
 | State lowest leaderboard with 72-hour trends | `lists.js`, `prices.js` | `StationListsView.swift`, `Trend` |
 | Route: OSRM with a straight-line fallback, detour limit, saved and edited routes, "Your location" | `routes.js` | `RouteView.swift`, `RouteService` |
 | Favorites: stations and routes | `state.js` | `Preferences.swift` |
@@ -63,6 +76,8 @@ Differences from the website:
 ios/
 ├── CostcoGas.xcodeproj         # Open this in Xcode
 ├── Info.plist                  # URL scheme and quick actions (other keys are build settings)
+├── Signing.xcconfig            # Bundle ID and team defaults; yours go in Local.xcconfig (git-ignored)
+├── run-on-phone.sh             # Pull, build, install and open on a connected iPhone
 ├── CostcoGasKit/               # Swift package, Foundation only (runs with `swift test`)
 │   ├── Sources/CostcoGasKit/
 │   │   ├── Prices.swift        # Grades, price parsing and formatting, trends   (prices.js)

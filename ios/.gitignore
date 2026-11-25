@@ -5,3 +5,6 @@ DerivedData/
 build/
 .build/
 .swiftpm/
+
+# Your signing team and bundle identifier (see Signing.xcconfig)
+Local.xcconfig

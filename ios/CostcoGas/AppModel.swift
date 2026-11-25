@@ -338,21 +338,6 @@ final class AppModel {
         if visibleTabs.contains(.nearby) { currentTab = .nearby }
     }
 
-    /// "Search this area": the Nearby list centres on the map.
-    func searchMapArea() {
-        guard let mapCenter else { return }
-        nearbyCenter = mapCenter
-        searchedPlace = nil
-        if visibleTabs.contains(.nearby) { currentTab = .nearby }
-    }
-
-    /// Show the button when the map has moved well away from where the Nearby list is centred.
-    var showSearchThisArea: Bool {
-        guard currentTab == .nearby, loadState == .ready, let mapCenter, mapSpanDegrees < 4 else { return false }
-        guard let center = nearbyCenter else { return true }
-        return distanceMiles(center, mapCenter) > max(2, prefs.nearbyRadius / 2)
-    }
-
     /// The map in view, for search results that prefer nearby places.
     var mapViewbox: GeoBounds? {
         guard let c = mapCenter else { return nil }
