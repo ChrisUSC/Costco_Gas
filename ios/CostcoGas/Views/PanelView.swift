@@ -22,6 +22,7 @@ struct PanelView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
+            .background(Color.panelBackground)
             .navigationTitle("Costco Gas")
             .navigationBarTitleDisplayMode(.inline)
             .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "City, address or zip code")
@@ -47,8 +48,12 @@ struct PanelView: View {
                 StationDetailView(station: station)
             }
         }
-        .sheet(isPresented: $model.showSettings) { SettingsView() }
-        .sheet(item: $model.historyStation) { station in PriceHistoryView(station: station) }
+        .sheet(isPresented: $model.showSettings) {
+            SettingsView().presentationBackground(Color.panelBackground)
+        }
+        .sheet(item: $model.historyStation) { station in
+            PriceHistoryView(station: station).presentationBackground(Color.panelBackground)
+        }
         .overlay(alignment: .bottom) {
             if let toast = model.toast {
                 ToastView(message: toast)

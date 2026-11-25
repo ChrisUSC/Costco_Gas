@@ -96,7 +96,7 @@ private struct PriceTile: View {
 
     var body: some View {
         VStack(spacing: 4) {
-            Text(grade.label).font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+            Text(grade.label).font(.caption.weight(.semibold)).foregroundStyle(.primary)
             Text(formatPrice(station.price(grade)))
                 .font(.title2.weight(.bold).monospacedDigit())
                 .foregroundStyle(grade.color)
@@ -106,11 +106,11 @@ private struct PriceTile: View {
         .padding(.vertical, 10)
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(highlighted ? grade.color.opacity(0.12) : Color.secondary.opacity(0.08))
+                .fill(Color(uiColor: highlighted ? .tertiarySystemGroupedBackground : .systemGroupedBackground))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 12)
-                .strokeBorder(highlighted ? grade.color : Color.clear, lineWidth: 1.5)
+                .strokeBorder(highlighted ? grade.color : Color(uiColor: .separator), lineWidth: highlighted ? 2 : 1)
         )
         .accessibilityElement(children: .combine)
     }

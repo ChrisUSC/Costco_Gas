@@ -1,21 +1,39 @@
 import CoreLocation
 import CostcoGasKit
 import SwiftUI
+import UIKit
 
-// Colours and the tab list, shared by every screen. The grade colours match the website's
-// chart (public/js/prices.js GRADE_INFO).
+// Colours and the tab list, shared by every screen. The grade colours are the website's hues
+// (public/js/prices.js GRADE_INFO), shaded per light / dark mode for contrast.
 
 extension Color {
     static let costcoBlue = Color(red: 0, green: 0x5D / 255, blue: 0xAA / 255)
     static let costcoRed = Color(red: 0xE3 / 255, green: 0x18 / 255, blue: 0x37 / 255)
 }
 
+extension Color {
+    /// A colour with separate light- and dark-mode values.
+    init(light: UIColor, dark: UIColor) {
+        self.init(uiColor: UIColor { $0.userInterfaceStyle == .dark ? dark : light })
+    }
+
+    /// The solid background behind the panel, so the map never shows through text.
+    static let panelBackground = Color(uiColor: .systemGroupedBackground)
+}
+
+private func rgb(_ hex: UInt32) -> UIColor {
+    UIColor(red: CGFloat((hex >> 16) & 0xFF) / 255, green: CGFloat((hex >> 8) & 0xFF) / 255,
+            blue: CGFloat(hex & 0xFF) / 255, alpha: 1)
+}
+
 extension Grade {
+    /// Darker shades in light mode and lighter ones in dark mode, so each grade's price meets
+    /// WCAG AA contrast (4.5:1 or more) on the panel's rows in both.
     var color: Color {
         switch self {
-        case .regular: return Color(red: 0x0F / 255, green: 0x9D / 255, blue: 0x6B / 255)
-        case .premium: return Color(red: 0x3B / 255, green: 0x82 / 255, blue: 0xF6 / 255)
-        case .diesel: return Color(red: 0xD9 / 255, green: 0x77 / 255, blue: 0x06 / 255)
+        case .regular: return Color(light: rgb(0x047857), dark: rgb(0x34D399))
+        case .premium: return Color(light: rgb(0x1D4ED8), dark: rgb(0x7DB4FF))
+        case .diesel: return Color(light: rgb(0xB45309), dark: rgb(0xFBBF24))
         }
     }
 }

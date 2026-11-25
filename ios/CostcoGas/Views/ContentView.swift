@@ -29,6 +29,8 @@ struct ContentView: View {
                             .presentationDetents([ContentView.peek, ContentView.half, .large], selection: $detent)
                             .presentationBackgroundInteraction(.enabled(upThrough: ContentView.half))
                             .presentationDragIndicator(.visible)
+                            // Solid, not see-through glass: text over the map was hard to read.
+                            .presentationBackground(Color.panelBackground)
                             .interactiveDismissDisabled()
                     }
             }
@@ -103,7 +105,7 @@ private struct MapLayer: View {
                             .font(.subheadline.weight(.semibold))
                             .padding(.horizontal, 14)
                             .padding(.vertical, 8)
-                            .background(.regularMaterial, in: Capsule())
+                            .background(Color(uiColor: .systemBackground), in: Capsule())
                     }
                     .buttonStyle(.plain)
                     .shadow(radius: 3, y: 1)
@@ -139,7 +141,7 @@ private struct PriceLegend: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
-        .background(.regularMaterial, in: Capsule())
+        .background(Color(uiColor: .systemBackground), in: Capsule())
         .accessibilityElement(children: .combine)
     }
 }

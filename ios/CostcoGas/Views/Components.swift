@@ -89,7 +89,7 @@ struct ListHeader: View {
     var body: some View {
         Text(text)
             .font(.footnote.weight(.semibold))
-            .foregroundStyle(.secondary)
+            .foregroundStyle(Color(uiColor: .secondaryLabel))
             .textCase(nil)
     }
 }
@@ -118,7 +118,7 @@ struct ToastView: View {
             .font(.subheadline.weight(.medium))
             .padding(.horizontal, 16)
             .padding(.vertical, 10)
-            .background(.regularMaterial, in: Capsule())
+            .background(Color(uiColor: .systemBackground), in: Capsule())
             .shadow(radius: 4, y: 2)
             .padding(.bottom, 24)
             .padding(.horizontal, 16)

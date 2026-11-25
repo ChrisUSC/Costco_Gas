@@ -141,6 +141,6 @@ private struct HistoryChart: View {
             }
         }
         .padding(6)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+        .background(Color(uiColor: .systemBackground), in: RoundedRectangle(cornerRadius: 8))
     }
 }
