@@ -131,6 +131,30 @@ final class StationTests: XCTestCase {
     }
 }
 
+final class LivePriceTests: XCTestCase {
+    func testParseRoundsToCentsLikeTheScrapers() {
+        let data = Data(#"{"146":{"premium":"5.599","regular":"4.999"}}"#.utf8)
+        XCTAssertEqual(LivePriceService.parse(data), GradePrices(regular: 5.00, premium: 5.60))
+        let diesel = Data(#"{"1":{"Regular":"$4.29","Premium":"4.69","Diesel":"4.99"}}"#.utf8)
+        XCTAssertEqual(LivePriceService.parse(diesel), GradePrices(regular: 4.29, premium: 4.69, diesel: 4.99))
+    }
+
+    func testParseRejectsEmptyOrUnreadableReplies() {
+        XCTAssertNil(LivePriceService.parse(Data(#"{"146":{"regular":"","premium":""}}"#.utf8)))
+        XCTAssertNil(LivePriceService.parse(Data(#"{}"#.utf8)))
+        XCTAssertNil(LivePriceService.parse(Data("<html>Access Denied</html>".utf8)))
+    }
+
+    func testURLAndWarehouseIDs() throws {
+        let url = LivePriceService.url(warehouseID: "146").absoluteString
+        XCTAssertTrue(url.hasPrefix("https://www.costco.com/AjaxGetGasPricesService?warehouseid=146&_="))
+        let stores = #"{"CA": {"Livermore": {"warehouse_id": "146"}, "Tracy": {"warehouse_id": 1234}}}"#
+        let directory = try StoreDirectory(data: Data(stores.utf8))
+        XCTAssertEqual(directory.states["CA"]?["Livermore"]?.warehouseID, "146")
+        XCTAssertEqual(directory.states["CA"]?["Tracy"]?.warehouseID, "1234")
+    }
+}
+
 final class GeoTests: XCTestCase {
     func testDistance() {
         let d = distanceMiles(LatLng(34.0522, -118.2437), LatLng(37.7749, -122.4194))

@@ -79,6 +79,57 @@ public final class SnapshotClient: @unchecked Sendable {
     }
 }
 
+// MARK: - Live price for one store
+
+/// Asks Costco directly for one warehouse's current prices: the same request the scrapers
+/// make for every store each hour (scraper/costco.js, pipeline get_gas_prices_ajax). Used when
+/// a station is opened. It's a single reading, without the scrapers' re-fetch-until-a-quorum-
+/// agrees check, so it's shown as live and never saved into the shared price files.
+public enum LivePriceService {
+    /// A browser user agent, as the scrapers send: Costco's servers turn away unknown clients.
+    static let userAgent = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1"
+
+    public static func url(warehouseID: String) -> URL {
+        var comps = URLComponents(string: "https://www.costco.com/AjaxGetGasPricesService")!
+        // A unique query string so no cache along the way answers with an old reply.
+        comps.queryItems = [
+            URLQueryItem(name: "warehouseid", value: warehouseID),
+            URLQueryItem(name: "_", value: String(Int(Date().timeIntervalSince1970 * 1000)))
+        ]
+        return comps.url!
+    }
+
+    /// Reads `{"146": {"regular": "4.999", "premium": "5.599", "diesel": ""}}`, rounding to
+    /// cents like the scrapers. Nil when no grade has a price.
+    public static func parse(_ data: Data) -> GradePrices? {
+        guard let top = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
+              let inner = top.values.first as? [String: Any] else { return nil }
+        var lower: [String: Any] = [:]
+        for (key, value) in inner { lower[key.lowercased()] = value }
+        func cents(_ value: Any?) -> Double? {
+            parsePrice(value).map { ($0 * 100).rounded() / 100 }
+        }
+        let prices = GradePrices(regular: cents(lower["regular"]), premium: cents(lower["premium"]),
+                                 diesel: cents(lower["diesel"]))
+        return prices.regular == nil && prices.premium == nil && prices.diesel == nil ? nil : prices
+    }
+
+    public static func fetch(warehouseID: String, session: URLSession = .shared) async throws -> GradePrices {
+        var request = URLRequest(url: url(warehouseID: warehouseID), cachePolicy: .reloadIgnoringLocalCacheData,
+                                 timeoutInterval: 10)
+        request.setValue(userAgent, forHTTPHeaderField: "User-Agent")
+        request.setValue("application/json, text/plain, */*", forHTTPHeaderField: "Accept")
+        request.setValue("no-cache, no-store", forHTTPHeaderField: "Cache-Control")
+        request.setValue("no-cache", forHTTPHeaderField: "Pragma")
+        let (data, response) = try await session.data(for: request)
+        if let http = response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
+            throw DataError.http(http.statusCode)
+        }
+        guard let prices = parse(data) else { throw DataError.malformed("live price") }
+        return prices
+    }
+}
+
 // MARK: - Places
 
 public struct Place: Codable, Hashable, Sendable {

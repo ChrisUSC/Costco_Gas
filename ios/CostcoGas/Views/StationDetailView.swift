@@ -29,9 +29,18 @@ struct StationDetailView: View {
                 }
                 .padding(.vertical, 4)
             } header: {
-                ListHeader(text: "Prices")
+                HStack {
+                    ListHeader(text: "Prices")
+                    Spacer()
+                    if model.liveQuotes[s.id] != nil {
+                        Label("Live from Costco", systemImage: "dot.radiowaves.left.and.right")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.green)
+                            .textCase(nil)
+                    }
+                }
             } footer: {
-                Text("\(model.updatedLabel.text). Arrows show the change since \(model.trendBaselineLabel).")
+                LivePriceFooter(station: s)
             }
 
             Section {
@@ -72,6 +81,8 @@ struct StationDetailView: View {
             }
         }
         .listStyle(.insetGrouped)
+        // Ask Costco for this store's current price as soon as it's opened.
+        .task(id: station.id) { await model.fetchLivePrice(for: s) }
         .navigationTitle(s.name)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.visible, for: .navigationBar) // the panel's main screen hides it
@@ -86,6 +97,47 @@ struct StationDetailView: View {
                 .accessibilityLabel(isFavorite ? "Remove from favorites" : "Add to favorites")
             }
         }
+    }
+}
+
+/// Says where the prices came from: a live reading from Costco (and what it changed), a
+/// reading in progress, or the hourly prices when Costco couldn't be reached.
+private struct LivePriceFooter: View {
+    @Environment(AppModel.self) private var model
+    let station: Station
+
+    var body: some View {
+        let trendNote = "Arrows show the change since \(model.trendBaselineLabel)."
+        VStack(alignment: .leading, spacing: 6) {
+            if let quote = model.liveQuotes[station.id] {
+                Text("Checked with Costco \(age(quote.fetchedAt)). \(trendNote)")
+                let changes = station.visibleGrades.compactMap { grade -> String? in
+                    let was = quote.hourly[grade]
+                    guard quote.prices[grade] != was else { return nil }
+                    return "\(grade.label) was \(formatPrice(was))"
+                }
+                if !changes.isEmpty {
+                    Text("Changed since the hourly update: \(changes.joined(separator: ", ")).")
+                        .foregroundStyle(.orange)
+                }
+            } else if model.liveFetch[station.id] == .loading {
+                HStack(spacing: 6) {
+                    ProgressView().controlSize(.mini)
+                    Text("Checking Costco for the current price…")
+                }
+            } else if model.liveFetch[station.id] == .failed {
+                Text("Couldn't reach Costco for a live price, so these are the hourly prices (\(model.updatedLabel.age)). \(trendNote)")
+                Button("Try again") { Task { await model.fetchLivePrice(for: station) } }
+                    .font(.footnote.weight(.semibold))
+            } else {
+                Text("\(model.updatedLabel.text). \(trendNote)")
+            }
+        }
+    }
+
+    private func age(_ date: Date) -> String {
+        let minutes = Int(max(0, model.now.timeIntervalSince(date)) / 60)
+        return minutes < 1 ? "just now" : "\(minutes) min ago"
     }
 }
 

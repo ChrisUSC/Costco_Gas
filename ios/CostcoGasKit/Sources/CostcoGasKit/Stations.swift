@@ -17,6 +17,8 @@ public enum DataError: Error, LocalizedError, Equatable {
 
 /// One warehouse from us_stores.json.
 public struct StoreInfo: Hashable, Sendable {
+    /// Costco's warehouse number, used to ask Costco for this store's live price.
+    public var warehouseID: String?
     public var url: String?
     public var coordinate: LatLng?
     public var address: String?
@@ -65,7 +67,14 @@ public struct StoreDirectory: Sendable {
             }
             hours = week
         }
+        var warehouseID: String?
+        if let id = info["warehouse_id"] as? String, !id.isEmpty {
+            warehouseID = id
+        } else if let id = info["warehouse_id"] as? NSNumber {
+            warehouseID = id.stringValue
+        }
         return StoreInfo(
+            warehouseID: warehouseID,
             url: info["url"] as? String,
             coordinate: coordinate,
             address: info["address"] as? String,
@@ -126,12 +135,13 @@ public struct Station: Identifiable, Hashable, Sendable {
     public let phone: String?
     public let gasHours: WeeklyHours?
     public let timeZone: String?
+    public let warehouseID: String?
     public var prices: GradePrices
     public var previous: GradePrices?
 
     public init(state: String, city: String, address: String? = nil, coordinate: LatLng? = nil, url: String? = nil,
                 phone: String? = nil, gasHours: WeeklyHours? = nil, timeZone: String? = nil,
-                prices: GradePrices, previous: GradePrices? = nil) {
+                prices: GradePrices, previous: GradePrices? = nil, warehouseID: String? = nil) {
         self.state = state
         self.city = city
         self.address = address
@@ -140,6 +150,7 @@ public struct Station: Identifiable, Hashable, Sendable {
         self.phone = phone
         self.gasHours = gasHours
         self.timeZone = timeZone
+        self.warehouseID = warehouseID
         self.prices = prices
         self.previous = previous
     }
@@ -191,7 +202,7 @@ public func buildStations(snapshot: PriceSnapshot, directory: StoreDirectory) ->
             out.append(Station(
                 state: stateCode, city: city, address: info.address, coordinate: info.coordinate, url: info.url,
                 phone: info.phone, gasHours: info.gasHours, timeZone: info.timeZone,
-                prices: prices, previous: snapshot.previous[stateCode]?[city]
+                prices: prices, previous: snapshot.previous[stateCode]?[city], warehouseID: info.warehouseID
             ))
         }
     }

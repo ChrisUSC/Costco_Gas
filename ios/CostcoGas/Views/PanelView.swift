@@ -146,23 +146,8 @@ private struct PanelHeader: View {
 
             TabBar()
 
-            HStack(spacing: 8) {
-                UpdatedLabel()
-                Spacer(minLength: 8)
-                if model.loadState == .ready {
-                    Button {
-                        Task { await model.refresh() }
-                    } label: {
-                        Label("Refresh", systemImage: "arrow.clockwise")
-                            .labelStyle(.iconOnly)
-                            .font(.footnote.weight(.semibold))
-                            .frame(width: 32, height: 28)
-                    }
-                    .buttonStyle(.bordered)
-                    .buttonBorderShape(.capsule)
-                    .accessibilityLabel("Refresh prices")
-                }
-            }
+            UpdatedLabel()
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(.horizontal, 16)
         .padding(.top, 2)
