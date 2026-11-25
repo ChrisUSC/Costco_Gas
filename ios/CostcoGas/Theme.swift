@@ -83,6 +83,19 @@ enum AppTab: String, CaseIterable, Identifiable, Codable {
         case .favorites: return "star"
         }
     }
+
+    /// Fits under the icon in the panel's tab bar.
+    var shortTitle: String { self == .search ? "All" : title }
+
+    var selectedSystemImage: String {
+        switch self {
+        case .nearby: return "location.fill"
+        case .lowest: return "trophy.fill"
+        case .route: return "point.topleft.down.to.point.bottomright.curvepath.fill"
+        case .search: return "list.bullet"
+        case .favorites: return "star.fill"
+        }
+    }
 }
 
 enum ThemePreference: String, CaseIterable, Identifiable {

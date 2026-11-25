@@ -72,47 +72,75 @@ private struct PanelHeader: View {
     @Environment(AppModel.self) private var model
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(spacing: 12) {
             Picker("Fuel grade", selection: Binding(get: { model.grade }, set: { model.setGrade($0) })) {
                 ForEach(Grade.allCases) { Text($0.label).tag($0) }
             }
             .pickerStyle(.segmented)
+            .controlSize(.large)
 
-            HStack {
+            TabBar()
+
+            HStack(spacing: 8) {
                 UpdatedLabel()
-                Spacer()
+                Spacer(minLength: 8)
                 if model.loadState == .ready {
                     Button {
                         Task { await model.refresh() }
                     } label: {
-                        Image(systemName: "arrow.clockwise").font(.caption)
+                        Label("Refresh", systemImage: "arrow.clockwise")
+                            .labelStyle(.iconOnly)
+                            .font(.footnote.weight(.semibold))
+                            .frame(width: 32, height: 28)
                     }
+                    .buttonStyle(.bordered)
+                    .buttonBorderShape(.capsule)
                     .accessibilityLabel("Refresh prices")
                 }
             }
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 10)
+        .padding(.bottom, 12)
+    }
+}
 
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    ForEach(model.visibleTabs) { tab in
-                        let selected = tab == model.currentTab
-                        Button {
-                            model.currentTab = tab
-                        } label: {
-                            Label(tab.title, systemImage: tab.systemImage)
-                                .font(.subheadline.weight(.medium))
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 7)
-                                .background(selected ? Color.costcoBlue : Color.secondary.opacity(0.14), in: Capsule())
-                                .foregroundStyle(selected ? Color.white : Color.primary)
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityAddTraits(selected ? .isSelected : [])
+/// Every visible tab fits across the panel, icon above a short label: no scrolling, nothing
+/// cut off at the edge.
+private struct TabBar: View {
+    @Environment(AppModel.self) private var model
+
+    var body: some View {
+        HStack(spacing: 4) {
+            ForEach(model.visibleTabs) { tab in
+                let selected = tab == model.currentTab
+                Button {
+                    model.currentTab = tab
+                } label: {
+                    VStack(spacing: 3) {
+                        Image(systemName: selected ? tab.selectedSystemImage : tab.systemImage)
+                            .font(.system(size: 17, weight: .semibold))
+                            .frame(height: 20)
+                        Text(tab.shortTitle)
+                            .font(.caption2.weight(selected ? .bold : .medium))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
                     }
+                    .frame(maxWidth: .infinity, minHeight: 46)
+                    .foregroundStyle(selected ? Color.costcoBlue : Color.secondary)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(selected ? Color.costcoBlue.opacity(0.14) : Color.clear)
+                    )
+                    .contentShape(Rectangle())
                 }
+                .buttonStyle(.plain)
+                .accessibilityLabel(tab.title)
+                .accessibilityAddTraits(selected ? [.isSelected, .isButton] : .isButton)
             }
         }
-        .padding(.horizontal)
-        .padding(.vertical, 10)
+        .padding(4)
+        .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 14))
     }
 }
 

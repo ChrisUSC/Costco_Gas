@@ -9,7 +9,8 @@ struct ContentView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.scenePhase) private var scenePhase
 
-    private static let peek = PresentationDetent.height(190)
+    // Tall enough for the search field, grade picker, tab bar and "Updated" line.
+    private static let peek = PresentationDetent.height(268)
     private static let half = PresentationDetent.fraction(0.5)
     @State private var detent: PresentationDetent = ContentView.half
 
