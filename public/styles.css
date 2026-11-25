@@ -547,6 +547,22 @@ body.dark-mode .theme-icon-moon { display: none; }
 }
 .card-meta:empty { display: none; }
 .distance-badge { color: var(--text-muted); font-weight: 500; white-space: nowrap; }
+/* Route results: fill-up plus detour, against the best value (fillup.js) */
+.route-cost { margin-top: 4px; font-size: var(--text-sm); color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.route-cost-best { color: var(--positive); font-weight: 600; }
+.route-cost-extra { color: var(--text); font-weight: 600; }
+.route-sort { margin: 12px 0 4px; }
+
+/* Fill-up cost on the station details and map popup */
+.fillup {
+    display: flex; flex-direction: column; gap: 6px;
+    padding: 12px; margin-top: 10px;
+    border-radius: var(--radius-md); background: var(--surface-2);
+    font-size: var(--text-sm);
+}
+.fillup-row { display: flex; justify-content: space-between; gap: 12px; color: var(--text-muted); }
+.fillup-val { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.fillup-edit { align-self: flex-start; padding-left: 0; padding-right: 0; font-size: var(--text-xs); color: var(--accent-text); }
 
 .rank {
     display: flex; align-items: center; justify-content: center;
@@ -839,6 +855,7 @@ body.dark-mode .history-range-btn.active { background: var(--surface-3); }
 .settings-hint { font-size: var(--text-sm); color: var(--text-muted); line-height: 1.45; }
 .settings-footnote { font-size: var(--text-xs); color: var(--text-muted); text-align: center; }
 .settings-select { width: auto; flex-shrink: 0; }
+.settings-number { width: 6.5rem; flex-shrink: 0; text-align: right; }
 
 /* Switch: a styled checkbox (keeps native keyboard + screen-reader behaviour) */
 .settings-switch {

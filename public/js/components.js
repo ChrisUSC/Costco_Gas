@@ -1,6 +1,7 @@
 // --- Reusable HTML Components & View Builders ---
 
 import { escapeHtml } from './dom.js';
+import { fillCost } from './fillup.js';
 import { gasHoursDetailsHtml, gasStatusHtml } from './hours.js';
 import { icon } from './icons.js';
 import { isPhoneViewport } from './layout.js';
@@ -109,6 +110,30 @@ export function priceTilesHtml(store, featured) {
     }).join('');
 }
 
+// --- Fill-up cost (rules in fillup.js) ---
+const money = (n) => `$${n.toFixed(2)}`;
+const trimNumber = (n) => String(+n.toFixed(1));
+
+// Your usual fill-up at this station, on the station details and map popup.
+export function fillUpHtml(store) {
+    if (!hasGradeData(store, state.gasPref)) return '';
+    const cost = fillCost(gradeVal(store, state.gasPref), state.fillGallons);
+    return `
+        <div class="fillup" role="group" aria-label="Fill-up cost">
+            <div class="fillup-row"><span>Fill-up · ${trimNumber(state.fillGallons)} gal ${GRADE_INFO[state.gasPref].label}</span><span class="fillup-val">${money(cost)}</span></div>
+            <button type="button" class="btn btn-ghost fillup-edit" data-action="open-settings">${trimNumber(state.fillGallons)} gal · ${trimNumber(state.mpg)} mpg · Change</button>
+        </div>`;
+}
+
+// On a Route result: "Fill-up $59.88 + detour $0.40" and how it compares with the best value.
+export function routeCostHtml(stop) {
+    const verdict = stop.isBest
+        ? `<span class="route-cost-best">Best value</span>`
+        : `<span class="route-cost-extra">+${money(stop.extraVsBest)} vs best</span>`;
+    const detour = stop.detourCost >= 0.005 ? ` + detour ${money(stop.detourCost)}` : ' · no detour';
+    return `<div class="route-cost">Fill-up ${money(stop.fillCost)}${detour} · ${verdict}</div>`;
+}
+
 // Tap-to-call link, shared by the map popup and the station details card.
 export function phoneLinkHtml(store, iconSize = 14) {
     if (!store.phone) return '';
@@ -131,7 +156,7 @@ export function shareButtonHtml(store, cls = '') {
 }
 
 // List card: the selected grade's price is the hero; the other grades sit quietly beneath.
-export function createStoreCard(store, { highlight = null, index = null, showDistance = false, distanceSuffix = '' } = {}) {
+export function createStoreCard(store, { highlight = null, index = null, showDistance = false, distanceSuffix = '', extraHtml = '' } = {}) {
     const div = document.createElement('div');
     div.className = 'store-card';
     div.dataset.action = 'fly-to-store';
@@ -169,6 +194,7 @@ export function createStoreCard(store, { highlight = null, index = null, showDis
                 <h3>${escapeHtml(store.city)}, ${escapeHtml(store.state)}</h3>
                 <div class="address">${escapeHtml(formatAddress(store.address))}</div>
                 <div class="card-meta">${gasStatusHtml(store)}${distanceHtml}</div>
+                ${extraHtml}
             </div>
             <div class="card-price ${featuredHasPrice ? '' : 'is-missing'}">
                 <span class="card-price-label">${GRADE_INFO[featured].label}</span>
@@ -243,6 +269,7 @@ export function renderMobileStoreCardContent(store) {
         </div>
         ${gasHoursDetailsHtml(store)}
         <div class="mobile-sheet-prices">${priceTilesHtml(store, state.gasPref)}</div>
+        ${fillUpHtml(store)}
         <div class="mobile-sheet-actions">
             <a class="btn btn-primary btn-directions" data-action="directions" href="${escapeHtml(directionsUrl(store, state.directionsApp))}" title="Open in ${DIRECTIONS_APP_LABELS[state.directionsApp]}" target="_blank" rel="noopener noreferrer">
                 ${DIRECTIONS_ICON} Directions

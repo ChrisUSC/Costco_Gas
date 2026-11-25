@@ -131,6 +131,59 @@ final class StationTests: XCTestCase {
     }
 }
 
+/// The same cases as the "fill-up cost and best value along a route" tests in helpers.test.mjs.
+final class FillUpTests: XCTestCase {
+    func stop(_ city: String, _ prices: GradePrices, offRoute: Double) -> StationDistance {
+        StationDistance(station: station("CA", city, prices: prices), distance: offRoute)
+    }
+    lazy var onRoute = stop("OnRoute", GradePrices(regular: 4.50), offRoute: 0)
+    lazy var offRoute = stop("OffRoute", GradePrices(regular: 4.30), offRoute: 2)
+    lazy var farOff = stop("FarOff", GradePrices(regular: 4.29), offRoute: 20)
+
+    func stops(_ along: [StationDistance], _ grade: Grade = .regular) -> [RouteStopCost] {
+        FillUp.routeStops(along, grade: grade, gallons: 12, mpg: 25)
+    }
+
+    func testFillCost() {
+        XCTAssertEqual(FillUp.fillCost(price: 4.5, gallons: 12), 54, accuracy: 1e-9)
+    }
+
+    func testRankedByFillUpPlusDetour() {
+        let ranked = stops([onRoute, offRoute, farOff])
+        XCTAssertEqual(ranked.map(\.station.city), ["OffRoute", "OnRoute", "FarOff"])
+        let off = ranked[0]
+        XCTAssertEqual(off.fillCost, 4.30 * 12, accuracy: 1e-9)
+        XCTAssertEqual(off.detourMiles, 2 * 2 * FillUp.roadFactor, accuracy: 1e-9)
+        XCTAssertEqual(off.detourCost, 2 * 2 * FillUp.roadFactor / 25 * 4.30, accuracy: 1e-9)
+        XCTAssertEqual(off.total, off.fillCost + off.detourCost, accuracy: 1e-9)
+        XCTAssertEqual(ranked[1].detourCost, 0)
+        XCTAssertEqual(ranked[2].station.city, "FarOff") // cheapest price, but the detour costs more
+    }
+
+    func testBestValueAndExtra() {
+        let ranked = stops([onRoute, offRoute, farOff])
+        XCTAssertTrue(ranked[0].isBest)
+        XCTAssertEqual(ranked[0].extraVsBest, 0)
+        XCTAssertFalse(ranked[1].isBest)
+        XCTAssertEqual(ranked[1].extraVsBest, ranked[1].total - ranked[0].total, accuracy: 1e-9)
+        let twin = stop("Twin", GradePrices(regular: 4.30), offRoute: 2)
+        XCTAssertTrue(stops([offRoute, twin])[1].isBest)
+    }
+
+    func testStationsWithoutTheGradeAreLeftOut() {
+        let noDiesel = stop("NoDiesel", GradePrices(regular: 4.00), offRoute: 1)
+        XCTAssertTrue(stops([noDiesel], .diesel).isEmpty)
+        XCTAssertEqual(stops([noDiesel, stop("D", GradePrices(diesel: 5), offRoute: 0)], .diesel).count, 1)
+    }
+
+    func testClampedSettings() {
+        XCTAssertEqual(FillUp.clamped(12.5, to: FillUp.gallonRange, fallback: 12), 12.5)
+        XCTAssertEqual(FillUp.clamped(nil, to: FillUp.gallonRange, fallback: 12), 12)
+        XCTAssertEqual(FillUp.clamped(0, to: FillUp.gallonRange, fallback: 12), 12)
+        XCTAssertEqual(FillUp.clamped(500, to: FillUp.gallonRange, fallback: 12), 12)
+    }
+}
+
 final class LivePriceTests: XCTestCase {
     func testParseRoundsToCentsLikeTheScrapers() {
         let data = Data(#"{"146":{"premium":"5.599","regular":"4.999"}}"#.utf8)

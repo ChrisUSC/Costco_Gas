@@ -43,6 +43,10 @@ struct StationDetailView: View {
                 LivePriceFooter(station: s)
             }
 
+            if let cost = model.fillCost(for: s) {
+                FillUpSection(cost: cost)
+            }
+
             Section {
                 Button {
                     openURL(directionsURL(for: s, app: model.prefs.directionsApp))
@@ -138,6 +142,26 @@ private struct LivePriceFooter: View {
     private func age(_ date: Date) -> String {
         let minutes = Int(max(0, model.now.timeIntervalSince(date)) / 60)
         return minutes < 1 ? "just now" : "\(minutes) min ago"
+    }
+}
+
+/// What your usual fill-up costs here.
+private struct FillUpSection: View {
+    @Environment(AppModel.self) private var model
+    let cost: Double
+
+    var body: some View {
+        Section {
+            LabeledContent("Fill-up · \(formatNumber(model.prefs.fillGallons)) gal \(model.grade.label)",
+                           value: formatPrice(cost))
+        } header: {
+            ListHeader(text: "Fill-up cost")
+        } footer: {
+            Button("\(formatNumber(model.prefs.fillGallons)) gal · \(formatNumber(model.prefs.mpg)) mpg · Change") {
+                model.showSettings = true
+            }
+            .font(.footnote)
+        }
     }
 }
 

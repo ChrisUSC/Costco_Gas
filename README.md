@@ -19,14 +19,15 @@ A live-updating map of Costco gas prices across the US. A scheduled scraper coll
 - 🔍 Search by city, address or zip code (store matches plus Nominatim geocoding)
 - 📈 Price-history chart per station with 7D / 30D / 90D / 1Y / All ranges
 - 🥇 **Lowest**: a ranked state leaderboard, with 72-hour price trends shown as an arrow and the size of the move (`▼ 4¢`, `▲ 6¢`, `–`)
+- ⛽ **Best value along a route**: set how many gallons you usually buy and your mpg in Settings. Route results rank stations by your fill-up plus the detour off the route and back, mark the best value and show how much more the others cost (or sort by lowest price); station details show what your usual fill-up costs
 - 📍 **Nearby**: stations within a 5–100 mi radius (10 mi by default) of you, a searched place or the map centre, sorted by price or distance
 - 🔗 Shareable links: `?store=STATE_City` opens a station, and `?tab=`, `?grade=` and `?state=` restore the view
 - ⚠️ The "Updated … ago" label turns amber and says the prices may be out of date when no new prices have arrived for 4 hours (they normally update hourly)
 - 📲 Installable to a phone or desktop home screen (web app manifest), and opens offline with the last prices it saw (service worker)
 - 📴 **Offline mode**: a built-in US outline replaces the map background, the header says the prices are saved, Route and place search are hidden, and prices refresh by themselves when the connection returns
-- ⚙️ Settings panel: clustering (on by default) and price colours (off by default), directions app (Google Maps, Apple Maps or Waze), light/dark/system theme, which tabs to show (All stations is hidden by default), start-up tab, and automatic location on/off. Settings are saved in the browser.
+- ⚙️ Settings panel: clustering (on by default) and price colours (off by default), gallons per fill-up and mpg, directions app (Google Maps, Apple Maps or Waze), light/dark/system theme, which tabs to show (All stations is hidden by default), start-up tab, and automatic location on/off. Settings are saved in the browser.
 - 🌙 Light and dark themes with matching map tiles, following the system setting by default
-- 📱 **iOS app** (`ios/`): a native SwiftUI version with the same features, reading the same data. See [`ios/README.md`](ios/README.md).
+- 📱 **iOS app** (`ios/`): a native SwiftUI version with the same features, reading the same data, plus home-screen widgets and a live price from Costco when you open a station. See [`ios/README.md`](ios/README.md).
 - ♿ Keyboard navigation with visible focus, 44px touch targets, reduced-motion support and text contrast that meets WCAG AA
 
 ## How it works
@@ -62,6 +63,7 @@ public/ (HTML, JS, CSS, us_stores.json) ──► Cloudflare Pages static hostin
 │   ├── js/
 │   │   │   # Helpers (all but layout.js are pure and unit-tested in tests/frontend)
 │   │   ├── prices.js           # Fuel grades, price parsing and formatting, trend arrows
+│   │   ├── fillup.js           # Fill-up cost; best value along a route (fill-up plus detour)
 │   │   ├── hours.js            # Gas hours and open / closed status in each station's time zone
 │   │   ├── time.js             # Scraper timestamps and the "Updated … ago" wording
 │   │   ├── geo.js              # Distances and route-corridor geometry
@@ -128,7 +130,8 @@ public/ (HTML, JS, CSS, us_stores.json) ──► Cloudflare Pages static hostin
 ├── ios/                        # Native iOS app (SwiftUI); see ios/README.md
 │   ├── CostcoGas.xcodeproj     # Open in Xcode 16+ and press Run
 │   ├── CostcoGasKit/           # Swift package: the public/js logic ported to Swift, with tests
-│   └── CostcoGas/              # The app: map, lists, route, search, chart, settings
+│   ├── CostcoGas/              # The app: map, lists, route, search, chart, settings
+│   └── CostcoGasWidget/        # Home-screen widgets: cheapest nearby, one station
 │
 ├── tests/                      # pytest suite for the pipeline
 │   ├── frontend/               # node --test unit tests for public/js and the CDN hashes

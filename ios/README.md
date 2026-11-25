@@ -53,6 +53,8 @@ and builds the app for the simulator on every push that touches `ios/`.
 | Search: stations plus Nominatim places | `search.js` | `SearchResultsView.swift`, `Geocoder` |
 | Station details: prices, open status in the station's time zone, 7-day hours, phone, share | `sheet.js`, `hours.js` | `StationDetailView.swift`, `GasHours` |
 | Live price when a station is opened: one request to Costco for that store, shown as live and never saved | (app only) | `LivePriceService`, `AppModel.fetchLivePrice` |
+| Fill-up cost; Route results ranked by best value (fill-up plus detour); gallons per fill-up and mpg in Settings | `fillup.js`, `routes.js` | `FillUp` (Kit), `RouteView.swift`, `StationDetailView.swift` |
+| Home-screen widgets: cheapest nearby (small and medium) and one station you pick | (app only) | `CostcoGasWidget/` |
 | Directions in Google Maps, Apple Maps or Waze | `stores.js` | `directionsURL` |
 | Price-history chart, 7D / 30D / 90D / 1Y / All | `charts.js` | `PriceHistoryView.swift` (Swift Charts), `PriceHistory` |
 | "Updated … ago", amber after 4 hours | `time.js`, `data.js` | `UpdatedLabel`, `ScraperTime` |
@@ -61,6 +63,18 @@ and builds the app for the simulator on every push that touches `ios/`.
 | Shared links `?store=`, `?tab=`, `?grade=`, `?state=` | `nav.js`, `station-actions.js` | `DeepLink` (also `costcogas://open?store=CA_Turlock`) |
 | Home-screen shortcuts | `manifest.webmanifest` | Quick actions in `Info.plist` |
 | Phone bottom sheet, tablet sidebar | `sheet.js`, `layout.js` | `ContentView.swift` |
+
+## Widgets
+
+Touch and hold the home screen, tap **+** (or **Edit → Add Widget**), search for **Costco Gas** and
+pick **Cheapest nearby** or **Station**. Touch and hold a widget, then **Edit Widget** to choose the
+fuel grade or the station. Tapping a widget opens the app on that station.
+
+The widgets fetch `us_latest.json` themselves about every half hour (iOS decides exactly when),
+keep their own saved copy for offline use, and read the store list bundled with them. They
+can't see the app's settings or favorites, which would need an App Group, so the grade and
+station are chosen on the widget. Cheapest nearby uses the location the app is allowed to use;
+if location is off it asks you to open the app.
 
 Differences from the website:
 
@@ -92,6 +106,7 @@ ios/
 │   │   ├── Geo.swift           # Distances and route-corridor geometry            (geo.js)
 │   │   ├── Stations.swift      # Store list, snapshots, addresses, directions     (stores.js)
 │   │   ├── Queries.swift       # List sorting and price colours        (lists.js, markers.js)
+│   │   ├── FillUp.swift        # Fill-up cost; best value along a route           (fillup.js)
 │   │   ├── PriceHistory.swift  # History parsing and daily chart series           (charts.js)
 │   │   ├── Services.swift      # Snapshot fetch + saved copy, OSRM, Nominatim, IP state
 │   │   └── DeepLink.swift      # ?store= / ?tab= / ?grade= / ?state= links        (nav.js)
@@ -104,6 +119,11 @@ ios/
     ├── Theme.swift             # Colours, tabs, theme choices
     ├── Map/                    # MKMapView wrapper and pin / cluster views
     └── Views/                  # Panel, lists, route, search, details, chart, settings
+CostcoGasWidget/                # Widget extension (WidgetKit, App Intents)
+    ├── CostcoGasWidgets.swift  # The two widgets, their timelines and views
+    ├── Intents.swift           # Widget settings: fuel grade, station picker
+    └── WidgetData.swift        # Prices and location for the widgets
+CostcoGasWidget.plist           # The extension's Info.plist keys
 ```
 
 The Kit mirrors `public/js`: when you change a rule there (a price format, the stale-price

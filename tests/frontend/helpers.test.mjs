@@ -12,6 +12,7 @@ import { formatGasTime, getGasStatus, groupGasHours } from '../../public/js/hour
 import { parseScraperTimestamp, getRelativeTimeLabel, formatLastUpdatedLabel, PRICES_STALE_HOURS } from '../../public/js/time.js';
 import { storeMatchesQuery, directionsUrl, formatAddress } from '../../public/js/stores.js';
 import { escapeHtml } from '../../public/js/dom.js';
+import { fillCost, GALLON_LIMITS, readCarSetting, ROAD_FACTOR, routeStopCosts } from '../../public/js/fillup.js';
 import { loadJsonPref } from '../../public/js/storage.js';
 
 const store = (over = {}) => ({
@@ -240,5 +241,57 @@ describe('formatting', () => {
 
     test('loadJsonPref falls back when storage is unavailable', () => {
         assert.deepEqual(loadJsonPref('favorites', []), []);
+    });
+});
+
+// The iOS app has the same cases in ios/CostcoGasKit (FillUpTests).
+describe('fill-up cost and best value along a route', () => {
+    // Stations along a route; `distance` is miles off the route, as the Route tab sets it.
+    const onRoute = store({ city: 'OnRoute', regVal: 4.50, distance: 0 });
+    const offRoute = store({ city: 'OffRoute', regVal: 4.30, distance: 2 });
+    const farOff = store({ city: 'FarOff', regVal: 4.29, distance: 20 });
+    const noDiesel = store({ city: 'NoDiesel', regVal: 4.00, distance: 1 });
+    const opts = { gallons: 12, mpg: 25 };
+
+    test('a fill-up costs the price times your usual gallons', () => {
+        assert.equal(fillCost(4.5, 12).toFixed(2), '54.00');
+    });
+
+    test('stops are ranked by fill-up plus the detour off the route and back', () => {
+        const stops = routeStopCosts([onRoute, offRoute, farOff], 'regular', opts);
+        assert.deepEqual(stops.map(s => s.store.city), ['OffRoute', 'OnRoute', 'FarOff']);
+        const off = stops[0];
+        assert.equal(off.fillCost.toFixed(2), (4.30 * 12).toFixed(2));
+        assert.ok(Math.abs(off.detourMiles - 2 * 2 * ROAD_FACTOR) < 1e-9);
+        assert.ok(Math.abs(off.detourCost - (2 * 2 * ROAD_FACTOR / 25) * 4.30) < 1e-9);
+        assert.ok(Math.abs(off.total - (off.fillCost + off.detourCost)) < 1e-9);
+        // On the route there's no detour.
+        assert.equal(stops[1].detourCost, 0);
+        // The cheapest price isn't the best value when the detour costs more than it saves.
+        assert.equal(stops[2].store.city, 'FarOff');
+    });
+
+    test('the best value is marked, and the rest say how much more they cost', () => {
+        const stops = routeStopCosts([onRoute, offRoute, farOff], 'regular', opts);
+        assert.equal(stops[0].isBest, true);
+        assert.equal(stops[0].extraVsBest, 0);
+        assert.equal(stops[1].isBest, false);
+        assert.ok(Math.abs(stops[1].extraVsBest - (stops[1].total - stops[0].total)) < 1e-9);
+        const twin = store({ city: 'Twin', regVal: 4.30, distance: 2 });
+        assert.equal(routeStopCosts([offRoute, twin], 'regular', opts)[1].isBest, true);
+    });
+
+    test('stations without the grade are left out', () => {
+        assert.deepEqual(routeStopCosts([noDiesel], 'diesel', opts), []);
+        assert.equal(routeStopCosts([noDiesel, store({ city: 'D', dieselVal: 5, distance: 0 })], 'diesel', opts).length, 1);
+    });
+
+    test('car settings fall back when empty, unreadable or out of range', () => {
+        assert.equal(readCarSetting('12.5', GALLON_LIMITS, 12), 12.5);
+        assert.equal(readCarSetting('', GALLON_LIMITS, 12), 12);
+        assert.equal(readCarSetting(null, GALLON_LIMITS, 12), 12);
+        assert.equal(readCarSetting('abc', GALLON_LIMITS, 12), 12);
+        assert.equal(readCarSetting('0', GALLON_LIMITS, 12), 12);
+        assert.equal(readCarSetting('500', GALLON_LIMITS, 12), 12);
     });
 });

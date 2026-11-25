@@ -170,6 +170,25 @@
             </section>
 
             <section class="settings-section">
+                <h3 class="settings-heading">Your car</h3>
+                <p class="settings-hint">Used to show what your usual fill-up costs, and on the Route tab which station is the best value once the detour off your route is counted.</p>
+                <label class="settings-row">
+                    <span class="settings-text">
+                        <span class="settings-label">Gallons per fill-up</span>
+                        <span class="settings-hint">How much you usually buy, 1 to 60</span>
+                    </span>
+                    <input type="number" name="fillGallons" class="input settings-number" inputmode="decimal" min="1" max="60" step="0.5">
+                </label>
+                <label class="settings-row">
+                    <span class="settings-text">
+                        <span class="settings-label">Fuel economy</span>
+                        <span class="settings-hint">Miles per gallon, 1 to 150</span>
+                    </span>
+                    <input type="number" name="mpg" class="input settings-number" inputmode="decimal" min="1" max="150" step="1">
+                </label>
+            </section>
+
+            <section class="settings-section">
                 <h3 class="settings-heading">Tabs</h3>
                 <p class="settings-hint">Choose which tabs to show. Typing in the search box still lists matching stations when All stations is off.</p>
                 <label class="settings-row">

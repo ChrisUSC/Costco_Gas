@@ -9,19 +9,53 @@
 /* Begin PBXBuildFile section */
 		C6A500000000000000000101 /* us_stores.json in Resources */ = {isa = PBXBuildFile; fileRef = C6A500000000000000000004 /* us_stores.json */; };
 		C6A500000000000000000102 /* CostcoGasKit in Frameworks */ = {isa = PBXBuildFile; productRef = C6A500000000000000000301 /* CostcoGasKit */; };
+		C6A500000000000000000103 /* CostcoGasKit in Frameworks */ = {isa = PBXBuildFile; productRef = C6A500000000000000000302 /* CostcoGasKit */; };
+		C6A500000000000000000104 /* us_stores.json in Resources */ = {isa = PBXBuildFile; fileRef = C6A500000000000000000004 /* us_stores.json */; };
+		C6A500000000000000000105 /* CostcoGasWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = C6A500000000000000000008 /* CostcoGasWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		C6A500000000000000000602 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = C6A500000000000000000000 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C6A500000000000000000011;
+			remoteInfo = CostcoGasWidget;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		C6A500000000000000000204 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				C6A500000000000000000105 /* CostcoGasWidget.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		C6A500000000000000000003 /* CostcoGas.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CostcoGas.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C6A500000000000000000004 /* us_stores.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = us_stores.json; path = ../public/us_stores.json; sourceTree = "<group>"; };
 		C6A500000000000000000005 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		C6A500000000000000000007 /* Signing.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Signing.xcconfig; sourceTree = "<group>"; };
+		C6A500000000000000000008 /* CostcoGasWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = CostcoGasWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		C6A500000000000000000009 /* CostcoGasWidget.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = CostcoGasWidget.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		C6A500000000000000000002 /* CostcoGas */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = CostcoGas;
+			sourceTree = "<group>";
+		};
+		C6A50000000000000000000A /* CostcoGasWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = CostcoGasWidget;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -35,6 +69,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		C6A500000000000000000212 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C6A500000000000000000103 /* CostcoGasKit in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -42,7 +84,9 @@
 			isa = PBXGroup;
 			children = (
 				C6A500000000000000000002 /* CostcoGas */,
+				C6A50000000000000000000A /* CostcoGasWidget */,
 				C6A500000000000000000005 /* Info.plist */,
+				C6A500000000000000000009 /* CostcoGasWidget.plist */,
 				C6A500000000000000000007 /* Signing.xcconfig */,
 				C6A500000000000000000004 /* us_stores.json */,
 				C6A500000000000000000006 /* Products */,
@@ -53,6 +97,7 @@
 			isa = PBXGroup;
 			children = (
 				C6A500000000000000000003 /* CostcoGas.app */,
+				C6A500000000000000000008 /* CostcoGasWidget.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -67,10 +112,12 @@
 				C6A500000000000000000201 /* Sources */,
 				C6A500000000000000000202 /* Frameworks */,
 				C6A500000000000000000203 /* Resources */,
+				C6A500000000000000000204 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				C6A500000000000000000601 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				C6A500000000000000000002 /* CostcoGas */,
@@ -83,6 +130,29 @@
 			productReference = C6A500000000000000000003 /* CostcoGas.app */;
 			productType = "com.apple.product-type.application";
 		};
+		C6A500000000000000000011 /* CostcoGasWidget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C6A500000000000000000403 /* Build configuration list for PBXNativeTarget "CostcoGasWidget" */;
+			buildPhases = (
+				C6A500000000000000000211 /* Sources */,
+				C6A500000000000000000212 /* Frameworks */,
+				C6A500000000000000000213 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				C6A50000000000000000000A /* CostcoGasWidget */,
+			);
+			name = CostcoGasWidget;
+			packageProductDependencies = (
+				C6A500000000000000000302 /* CostcoGasKit */,
+			);
+			productName = CostcoGasWidget;
+			productReference = C6A500000000000000000008 /* CostcoGasWidget.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -94,6 +164,9 @@
 				LastUpgradeCheck = 1600;
 				TargetAttributes = {
 					C6A500000000000000000010 = {
+						CreatedOnToolsVersion = 16.0;
+					};
+					C6A500000000000000000011 = {
 						CreatedOnToolsVersion = 16.0;
 					};
 				};
@@ -116,6 +189,7 @@
 			projectRoot = "";
 			targets = (
 				C6A500000000000000000010 /* CostcoGas */,
+				C6A500000000000000000011 /* CostcoGasWidget */,
 			);
 		};
 /* End PBXProject section */
@@ -129,6 +203,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		C6A500000000000000000213 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C6A500000000000000000104 /* us_stores.json in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -139,7 +221,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		C6A500000000000000000211 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		C6A500000000000000000601 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C6A500000000000000000011 /* CostcoGasWidget */;
+			targetProxy = C6A500000000000000000602 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		C6A500000000000000000501 /* Debug */ = {
@@ -321,6 +418,54 @@
 			};
 			name = Release;
 		};
+		C6A500000000000000000505 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = C6A500000000000000000007 /* Signing.xcconfig */;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = CostcoGasWidget.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Costco Gas";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(inherited).widget";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		C6A500000000000000000506 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = C6A500000000000000000007 /* Signing.xcconfig */;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = CostcoGasWidget.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Costco Gas";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(inherited).widget";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -342,6 +487,15 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		C6A500000000000000000403 /* Build configuration list for PBXNativeTarget "CostcoGasWidget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C6A500000000000000000505 /* Debug */,
+				C6A500000000000000000506 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
@@ -353,6 +507,10 @@
 
 /* Begin XCSwiftPackageProductDependency section */
 		C6A500000000000000000301 /* CostcoGasKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = CostcoGasKit;
+		};
+		C6A500000000000000000302 /* CostcoGasKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = CostcoGasKit;
 		};

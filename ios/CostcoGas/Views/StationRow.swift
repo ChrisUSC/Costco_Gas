@@ -1,8 +1,8 @@
 import CostcoGasKit
 import SwiftUI
 
-/// A station in a list: the selected grade's price is the hero, the other grades sit quietly
-/// beneath (the website's store card).
+/// A station in a list, showing only the selected grade's price (the station details show every
+/// grade).
 struct StationRow: View {
     @Environment(AppModel.self) private var model
     @Environment(\.openURL) private var openURL
@@ -11,6 +11,8 @@ struct StationRow: View {
     var rank: Int?
     var distance: Double?
     var distanceSuffix = ""
+    /// On Route results: the fill-up plus detour, against the best value.
+    var routeCost: RouteStopCost?
 
     var body: some View {
         let grade = model.grade
@@ -47,11 +49,8 @@ struct StationRow: View {
                         }
                         GasStatusLabel(station: station, now: model.now)
                     }
-                    let others = station.visibleGrades.filter { $0 != grade }
-                    if !others.isEmpty {
-                        Text(others.map { "\($0.label) \(formatPrice(station.price($0)))" }.joined(separator: " · "))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                    if let cost = routeCost {
+                        RouteCostLine(cost: cost)
                     }
                 }
                 Spacer(minLength: 8)
@@ -102,5 +101,21 @@ struct StationRow: View {
                 Label("Share", systemImage: "square.and.arrow.up")
             }
         }
+    }
+}
+
+/// "Fill-up $59.88 + detour $0.40 · Best value" (or "+$0.85 vs best") on a Route result. One
+/// sentence that wraps onto a second line when it doesn't fit, so no amount is ever cut off.
+struct RouteCostLine: View {
+    let cost: RouteStopCost
+
+    var body: some View {
+        let detour = cost.detourCost >= 0.005 ? " + detour \(formatPrice(cost.detourCost))" : " · no detour"
+        let verdict = cost.isBest
+            ? Text("Best value").fontWeight(.semibold).foregroundStyle(.green)
+            : Text("+\(formatPrice(cost.extraVsBest)) vs best").fontWeight(.semibold).foregroundStyle(.primary)
+        (Text("Fill-up \(formatPrice(cost.fillCost))\(detour) · ").foregroundStyle(.secondary) + verdict)
+            .font(.caption.monospacedDigit())
+            .fixedSize(horizontal: false, vertical: true)
     }
 }
