@@ -26,6 +26,7 @@ A live-updating map of Costco gas prices across the US. A scheduled scraper coll
 - 📴 **Offline mode**: a built-in US outline replaces the map background, the header says the prices are saved, Route and place search are hidden, and prices refresh by themselves when the connection returns
 - ⚙️ Settings panel: clustering (on by default) and price colours (off by default), directions app (Google Maps, Apple Maps or Waze), light/dark/system theme, which tabs to show (All stations is hidden by default), start-up tab, and automatic location on/off. Settings are saved in the browser.
 - 🌙 Light and dark themes with matching map tiles, following the system setting by default
+- 📱 **iOS app** (`ios/`): a native SwiftUI version with the same features, reading the same data. See [`ios/README.md`](ios/README.md).
 - ♿ Keyboard navigation with visible focus, 44px touch targets, reduced-motion support and text contrast that meets WCAG AA
 
 ## How it works
@@ -124,6 +125,11 @@ public/ (HTML, JS, CSS, us_stores.json) ──► Cloudflare Pages static hostin
 │   ├── local_stores.json       # Small nearby subset for quick local runs (option 1)
 │   └── snapshots/              # Local copies of R2 snapshots (git-ignored)
 │
+├── ios/                        # Native iOS app (SwiftUI); see ios/README.md
+│   ├── CostcoGas.xcodeproj     # Open in Xcode 16+ and press Run
+│   ├── CostcoGasKit/           # Swift package: the public/js logic ported to Swift, with tests
+│   └── CostcoGas/              # The app: map, lists, route, search, chart, settings
+│
 ├── tests/                      # pytest suite for the pipeline
 │   ├── frontend/               # node --test unit tests for public/js and the CDN hashes
 │   ├── scraper/                # node --test tests for scraper/ (fake R2, queue and Costco)
@@ -132,7 +138,8 @@ public/ (HTML, JS, CSS, us_stores.json) ──► Cloudflare Pages static hostin
 │   ├── fetch_prices.yml        # Scheduled price scrape (R2 download → scrape → upload)
 │   ├── discover.yml            # Weekly new-store discovery; opens a PR
 │   ├── seed_r2.yml             # Manual R2 connection test
-│   └── testing.yml             # Runs the pipeline and frontend tests on pushes and PRs to main
+│   ├── testing.yml             # Runs the pipeline and frontend tests on pushes and PRs to main
+│   └── ios.yml                 # Tests CostcoGasKit and builds the iOS app (macOS runner) when ios/ changes
 ├── .github/dependabot.yml      # Weekly upgrade PRs for pip, npm and Actions
 ├── requirements.txt            # Pipeline dependencies (pinned)
 ├── requirements-dev.txt        # + pytest

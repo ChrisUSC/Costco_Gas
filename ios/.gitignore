@@ -1,0 +1,10 @@
+# Xcode and SwiftPM per-user state and build output
+xcuserdata/
+*.xcuserstate
+DerivedData/
+build/
+.build/
+.swiftpm/
+
+# Your signing team and bundle identifier (see Signing.xcconfig)
+Local.xcconfig
