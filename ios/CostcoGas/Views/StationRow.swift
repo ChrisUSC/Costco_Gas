@@ -110,23 +110,18 @@ struct StationRow: View {
     }
 }
 
-/// "Fill-up $59.88 + detour $0.40 · Best value" (or "+$0.85 vs best") on a Route result.
+/// "Fill-up $59.88 + detour $0.40 · Best value" (or "+$0.85 vs best") on a Route result. One
+/// sentence that wraps onto a second line when it doesn't fit, so no amount is ever cut off.
 struct RouteCostLine: View {
     let cost: RouteStopCost
 
     var body: some View {
-        HStack(spacing: 4) {
-            Text("Fill-up \(formatPrice(cost.fillCost))" + (cost.detourCost >= 0.005 ? " + detour \(formatPrice(cost.detourCost))" : " · no detour"))
-                .foregroundStyle(.secondary)
-            Text("·").foregroundStyle(.secondary)
-            if cost.isBest {
-                Text("Best value").fontWeight(.semibold).foregroundStyle(.green)
-            } else {
-                Text("+\(formatPrice(cost.extraVsBest)) vs best").fontWeight(.semibold)
-            }
-        }
-        .font(.caption.monospacedDigit())
-        .lineLimit(1)
-        .minimumScaleFactor(0.8)
+        let detour = cost.detourCost >= 0.005 ? " + detour \(formatPrice(cost.detourCost))" : " · no detour"
+        let verdict = cost.isBest
+            ? Text("Best value").fontWeight(.semibold).foregroundStyle(.green)
+            : Text("+\(formatPrice(cost.extraVsBest)) vs best").fontWeight(.semibold).foregroundStyle(.primary)
+        (Text("Fill-up \(formatPrice(cost.fillCost))\(detour) · ").foregroundStyle(.secondary) + verdict)
+            .font(.caption.monospacedDigit())
+            .fixedSize(horizontal: false, vertical: true)
     }
 }
