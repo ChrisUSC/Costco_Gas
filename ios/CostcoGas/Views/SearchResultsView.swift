@@ -5,8 +5,9 @@ import SwiftUI
 /// places from Nominatim. Offline, only stations are searched.
 struct SearchResultsView: View {
     @Environment(AppModel.self) private var model
-    @Environment(\.dismissSearch) private var dismissSearch
     @Binding var query: String
+    /// Closes the keyboard once a result is picked.
+    var onDone: () -> Void = {}
 
     @State private var places: [GeoResult] = []
     @State private var searchingPlaces = false
@@ -69,7 +70,7 @@ struct SearchResultsView: View {
 
     private func finish() {
         query = ""
-        dismissSearch()
+        onDone()
     }
 
     private func lookUpPlaces(_ q: String) async {

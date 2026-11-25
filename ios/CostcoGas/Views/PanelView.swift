@@ -1,52 +1,46 @@
 import CostcoGasKit
 import SwiftUI
 
-/// The sidebar (iPad) or bottom sheet (iPhone): search, the grade toggle, the "Updated"
-/// line, the tab strip and the active tab. Station details push inside it.
+/// The sidebar (iPad) or bottom sheet (iPhone): the search row, the grade toggle, the tab bar,
+/// the "Updated" line and the active tab. Station details push inside it. Pulled all the way
+/// down on iPhone, only the search row shows.
 struct PanelView: View {
     @Environment(AppModel.self) private var model
     @State private var query = ""
+    @FocusState private var searchFocused: Bool
 
     var body: some View {
         @Bindable var model = model
         NavigationStack {
             VStack(spacing: 0) {
-                PanelHeader()
-                Divider()
-                Group {
-                    if !query.isEmpty {
-                        SearchResultsView(query: $query)
-                    } else {
-                        TabContent()
+                SearchRow(query: $query, focused: $searchFocused)
+                if model.panelSize != .collapsed {
+                    if query.isEmpty {
+                        PanelHeader()
                     }
+                    Divider()
+                    Group {
+                        if !query.isEmpty {
+                            SearchResultsView(query: $query, onDone: {
+                                searchFocused = false
+                                model.panelSize = .half
+                            })
+                        } else {
+                            TabContent()
+                        }
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
+            .frame(maxHeight: .infinity, alignment: .top)
             .background(Color.panelBackground)
-            .navigationTitle("Costco Gas")
-            .navigationBarTitleDisplayMode(.inline)
-            .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "City, address or zip code")
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button {
-                        Task { await model.findMe() }
-                    } label: {
-                        Image(systemName: "location.fill")
-                    }
-                    .accessibilityLabel("Near me")
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        model.showSettings = true
-                    } label: {
-                        Image(systemName: "gearshape")
-                    }
-                    .accessibilityLabel("Settings")
-                }
-            }
+            .toolbar(.hidden, for: .navigationBar)
             .navigationDestination(item: $model.selectedStation) { station in
                 StationDetailView(station: station)
             }
+        }
+        .onChange(of: searchFocused) { _, focused in
+            if focused { model.panelSize = .full }
         }
         .sheet(isPresented: $model.showSettings) {
             SettingsView().presentationBackground(Color.panelBackground)
@@ -65,6 +59,77 @@ struct PanelView: View {
         }
         .animation(.easeInOut(duration: 0.2), value: model.toast)
         .preferredColorScheme(model.prefs.theme.colorScheme)
+    }
+}
+
+/// The search field with the Near me and Settings buttons beside it (Cancel while typing).
+private struct SearchRow: View {
+    @Environment(AppModel.self) private var model
+    @Binding var query: String
+    var focused: FocusState<Bool>.Binding
+
+    var body: some View {
+        HStack(spacing: 10) {
+            HStack(spacing: 8) {
+                Image(systemName: "magnifyingglass")
+                    .foregroundStyle(.secondary)
+                    .accessibilityHidden(true)
+                TextField("City, address or zip code", text: $query)
+                    .focused(focused)
+                    .submitLabel(.search)
+                    .autocorrectionDisabled()
+                    .textInputAutocapitalization(.never)
+                if !query.isEmpty {
+                    Button {
+                        query = ""
+                    } label: {
+                        Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Clear search")
+                }
+            }
+            .padding(.horizontal, 12)
+            .frame(height: 44)
+            .background(Color(uiColor: .tertiarySystemFill), in: RoundedRectangle(cornerRadius: 12))
+
+            if focused.wrappedValue {
+                Button("Cancel") {
+                    query = ""
+                    focused.wrappedValue = false
+                }
+                .fontWeight(.medium)
+            } else {
+                CircleButton(systemImage: "location.fill", label: "Near me") {
+                    Task { await model.findMe() }
+                }
+                CircleButton(systemImage: "gearshape.fill", label: "Settings") {
+                    model.showSettings = true
+                }
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 16)
+        .padding(.bottom, 10)
+        .animation(.easeInOut(duration: 0.15), value: focused.wrappedValue)
+    }
+}
+
+private struct CircleButton: View {
+    let systemImage: String
+    let label: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: systemImage)
+                .font(.system(size: 17, weight: .semibold))
+                .frame(width: 44, height: 44)
+                .background(Color(uiColor: .tertiarySystemFill), in: Circle())
+                .foregroundStyle(Color.costcoBlue)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(label)
     }
 }
 
@@ -100,7 +165,7 @@ private struct PanelHeader: View {
             }
         }
         .padding(.horizontal, 16)
-        .padding(.top, 10)
+        .padding(.top, 2)
         .padding(.bottom, 12)
     }
 }

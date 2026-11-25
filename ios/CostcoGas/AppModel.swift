@@ -73,6 +73,7 @@ final class AppModel {
     var selectedStation: Station?
     var historyStation: Station?
     var showSettings = false
+    var panelSize: PanelSize = .half
     var toast: String?
     var mapRequest: MapRequest?
     var mapCenter: LatLng?
@@ -298,6 +299,7 @@ final class AppModel {
 
     func show(_ station: Station) {
         selectedStation = station
+        if panelSize == .collapsed { panelSize = .half }
         if let c = station.coordinate { mapRequest = MapRequest(command: .center(c, spanDegrees: 0.05)) }
     }
 

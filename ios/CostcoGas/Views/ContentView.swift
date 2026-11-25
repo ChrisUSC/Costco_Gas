@@ -9,10 +9,24 @@ struct ContentView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.scenePhase) private var scenePhase
 
-    // Tall enough for the search field, grade picker, tab bar and "Updated" line.
-    private static let peek = PresentationDetent.height(268)
+    /// Pulled all the way down: just the search row.
+    private static let collapsed = PresentationDetent.height(84)
     private static let half = PresentationDetent.fraction(0.5)
-    @State private var detent: PresentationDetent = ContentView.half
+
+    private var detent: Binding<PresentationDetent> {
+        Binding(
+            get: {
+                switch model.panelSize {
+                case .collapsed: return ContentView.collapsed
+                case .half: return ContentView.half
+                case .full: return .large
+                }
+            },
+            set: { newValue in
+                model.panelSize = newValue == ContentView.collapsed ? .collapsed : (newValue == .large ? .full : .half)
+            }
+        )
+    }
 
     var body: some View {
         GeometryReader { geometry in
@@ -24,10 +38,10 @@ struct ContentView: View {
                     MapLayer(bottomInset: 0)
                 }
             } else {
-                MapLayer(bottomInset: geometry.size.height * 0.5)
+                MapLayer(bottomInset: model.panelSize == .collapsed ? 90 : geometry.size.height * 0.5)
                     .sheet(isPresented: .constant(true)) {
                         PanelView()
-                            .presentationDetents([ContentView.peek, ContentView.half, .large], selection: $detent)
+                            .presentationDetents([ContentView.collapsed, ContentView.half, .large], selection: detent)
                             .presentationBackgroundInteraction(.enabled(upThrough: ContentView.half))
                             .presentationDragIndicator(.visible)
                             // Solid, not see-through glass: text over the map was hard to read.
@@ -55,9 +69,6 @@ struct ContentView: View {
         }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { Task { await model.refreshIfStale() } }
-        }
-        .onChange(of: model.selectedStation) { _, station in
-            if station != nil && detent == ContentView.peek { detent = ContentView.half }
         }
         .onChange(of: quickActions.pendingTab, initial: true) { _, tab in
             guard let tab else { return }

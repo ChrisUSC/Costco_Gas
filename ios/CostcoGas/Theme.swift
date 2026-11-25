@@ -98,6 +98,11 @@ enum AppTab: String, CaseIterable, Identifiable, Codable {
     }
 }
 
+/// How far the iPhone bottom sheet is pulled up.
+enum PanelSize {
+    case collapsed, half, full
+}
+
 enum ThemePreference: String, CaseIterable, Identifiable {
     case system, light, dark
 

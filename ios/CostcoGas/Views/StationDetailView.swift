@@ -74,6 +74,7 @@ struct StationDetailView: View {
         .listStyle(.insetGrouped)
         .navigationTitle(s.name)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.visible, for: .navigationBar) // the panel's main screen hides it
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button {
