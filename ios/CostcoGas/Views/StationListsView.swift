@@ -30,7 +30,7 @@ struct NearbyListView: View {
                             .foregroundStyle(.secondary)
                     } else {
                         ForEach(Array(sorted.enumerated()), id: \.element.id) { index, item in
-                            StationRow(station: item.station, rank: prefs.nearbySort == .price ? index + 1 : nil, distance: item.distance)
+                            StationRow(station: item.station, rank: prefs.nearbySort == .price ? index + 1 : nil, distance: item.distance, showValue: true)
                         }
                     }
                 } header: {

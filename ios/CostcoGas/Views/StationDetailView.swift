@@ -43,6 +43,10 @@ struct StationDetailView: View {
                 LivePriceFooter(station: s)
             }
 
+            if let fillUp = model.fillUpEstimate(for: s) {
+                FillUpSection(estimate: fillUp)
+            }
+
             Section {
                 Button {
                     openURL(directionsURL(for: s, app: model.prefs.directionsApp))
@@ -138,6 +142,39 @@ private struct LivePriceFooter: View {
     private func age(_ date: Date) -> String {
         let minutes = Int(max(0, model.now.timeIntervalSince(date)) / 60)
         return minutes < 1 ? "just now" : "\(minutes) min ago"
+    }
+}
+
+/// What a fill-up costs here, the drive there and back, and whether it beats the nearest station.
+private struct FillUpSection: View {
+    @Environment(AppModel.self) private var model
+    let estimate: FillUpEstimate
+
+    var body: some View {
+        Section {
+            LabeledContent("Fill-up · \(formatNumber(model.prefs.tankGallons)) gal \(model.grade.label)",
+                           value: formatPrice(estimate.fillCost))
+            if let driveCost = estimate.driveCost, let miles = estimate.driveMiles {
+                LabeledContent("Drive there and back · \(miles < 1 ? "under 1 mi" : "about \(Int(miles.rounded())) mi")",
+                               value: formatPrice(driveCost))
+            }
+            if let verdict = FillUp.verdict(estimate) {
+                Text(verdict.text)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(verdict.tone == .neutral ? Color.primary : verdict.tone.color)
+            } else if estimate.driveCost == nil {
+                Text("Share your location or search for a place to see whether it's worth the drive.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+        } header: {
+            ListHeader(text: "Fill-up cost")
+        } footer: {
+            Button("\(formatNumber(model.prefs.tankGallons)) gal tank · \(formatNumber(model.prefs.mpg)) mpg · Change") {
+                model.showSettings = true
+            }
+            .font(.footnote)
+        }
     }
 }
 

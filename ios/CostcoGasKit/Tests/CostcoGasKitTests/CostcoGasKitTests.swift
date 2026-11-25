@@ -131,6 +131,64 @@ final class StationTests: XCTestCase {
     }
 }
 
+/// The same cases as the "fill-up cost and worth the drive" tests in helpers.test.mjs.
+final class FillUpTests: XCTestCase {
+    let home = LatLng(37, -120)
+    lazy var near = station("CA", "Near", prices: GradePrices(regular: 4.50), coordinate: LatLng(37, -120 + 0.1))
+    lazy var far = station("CA", "Far", prices: GradePrices(regular: 4.10), coordinate: LatLng(37, -120 + 0.3))
+    lazy var pricey = station("CA", "Pricey", prices: GradePrices(regular: 4.60), coordinate: LatLng(37, -120 + 0.5))
+    var all: [Station] { [near, far, pricey] }
+
+    func estimate(_ s: Station, _ grade: Grade = .regular, among: [Station]? = nil, from: LatLng? = LatLng(37, -120)) -> FillUpEstimate? {
+        FillUp.estimate(for: s, grade: grade, among: among ?? all, from: from, tankGallons: 15, mpg: 25)
+    }
+
+    func testCostsAndSavingsAgainstTheNearestStation() throws {
+        let est = try XCTUnwrap(estimate(far))
+        XCTAssertEqual(est.fillCost, 61.50, accuracy: 1e-9)
+        let miles = 2 * distanceMiles(home, LatLng(37, -120 + 0.3)) * FillUp.roadFactor
+        XCTAssertEqual(try XCTUnwrap(est.driveMiles), miles, accuracy: 1e-9)
+        XCTAssertEqual(try XCTUnwrap(est.driveCost), miles / 25 * 4.10, accuracy: 1e-9)
+        XCTAssertEqual(est.nearest?.city, "Near")
+        XCTAssertEqual(est.nearest?.isThis, false)
+        let nearTotal = 15 * 4.50 + (2 * distanceMiles(home, LatLng(37, -120 + 0.1)) * FillUp.roadFactor / 25) * 4.50
+        XCTAssertEqual(try XCTUnwrap(est.savings), nearTotal - (try XCTUnwrap(est.total)), accuracy: 1e-9)
+        XCTAssertGreaterThan(try XCTUnwrap(est.savings), 0)
+    }
+
+    func testVerdicts() throws {
+        let saves = try XCTUnwrap(FillUp.verdict(estimate(far)))
+        XCTAssertEqual(saves.tone, .good)
+        XCTAssertTrue(saves.text.hasPrefix("Saves $") && saves.text.hasSuffix(" vs Near, the nearest station"))
+        let more = try XCTUnwrap(FillUp.verdict(estimate(pricey)))
+        XCTAssertEqual(more.tone, .bad)
+        XCTAssertTrue(more.short.hasPrefix("$") && more.short.hasSuffix(" more"))
+        XCTAssertEqual(FillUp.verdict(estimate(near)), FillUpVerdict(text: "The nearest station", short: "Nearest", tone: .neutral))
+        let twin = station("CA", "Twin", prices: GradePrices(regular: 4.50), coordinate: LatLng(37, -120 + 0.1))
+        XCTAssertEqual(FillUp.verdict(estimate(twin, among: [near, twin]))?.tone, .neutral)
+    }
+
+    func testWithoutLocationOrPrice() throws {
+        let est = try XCTUnwrap(estimate(far, from: nil))
+        XCTAssertEqual(est.fillCost, 61.50, accuracy: 1e-9)
+        XCTAssertNil(est.driveCost)
+        XCTAssertNil(FillUp.verdict(est))
+        XCTAssertNil(estimate(far, .diesel))
+    }
+
+    func testNearestSellsTheGrade() {
+        let dieselFar = station("CA", "DieselFar", prices: GradePrices(diesel: 5.00), coordinate: LatLng(37, -120 + 0.4))
+        XCTAssertEqual(estimate(dieselFar, .diesel, among: [near, dieselFar])?.nearest?.isThis, true)
+    }
+
+    func testClampedSettings() {
+        XCTAssertEqual(FillUp.clamped(12.5, to: FillUp.tankRange, fallback: 15), 12.5)
+        XCTAssertEqual(FillUp.clamped(nil, to: FillUp.tankRange, fallback: 15), 15)
+        XCTAssertEqual(FillUp.clamped(0, to: FillUp.tankRange, fallback: 15), 15)
+        XCTAssertEqual(FillUp.clamped(500, to: FillUp.tankRange, fallback: 15), 15)
+    }
+}
+
 final class LivePriceTests: XCTestCase {
     func testParseRoundsToCentsLikeTheScrapers() {
         let data = Data(#"{"146":{"premium":"5.599","regular":"4.999"}}"#.utf8)

@@ -11,6 +11,8 @@ struct StationRow: View {
     var rank: Int?
     var distance: Double?
     var distanceSuffix = ""
+    /// Show "Saves $2.10" against the nearest station (Nearby list).
+    var showValue = false
 
     var body: some View {
         let grade = model.grade
@@ -46,6 +48,12 @@ struct StationRow: View {
                                 .foregroundStyle(.secondary)
                         }
                         GasStatusLabel(station: station, now: model.now)
+                        if showValue, let verdict = model.fillUpVerdict(for: station) {
+                            Text(verdict.short)
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(verdict.tone.color)
+                                .accessibilityLabel("\(verdict.text), including the drive there and back")
+                        }
                     }
                     let others = station.visibleGrades.filter { $0 != grade }
                     if !others.isEmpty {

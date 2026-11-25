@@ -3,6 +3,7 @@
 import {
     DIRECTIONS_ICON,
     favoriteButtonHtml,
+    fillUpHtml,
     phoneLinkHtml,
     priceTilesHtml,
     shareButtonHtml
@@ -161,6 +162,7 @@ export function storePopupHtml(store) {
         </div>
         ${gasHoursDetailsHtml(store)}
         <div class="popup-prices-grid">${priceTilesHtml(store, state.gasPref)}</div>
+        ${fillUpHtml(store)}
         <div class="popup-actions-row">
             <a href="${escapeHtml(directionsUrl(store, state.directionsApp))}" title="Open in ${DIRECTIONS_APP_LABELS[state.directionsApp]}" target="_blank" rel="noopener noreferrer" class="btn btn-primary popup-btn-directions">${DIRECTIONS_ICON} Directions</a>
             <button type="button" class="btn btn-secondary" data-action="history" ${where}>${icon('chart', 16)} History</button>

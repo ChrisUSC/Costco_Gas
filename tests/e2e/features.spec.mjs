@@ -22,6 +22,40 @@ test.describe('Nearby with location access already allowed', () => {
         await expect(page.locator('.leaderboard-header')).toContainText('within 5 mi');
         await expect(cards(page)).toHaveCount(1);
     });
+
+    test('cards and station details compare the fill-up with the nearest station', async ({ page }, testInfo) => {
+        await page.goto('/');
+        await openListOnPhone(page, testInfo);
+        await page.locator('#nearbyRadiusSelect').selectOption('25'); // only Turlock is within 10 mi
+        // We're at Turlock: it's the nearest station; the others cost more, drive included.
+        await expect(cards(page).first().locator('.value-badge')).toHaveText('Nearest');
+        await expect(cards(page).nth(1).locator('.value-badge')).toHaveText(/^\$\d+\.\d{2} more$/);
+
+        await cards(page).nth(1).click(); // opens the station (popup, or the sheet card)
+        const fillUp = page.locator('.fillup:visible');
+        await expect(fillUp).toContainText('Fill-up · 15 gal Regular');
+        await expect(fillUp).toContainText(/Drive there and back · (about \d+|under 1) mi/);
+        await expect(fillUp.locator('.fillup-verdict')).toHaveText(/^Costs \$\d+\.\d{2} more than Turlock, the nearest station$/);
+    });
+
+    test('the car settings change the fill-up cost and are kept', async ({ page }, testInfo) => {
+        await page.goto('/');
+        await page.locator('#settingsBtn').click();
+        const tank = page.locator('#settingsForm input[name="tankGallons"]');
+        await expect(tank).toHaveValue('15');
+        await tank.fill('10');
+        await tank.press('Tab'); // the change applies when the field is left
+        await page.locator('#settingsForm input[name="mpg"]').fill('0'); // out of range: ignored
+        await page.locator('#settingsForm input[name="mpg"]').press('Tab');
+        await expect(page.locator('#settingsForm input[name="mpg"]')).toHaveValue('25');
+        await page.keyboard.press('Escape');
+
+        await page.reload();
+        await openListOnPhone(page, testInfo);
+        await cards(page).first().click();
+        await expect(page.locator('.fillup:visible')).toContainText('Fill-up · 10 gal Regular');
+        await expect(page.locator('.fillup:visible')).toContainText('10 gal tank · 25 mpg · Change');
+    });
 });
 
 test.describe('Route', () => {

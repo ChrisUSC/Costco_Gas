@@ -19,6 +19,19 @@ struct SettingsView: View {
                     Text("Price colours show the cheapest, middle and most expensive third of the prices in view in green, amber and red.")
                 }
 
+                Section {
+                    Stepper(value: $prefs.tankGallons, in: FillUp.tankRange, step: 1) {
+                        LabeledContent("Tank size", value: "\(formatNumber(prefs.tankGallons)) gal")
+                    }
+                    Stepper(value: $prefs.mpg, in: FillUp.mpgRange, step: 1) {
+                        LabeledContent("Fuel economy", value: "\(formatNumber(prefs.mpg)) mpg")
+                    }
+                } header: {
+                    Text("Your car")
+                } footer: {
+                    Text("Used to show what a fill-up costs and whether a cheaper station is worth the drive, counting the gas used to get there and back.")
+                }
+
                 Section("Directions") {
                     Picker("Open directions in", selection: $prefs.directionsApp) {
                         ForEach(DirectionsApp.allCases) { Text($0.label).tag($0) }
@@ -77,4 +90,9 @@ struct SettingsView: View {
         }
         .preferredColorScheme(model.prefs.theme.colorScheme)
     }
+}
+
+/// "15" or "12.5": a setting without a trailing ".0".
+func formatNumber(_ value: Double) -> String {
+    value.rounded() == value ? String(Int(value)) : String(format: "%.1f", value)
 }

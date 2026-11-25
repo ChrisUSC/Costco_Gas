@@ -82,8 +82,8 @@ export function renderNearbyPrices() {
 
     const loc = state.userLocation;
     appendPagedCards(container, sortedData,
-        (store, index) => createStoreCard(store, { highlight: state.gasPref, index, showDistance: true }),
-        { key: `nearby|${loc.lat},${loc.lng}|${state.nearbyRadiusMiles}|${state.nearbySortMode}|${state.gasPref}` });
+        (store, index) => createStoreCard(store, { highlight: state.gasPref, index, showDistance: true, showValue: true }),
+        { key: `nearby|${loc.lat},${loc.lng}|${state.nearbyRadiusMiles}|${state.nearbySortMode}|${state.gasPref}|${state.tankGallons}|${state.mpg}` });
 }
 
 export function setNearbyRadius(val) {

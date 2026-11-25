@@ -2,6 +2,7 @@ import CostcoGasKit
 import Foundation
 import Network
 import Observation
+import WidgetKit
 
 enum LoadState: Equatable {
     case loading, ready, failed
@@ -190,6 +191,8 @@ final class AppModel {
                 }
             }
             if !offline { prefetchHistoryIfDue() }
+            // The widgets fetch their own prices; nudge them now the app has fresh ones.
+            WidgetCenter.shared.reloadAllTimelines()
         } catch {
             loadState = .failed
         }
@@ -218,6 +221,18 @@ final class AppModel {
             overlayLive(quote.prices, on: id)
         }
         now = Date()
+    }
+
+    // MARK: - Fill-up cost
+
+    /// The fill-up at a station and the drive there and back from where Nearby is centred.
+    func fillUpEstimate(for station: Station) -> FillUpEstimate? {
+        FillUp.estimate(for: station, grade: grade, among: stations, from: nearbyCenter,
+                        tankGallons: prefs.tankGallons, mpg: prefs.mpg)
+    }
+
+    func fillUpVerdict(for station: Station) -> FillUpVerdict? {
+        FillUp.verdict(fillUpEstimate(for: station))
     }
 
     // MARK: - Live price for one station
@@ -376,6 +391,7 @@ final class AppModel {
             let here = try await location.requestLocation()
             deviceLocation = here
             nearbyCenter = here
+            WidgetCenter.shared.reloadTimelines(ofKind: "NearbyWidget") // location may be newly allowed
             searchedPlace = nil
             selectedStation = nil
             stateContext = StationQueries.closestState(to: here, in: stations) ?? stateContext

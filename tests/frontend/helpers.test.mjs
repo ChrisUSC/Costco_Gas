@@ -12,6 +12,7 @@ import { formatGasTime, getGasStatus, groupGasHours } from '../../public/js/hour
 import { parseScraperTimestamp, getRelativeTimeLabel, formatLastUpdatedLabel, PRICES_STALE_HOURS } from '../../public/js/time.js';
 import { storeMatchesQuery, directionsUrl, formatAddress } from '../../public/js/stores.js';
 import { escapeHtml } from '../../public/js/dom.js';
+import { fillUpEstimate, fillUpVerdict, readCarSetting, ROAD_FACTOR, TANK_LIMITS } from '../../public/js/fillup.js';
 import { loadJsonPref } from '../../public/js/storage.js';
 
 const store = (over = {}) => ({
@@ -240,5 +241,63 @@ describe('formatting', () => {
 
     test('loadJsonPref falls back when storage is unavailable', () => {
         assert.deepEqual(loadJsonPref('favorites', []), []);
+    });
+});
+
+// The iOS app has the same cases in ios/CostcoGasKit (FillUpTests).
+describe('fill-up cost and worth the drive', () => {
+    // Stations due east of home in California (a zero coordinate counts as missing).
+    const home = { lat: 37, lng: -120 };
+    const near = store({ city: 'Near', lat: 37, lng: -120 + 0.1, regVal: 4.50 });
+    const far = store({ city: 'Far', lat: 37, lng: -120 + 0.3, regVal: 4.10 });
+    const pricey = store({ city: 'Pricey', lat: 37, lng: -120 + 0.5, regVal: 4.60 });
+    const opts = { stores: [near, far, pricey], from: home, tankGallons: 15, mpg: 25 };
+
+    test('fill-up cost, the drive there and back, and savings against the nearest station', () => {
+        const est = fillUpEstimate(far, 'regular', opts);
+        assert.equal(est.fillCost.toFixed(2), '61.50');
+        const miles = 2 * getDistanceMiles(37, -120, 37, -120 + 0.3) * ROAD_FACTOR;
+        assert.ok(Math.abs(est.driveMiles - miles) < 1e-9);
+        assert.equal(est.driveCost.toFixed(2), ((miles / 25) * 4.10).toFixed(2));
+        assert.equal(est.nearest.city, 'Near');
+        assert.equal(est.nearest.isThis, false);
+        const nearTotal = 15 * 4.50 + (2 * getDistanceMiles(37, -120, 37, -120 + 0.1) * ROAD_FACTOR / 25) * 4.50;
+        assert.ok(Math.abs(est.savings - (nearTotal - est.total)) < 1e-9);
+        assert.ok(est.savings > 0);
+    });
+
+    test('verdicts: saves, costs more, nearest, about the same', () => {
+        assert.match(fillUpVerdict(fillUpEstimate(far, 'regular', opts)).text, /^Saves \$\d+\.\d{2} vs Near, the nearest station$/);
+        assert.equal(fillUpVerdict(fillUpEstimate(far, 'regular', opts)).tone, 'good');
+        const more = fillUpVerdict(fillUpEstimate(pricey, 'regular', opts));
+        assert.equal(more.tone, 'bad');
+        assert.match(more.short, /^\$\d+\.\d{2} more$/);
+        assert.deepEqual(fillUpVerdict(fillUpEstimate(near, 'regular', opts)), { text: 'The nearest station', short: 'Nearest', tone: 'neutral' });
+        const twin = store({ city: 'Twin', lat: 37, lng: -120 + 0.1, regVal: 4.50 });
+        const same = fillUpVerdict(fillUpEstimate(twin, 'regular', { ...opts, stores: [near, twin] }));
+        assert.equal(same.tone, 'neutral');
+    });
+
+    test('without a location only the fill-up is known; no price gives nothing', () => {
+        const est = fillUpEstimate(far, 'regular', { ...opts, from: null });
+        assert.equal(est.fillCost.toFixed(2), '61.50');
+        assert.equal(est.driveCost, null);
+        assert.equal(fillUpVerdict(est), null);
+        assert.equal(fillUpEstimate(far, 'diesel', opts), null);
+    });
+
+    test('the nearest station is the nearest one selling the grade', () => {
+        const dieselFar = store({ city: 'DieselFar', lat: 37, lng: -120 + 0.4, dieselVal: 5.00 });
+        const est = fillUpEstimate(dieselFar, 'diesel', { ...opts, stores: [near, dieselFar] });
+        assert.equal(est.nearest.isThis, true);
+    });
+
+    test('car settings fall back when empty, unreadable or out of range', () => {
+        assert.equal(readCarSetting('12.5', TANK_LIMITS, 15), 12.5);
+        assert.equal(readCarSetting('', TANK_LIMITS, 15), 15);
+        assert.equal(readCarSetting(null, TANK_LIMITS, 15), 15);
+        assert.equal(readCarSetting('abc', TANK_LIMITS, 15), 15);
+        assert.equal(readCarSetting('0', TANK_LIMITS, 15), 15);
+        assert.equal(readCarSetting('500', TANK_LIMITS, 15), 15);
     });
 });

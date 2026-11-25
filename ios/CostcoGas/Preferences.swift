@@ -25,6 +25,10 @@ final class Preferences {
     var nearbySort: NearbySort { didSet { defaults.set(nearbySort.rawValue, forKey: "nearbySort") } }
     var historyRange: HistoryRange { didSet { defaults.set(historyRange.rawValue, forKey: "historyRangeDays") } }
 
+    // Your car, for the fill-up cost and "worth the drive" comparison (FillUp in the Kit)
+    var tankGallons: Double { didSet { defaults.set(tankGallons, forKey: "tankGallons") } }
+    var mpg: Double { didSet { defaults.set(mpg, forKey: "mpg") } }
+
     // Favorites
     var favoriteStations: Set<String> { didSet { defaults.set(Array(favoriteStations).sorted(), forKey: "favoriteStores") } }
     var favoriteRoutes: [SavedRoute] {
@@ -56,6 +60,9 @@ final class Preferences {
         historyRange = defaults.object(forKey: "historyRangeDays") == nil
             ? .month
             : (HistoryRange(rawValue: defaults.integer(forKey: "historyRangeDays")) ?? .month)
+        tankGallons = FillUp.clamped(defaults.object(forKey: "tankGallons") as? Double,
+                                     to: FillUp.tankRange, fallback: FillUp.defaultTankGallons)
+        mpg = FillUp.clamped(defaults.object(forKey: "mpg") as? Double, to: FillUp.mpgRange, fallback: FillUp.defaultMPG)
         favoriteStations = Set(defaults.stringArray(forKey: "favoriteStores") ?? [])
         favoriteRoutes = defaults.data(forKey: "favoriteRoutes")
             .flatMap { try? JSONDecoder().decode([SavedRoute].self, from: $0) } ?? []
