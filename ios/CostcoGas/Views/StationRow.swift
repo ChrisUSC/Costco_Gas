@@ -1,8 +1,8 @@
 import CostcoGasKit
 import SwiftUI
 
-/// A station in a list: the selected grade's price is the hero, the other grades sit quietly
-/// beneath (the website's store card).
+/// A station in a list, showing only the selected grade's price (the station details show every
+/// grade).
 struct StationRow: View {
     @Environment(AppModel.self) private var model
     @Environment(\.openURL) private var openURL
@@ -48,12 +48,6 @@ struct StationRow: View {
                                 .foregroundStyle(.secondary)
                         }
                         GasStatusLabel(station: station, now: model.now)
-                    }
-                    let others = station.visibleGrades.filter { $0 != grade }
-                    if !others.isEmpty {
-                        Text(others.map { "\($0.label) \(formatPrice(station.price($0)))" }.joined(separator: " · "))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
                     }
                     if let cost = routeCost {
                         RouteCostLine(cost: cost)
