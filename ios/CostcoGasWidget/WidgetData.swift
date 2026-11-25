@@ -110,7 +110,8 @@ extension Color {
         self.init(uiColor: UIColor { $0.userInterfaceStyle == .dark ? ui(dark) : ui(light) })
     }
 
-    static let costcoBlue = Color(red: 0, green: 0x5D / 255, blue: 0xAA / 255)
+    /// Costco blue, lightened in dark mode so it stays readable on a dark widget.
+    static let widgetTitle = Color(light: 0x005DAA, dark: 0x7DB4FF)
 }
 
 /// Opens the app on a station.

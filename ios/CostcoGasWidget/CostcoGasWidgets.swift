@@ -76,11 +76,22 @@ struct NearbyWidgetView: View {
     let entry: NearbyEntry
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Label("Cheapest \(entry.grade.label)", systemImage: "fuelpump.fill")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(Color.costcoBlue)
-                .lineLimit(1)
+        VStack(alignment: .leading, spacing: 0) {
+            // One header line: what it shows, and how old the prices are.
+            HStack(spacing: 4) {
+                Label("Cheapest \(entry.grade.label)", systemImage: "fuelpump.fill")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color.widgetTitle)
+                    .lineLimit(1)
+                Spacer(minLength: 4)
+                if family != .systemSmall, entry.timestamp != nil {
+                    Text(WidgetData.updatedText(entry.timestamp, now: entry.date))
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+            }
+
             if let message = entry.message {
                 Spacer(minLength: 0)
                 Text(message).font(.footnote).foregroundStyle(.secondary)
@@ -91,32 +102,40 @@ struct NearbyWidgetView: View {
                     .font(.system(size: 30, weight: .bold).monospacedDigit())
                     .foregroundStyle(entry.grade.widgetColor)
                     .minimumScaleFactor(0.7)
+                    .lineLimit(1)
                 Text(top.station.city).font(.subheadline.weight(.semibold)).lineLimit(1)
                 Text("\(String(format: "%.1f", top.distance)) mi away").font(.caption).foregroundStyle(.secondary)
                 Spacer(minLength: 0)
+                if entry.timestamp != nil {
+                    Text("Updated \(WidgetData.updatedText(entry.timestamp, now: entry.date))")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
             } else {
-                Spacer(minLength: 2)
-                ForEach(entry.items) { item in
-                    Link(destination: stationURL(item.station)) {
-                        HStack {
-                            VStack(alignment: .leading, spacing: 0) {
-                                Text(item.station.city).font(.subheadline.weight(.semibold)).lineLimit(1)
-                                Text("\(String(format: "%.1f", item.distance)) mi").font(.caption2).foregroundStyle(.secondary)
+                // One line per station, spread evenly down the rest of the widget.
+                Spacer(minLength: 6)
+                VStack(spacing: 0) {
+                    ForEach(Array(entry.items.enumerated()), id: \.element.id) { index, item in
+                        if index > 0 { Divider().padding(.vertical, 5) }
+                        Link(destination: stationURL(item.station)) {
+                            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                                Text(item.station.city)
+                                    .font(.subheadline.weight(.semibold))
+                                    .lineLimit(1)
+                                Text("\(String(format: "%.1f", item.distance)) mi")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(1)
+                                Spacer(minLength: 4)
+                                Text(formatPrice(item.station.price(entry.grade)))
+                                    .font(.headline.monospacedDigit())
+                                    .foregroundStyle(entry.grade.widgetColor)
                             }
-                            Spacer()
-                            Text(formatPrice(item.station.price(entry.grade)))
-                                .font(.title3.weight(.bold).monospacedDigit())
-                                .foregroundStyle(entry.grade.widgetColor)
                         }
                     }
                 }
                 Spacer(minLength: 0)
-            }
-            if entry.timestamp != nil {
-                Text("Updated \(WidgetData.updatedText(entry.timestamp, now: entry.date))")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -205,7 +224,7 @@ struct StationWidgetView: View {
             } else {
                 Label("Costco Gas", systemImage: "fuelpump.fill")
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(Color.costcoBlue)
+                    .foregroundStyle(Color.widgetTitle)
                 Spacer(minLength: 0)
                 Text(entry.message ?? "").font(.footnote).foregroundStyle(.secondary)
                 Spacer(minLength: 0)
