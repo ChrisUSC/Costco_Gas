@@ -25,16 +25,33 @@ export function fillCost(price, gallons) {
     return price * gallons;
 }
 
+// The extra road miles a stop at each station adds to a trip, from an OSRM /table reply for
+// the points [origin, station 1 … station n, destination] with sources 0…n and destinations
+// 1…n+1 (distances in metres): origin → station + station → destination − the direct route.
+// Null for a station the router couldn't reach.
+export function roadDetourMiles(distances, stationCount, routeMiles) {
+    const out = [];
+    for (let i = 0; i < stationCount; i++) {
+        const toStation = distances?.[0]?.[i];
+        const toDestination = distances?.[i + 1]?.[stationCount];
+        out.push(Number.isFinite(toStation) && Number.isFinite(toDestination)
+            ? Math.max(0, (toStation + toDestination) / 1609.34 - routeMiles)
+            : null);
+    }
+    return out;
+}
+
 // Each station along a route with a price for the grade, cheapest overall first: the fill-up
-// plus the detour (off the route to the station and back, `store.distance` miles each way,
-// allowing for winding roads). `extraVsBest` is how much more it costs than the best one;
+// plus the detour. The detour is `store.detourMiles` (road miles, from roadDetourMiles) when
+// known, else an estimate: off the route to the station and back, `store.distance` miles each
+// way, allowing for winding roads. `extraVsBest` is how much more it costs than the best one;
 // `isBest` marks the best (and any within a few cents of it).
 export function routeStopCosts(along, grade, { gallons, mpg }) {
     const stops = along
         .filter(s => hasGradeData(s, grade))
         .map(store => {
             const price = gradeVal(store, grade);
-            const detourMiles = 2 * (store.distance || 0) * ROAD_FACTOR;
+            const detourMiles = Number.isFinite(store.detourMiles) ? store.detourMiles : 2 * (store.distance || 0) * ROAD_FACTOR;
             const detourCost = (detourMiles / mpg) * price;
             const fill = fillCost(price, gallons);
             return { store, price, detourMiles, detourCost, fillCost: fill, total: fill + detourCost };

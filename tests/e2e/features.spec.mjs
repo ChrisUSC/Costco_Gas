@@ -62,6 +62,18 @@ test.describe('Route', () => {
         // Leaving the Route tab puts every station back on the map.
         await expect.poll(() => page.locator('#map .leaflet-marker-icon, #map .station-cluster').count()).toBeGreaterThan(pins);
     });
+
+    test('opening a station on the route draws its detour and shows what it costs', async ({ page }, testInfo) => {
+        await page.goto('/?tab=route');
+        await openListOnPhone(page, testInfo);
+        await page.locator('#routeOrigin').fill('Start Town');
+        await page.locator('#routeDestination').fill('End Town');
+        await page.locator('[data-action="route-find"]').click();
+        await page.locator('#routeResultsContainer .store-card').first().click();
+        // The drive through the station: a dashed line over the route.
+        await expect(page.locator('#map path[stroke-dasharray]')).toHaveCount(1);
+        await expect(page.locator('.fillup:visible')).toContainText(/Detour off your route · (under 0\.1|\d+\.\d) mi/);
+    });
 });
 
 test.describe('Fill-up cost', () => {

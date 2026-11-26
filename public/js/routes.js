@@ -8,7 +8,7 @@ import {
     skeletonCardsHtml
 } from './components.js';
 import { escapeHtml, showToast } from './dom.js';
-import { ROUTE_SORTS, routeStopCosts } from './fillup.js';
+import { roadDetourMiles, ROUTE_SORTS, routeStopCosts } from './fillup.js';
 import { getDistanceMiles, getRouteBoundsPadded, minDistanceToRouteMiles } from './geo.js';
 import { icon } from './icons.js';
 import { getLocationIfGranted, requestBrowserLocation } from './location.js';
@@ -43,6 +43,81 @@ async function fetchDrivingRoute(origin, destination) {
             isApproximate: true
         };
     }
+}
+
+// Road detours: how many extra miles a stop at each station adds, from one OSRM table request
+// (at most this many stations, nearest the route first). Returns a list matching `stations`,
+// with null where unknown; all null if the request fails.
+const MAX_DETOUR_STATIONS = 60;
+
+async function fetchRoadDetours(origin, destination, stations, routeMiles) {
+    const none = stations.map(() => null);
+    const measured = stations
+        .map((s, i) => ({ s, i }))
+        .sort((a, b) => a.s.distance - b.s.distance)
+        .slice(0, MAX_DETOUR_STATIONS);
+    if (measured.length === 0) return none;
+    const points = [origin, ...measured.map(m => m.s), destination].map(p => `${p.lng},${p.lat}`).join(';');
+    const n = measured.length;
+    const sources = Array.from({ length: n + 1 }, (_, i) => i).join(';');
+    const destinations = Array.from({ length: n + 1 }, (_, i) => i + 1).join(';');
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+    try {
+        const res = await fetch(`https://router.project-osrm.org/table/v1/driving/${points}?sources=${sources}&destinations=${destinations}&annotations=distance`, { signal: controller.signal });
+        if (!res.ok) throw new Error(`Routing service returned ${res.status}`);
+        const data = await res.json();
+        if (data.code !== 'Ok') throw new Error('No distance table');
+        const miles = roadDetourMiles(data.distances, n, routeMiles);
+        measured.forEach((m, k) => { none[m.i] = miles[k]; });
+        return none;
+    } catch (err) {
+        console.warn('Road detours unavailable, estimating from the distance to the route:', err);
+        return stations.map(() => null);
+    } finally {
+        clearTimeout(timeoutId);
+    }
+}
+
+// --- The detour to one station, drawn on the map when it's opened from the Route tab ---
+let detourLine = null;
+let detourRequest = 0;
+
+// The drive start → station → destination, as [lat, lng] points, or null.
+async function fetchRouteVia(origin, stop, destination) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+    try {
+        const points = [origin, stop, destination].map(p => `${p.lng},${p.lat}`).join(';');
+        const res = await fetch(`https://router.project-osrm.org/route/v1/driving/${points}?overview=full&geometries=geojson`, { signal: controller.signal });
+        if (!res.ok) return null;
+        const data = await res.json();
+        const route = data.code === 'Ok' && data.routes?.[0];
+        return route ? route.geometry.coordinates.map(([lng, lat]) => [lat, lng]) : null;
+    } catch (e) {
+        return null;
+    } finally {
+        clearTimeout(timeoutId);
+    }
+}
+
+export function clearRouteDetour() {
+    detourRequest++;
+    if (detourLine && routeLayer) routeLayer.removeLayer(detourLine);
+    detourLine = null;
+}
+
+// On the Route tab, draw the drive through `store` as a dashed orange line over the route, so
+// the way off the route and back is visible. Does nothing for stations not on the route.
+export async function showRouteDetour(store) {
+    clearRouteDetour();
+    const routeState = state.lastRouteState;
+    if (!store || state.currentTab !== 'route' || !routeState?.along || routeState.route.isApproximate || !routeLayer) return;
+    if (!routeState.along.some(s => s.state === store.state && s.city === store.city)) return;
+    const request = detourRequest;
+    const coords = await fetchRouteVia(routeState.origin, store, routeState.destination);
+    if (!coords || request !== detourRequest || state.lastRouteState !== routeState || state.currentTab !== 'route') return;
+    detourLine = L.polyline(coords, { color: '#e08a00', weight: 4, opacity: 0.95, dashArray: '8 8', interactive: false }).addTo(routeLayer);
 }
 
 export function renderRoutePanel() {
@@ -287,6 +362,7 @@ export function cancelEditRoute() {
 
 export function clearRouteVisuals() {
     if (routeLayer) routeLayer.clearLayers();
+    detourLine = null;
 }
 
 function renderRouteResults(routeState) {
@@ -344,6 +420,7 @@ function renderRouteOnMap(routeCoords, origin, destination) {
     if (!routeLayer || !map) return;
 
     routeLayer.clearLayers();
+    detourLine = null;
     L.polyline(routeCoords, { color: '#005DAA', weight: 5, opacity: 0.7 }).addTo(routeLayer);
     L.circleMarker([origin.lat, origin.lng], { radius: 8, fillColor: '#059669', color: '#fff', weight: 3, opacity: 1, fillOpacity: 1 })
         .addTo(routeLayer).bindPopup(`<b>Start:</b> ${escapeHtml(origin.label)}`);
@@ -411,6 +488,11 @@ export async function findGasAlongRoute() {
                 s.lng >= bounds.minLng && s.lng <= bounds.maxLng)
             .map(s => ({ ...s, distance: minDistanceToRouteMiles(s.lat, s.lng, route.coords) }))
             .filter(s => s.distance <= bufferMiles);
+        // The extra road miles each stop adds (a straight-line route has no roads to measure).
+        if (!route.isApproximate) {
+            const detours = await fetchRoadDetours(origin, destination, along, route.distanceMiles);
+            along.forEach((s, i) => { if (detours[i] !== null) s.detourMiles = detours[i]; });
+        }
 
         state.lastRouteState = { originText, destText, bufferMiles, origin, destination, route, along };
         // The user may have switched tabs while the route was loading; the result is kept

@@ -214,6 +214,53 @@ public enum RouteService {
         return DrivingRoute(coords: coords, distanceMiles: route.distance / 1609.34, isApproximate: false)
     }
 
+    struct OSRMTable: Decodable {
+        let code: String
+        let distances: [[Double?]]?
+    }
+
+    /// Most stations measured in one road-detour request (nearest the route first).
+    public static let maxDetourStations = 60
+
+    /// The extra road miles a stop at each station adds, keyed by station id, from one OSRM table
+    /// request (8 s limit). Stations it couldn't measure are left out; empty if the request fails.
+    public static func roadDetours(from origin: LatLng, to destination: LatLng, stations: [StationDistance],
+                                   routeMiles: Double, session: URLSession = .shared) async -> [String: Double] {
+        let measured = Array(stations.filter { $0.station.coordinate != nil }
+            .sorted { $0.distance < $1.distance }
+            .prefix(maxDetourStations))
+        guard !measured.isEmpty else { return [:] }
+        let points = [origin] + measured.compactMap(\.station.coordinate) + [destination]
+        let n = measured.count
+        let path = points.map { "\($0.lng),\($0.lat)" }.joined(separator: ";")
+        let sources = (0...n).map(String.init).joined(separator: ";")
+        let destinations = (1...(n + 1)).map(String.init).joined(separator: ";")
+        guard let url = URL(string: "https://router.project-osrm.org/table/v1/driving/\(path)?sources=\(sources)&destinations=\(destinations)&annotations=distance") else { return [:] }
+        do {
+            let (data, response) = try await session.data(for: URLRequest(url: url, timeoutInterval: 8))
+            if let http = response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) { return [:] }
+            let table = try JSONDecoder().decode(OSRMTable.self, from: data)
+            guard table.code == "Ok" else { return [:] }
+            let miles = FillUp.roadDetourMiles(distances: table.distances, stationCount: n, routeMiles: routeMiles)
+            var out: [String: Double] = [:]
+            for (item, detour) in zip(measured, miles) { if let detour { out[item.id] = detour } }
+            return out
+        } catch {
+            return [:]
+        }
+    }
+
+    /// The drive start → stop → destination, for drawing a station's detour; nil if routing fails.
+    public static func routeVia(origin: LatLng, stop: LatLng, destination: LatLng,
+                                session: URLSession = .shared) async -> [LatLng]? {
+        let path = [origin, stop, destination].map { "\($0.lng),\($0.lat)" }.joined(separator: ";")
+        guard let url = URL(string: "https://router.project-osrm.org/route/v1/driving/\(path)?overview=full&geometries=geojson") else { return nil }
+        guard let reply = try? await session.data(for: URLRequest(url: url, timeoutInterval: 8)),
+              (reply.1 as? HTTPURLResponse).map({ (200..<300).contains($0.statusCode) }) ?? true,
+              let route = try? decode(reply.0) else { return nil }
+        return route.coords
+    }
+
     /// The driving route, or a straight-line corridor when routing is unavailable (8 s limit).
     public static func drivingRoute(from origin: LatLng, to destination: LatLng,
                                     session: URLSession = .shared) async -> DrivingRoute {

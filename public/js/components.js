@@ -1,7 +1,7 @@
 // --- Reusable HTML Components & View Builders ---
 
 import { escapeHtml } from './dom.js';
-import { fillCost } from './fillup.js';
+import { fillCost, routeStopCosts } from './fillup.js';
 import { gasHoursDetailsHtml, gasStatusHtml } from './hours.js';
 import { icon } from './icons.js';
 import { isPhoneViewport } from './layout.js';
@@ -118,11 +118,24 @@ const trimNumber = (n) => String(+n.toFixed(1));
 export function fillUpHtml(store) {
     if (!hasGradeData(store, state.gasPref)) return '';
     const cost = fillCost(gradeVal(store, state.gasPref), state.fillGallons);
+    const stop = routeStopFor(store);
+    const detourHtml = stop
+        ? `<div class="fillup-row"><span>Detour off your route · ${stop.detourMiles < 0.1 ? 'under 0.1' : stop.detourMiles.toFixed(1)} mi</span><span class="fillup-val">${money(stop.detourCost)}</span></div>`
+        : '';
     return `
         <div class="fillup" role="group" aria-label="Fill-up cost">
             <div class="fillup-row"><span>Fill-up · ${trimNumber(state.fillGallons)} gal ${GRADE_INFO[state.gasPref].label}</span><span class="fillup-val">${money(cost)}</span></div>
+            ${detourHtml}
             <button type="button" class="btn btn-ghost fillup-edit" data-action="open-settings">${trimNumber(state.fillGallons)} gal · ${trimNumber(state.mpg)} mpg · Change</button>
         </div>`;
+}
+
+// This station's stop on the route being shown, if it's on it (Route tab only).
+function routeStopFor(store) {
+    const routeState = state.lastRouteState;
+    if (state.currentTab !== 'route' || !routeState?.along) return null;
+    return routeStopCosts(routeState.along, state.gasPref, { gallons: state.fillGallons, mpg: state.mpg })
+        .find(s => s.store.state === store.state && s.store.city === store.city) || null;
 }
 
 // On a Route result: "Fill-up $59.88 + detour $0.40" and how it compares with the best value.

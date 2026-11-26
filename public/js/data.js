@@ -124,7 +124,7 @@ export function refreshPrices() {
                 // Route results hold copies of stations; give them the new prices.
                 if (state.lastRouteState?.along) {
                     state.lastRouteState.along = state.lastRouteState.along
-                        .map(s => { const fresh = findStore(s.state, s.city); return fresh ? { ...fresh, distance: s.distance } : null; })
+                        .map(s => { const fresh = findStore(s.state, s.city); return fresh ? { ...fresh, distance: s.distance, detourMiles: s.detourMiles } : null; })
                         .filter(Boolean);
                 }
                 setOfflineMode(navigator.onLine === false);

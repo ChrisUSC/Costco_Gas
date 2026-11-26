@@ -44,7 +44,7 @@ struct StationDetailView: View {
             }
 
             if let cost = model.fillCost(for: s) {
-                FillUpSection(cost: cost)
+                FillUpSection(station: s, cost: cost)
             }
 
             Section {
@@ -148,12 +148,17 @@ private struct LivePriceFooter: View {
 /// What your usual fill-up costs here.
 private struct FillUpSection: View {
     @Environment(AppModel.self) private var model
+    let station: Station
     let cost: Double
 
     var body: some View {
         Section {
             LabeledContent("Fill-up · \(formatNumber(model.prefs.fillGallons)) gal \(model.grade.label)",
                            value: formatPrice(cost))
+            if let stop = model.routeStop(for: station) {
+                LabeledContent("Detour off your route · \(stop.detourMiles < 0.1 ? "under 0.1" : String(format: "%.1f", stop.detourMiles)) mi",
+                               value: formatPrice(stop.detourCost))
+            }
         } header: {
             ListHeader(text: "Fill-up cost")
         } footer: {

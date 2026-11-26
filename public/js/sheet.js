@@ -5,6 +5,7 @@ import { debounce } from './dom.js';
 import { isMobileViewport, isPhoneViewport, isTabletPortrait } from './layout.js';
 import { map } from './map.js';
 import { currentOverlay, popOverlay, pushOverlay, replaceOverlay, syncUrl } from './nav.js';
+import { showRouteDetour } from './routes.js';
 import { state } from './state.js';
 
 export function initSheet() {
@@ -195,6 +196,7 @@ export function openMobileStoreCard(store, { fromHistory = false } = {}) {
     if (!store) return;
     state.activeMobileStore = store;
     renderMobileStoreCardContent(store);
+    showRouteDetour(store);
     const container = document.getElementById('appContainer');
 
     if (isPhoneViewport()) {
