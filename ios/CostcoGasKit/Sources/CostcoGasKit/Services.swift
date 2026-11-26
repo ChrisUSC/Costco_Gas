@@ -250,6 +250,17 @@ public enum RouteService {
         }
     }
 
+    /// The drive start → stop → destination, for drawing a station's detour; nil if routing fails.
+    public static func routeVia(origin: LatLng, stop: LatLng, destination: LatLng,
+                                session: URLSession = .shared) async -> [LatLng]? {
+        let path = [origin, stop, destination].map { "\($0.lng),\($0.lat)" }.joined(separator: ";")
+        guard let url = URL(string: "https://router.project-osrm.org/route/v1/driving/\(path)?overview=full&geometries=geojson") else { return nil }
+        guard let reply = try? await session.data(for: URLRequest(url: url, timeoutInterval: 8)),
+              (reply.1 as? HTTPURLResponse).map({ (200..<300).contains($0.statusCode) }) ?? true,
+              let route = try? decode(reply.0) else { return nil }
+        return route.coords
+    }
+
     /// The driving route, or a straight-line corridor when routing is unavailable (8 s limit).
     public static func drivingRoute(from origin: LatLng, to destination: LatLng,
                                     session: URLSession = .shared) async -> DrivingRoute {

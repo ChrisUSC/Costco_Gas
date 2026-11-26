@@ -95,6 +95,7 @@ private struct MapLayer: View {
             clustering: model.prefs.clusterMarkers,
             colorPins: model.prefs.colorPins,
             route: model.currentTab == .route ? model.routeResult : nil,
+            detour: model.currentTab == .route ? model.detourPath : nil,
             searchedPlace: model.searchedPlace,
             showsUserLocation: model.deviceLocation != nil,
             request: model.mapRequest,

@@ -11,6 +11,8 @@ struct StationMapView: UIViewRepresentable {
     var clustering: Bool
     var colorPins: Bool
     var route: RouteResult?
+    /// The drive through the open station, drawn dashed over the route.
+    var detour: [LatLng]?
     var searchedPlace: Place?
     var showsUserLocation: Bool
     var request: MapRequest?
@@ -46,6 +48,7 @@ struct StationMapView: UIViewRepresentable {
         if map.showsUserLocation != showsUserLocation { map.showsUserLocation = showsUserLocation }
         coordinator.syncStations(on: map)
         coordinator.syncRoute(on: map)
+        coordinator.syncDetour(on: map)
         coordinator.syncPlace(on: map)
         if let request, request.id != coordinator.lastRequestID {
             coordinator.lastRequestID = request.id
@@ -192,7 +195,31 @@ struct StationMapView: UIViewRepresentable {
             if let placeMarker { map.addAnnotation(placeMarker) }
         }
 
+        private var detourOverlay: DetourPolyline?
+        private var detourSignature: String?
+
+        func syncDetour(on map: MKMapView) {
+            let path = parent.detour
+            let signature = path.map { p in "\(p.count)|\(p.first?.lat ?? 0),\(p.first?.lng ?? 0)|\(p.last?.lat ?? 0),\(p.last?.lng ?? 0)|\(p[p.count / 2].lat)" }
+            guard signature != detourSignature else { return }
+            detourSignature = signature
+            if let detourOverlay { map.removeOverlay(detourOverlay) }
+            detourOverlay = nil
+            guard let path, path.count > 1 else { return }
+            var coords = path.map(\.clCoordinate)
+            let line = DetourPolyline(coordinates: &coords, count: coords.count)
+            map.addOverlay(line, level: .aboveRoads)
+            detourOverlay = line
+        }
+
         func mapView(_ map: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
+            if let detour = overlay as? DetourPolyline {
+                let renderer = MKPolylineRenderer(polyline: detour)
+                renderer.strokeColor = .systemOrange
+                renderer.lineWidth = 4
+                renderer.lineDashPattern = [8, 6]
+                return renderer
+            }
             guard let line = overlay as? MKPolyline else { return MKOverlayRenderer(overlay: overlay) }
             let renderer = MKPolylineRenderer(polyline: line)
             renderer.strokeColor = UIColor(red: 0, green: 0x5D / 255, blue: 0xAA / 255, alpha: 0.75)
@@ -223,3 +250,6 @@ struct StationMapView: UIViewRepresentable {
         }
     }
 }
+
+/// The drive through one station, drawn dashed in orange over the blue route.
+final class DetourPolyline: MKPolyline {}

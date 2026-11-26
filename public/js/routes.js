@@ -79,6 +79,47 @@ async function fetchRoadDetours(origin, destination, stations, routeMiles) {
     }
 }
 
+// --- The detour to one station, drawn on the map when it's opened from the Route tab ---
+let detourLine = null;
+let detourRequest = 0;
+
+// The drive start → station → destination, as [lat, lng] points, or null.
+async function fetchRouteVia(origin, stop, destination) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+    try {
+        const points = [origin, stop, destination].map(p => `${p.lng},${p.lat}`).join(';');
+        const res = await fetch(`https://router.project-osrm.org/route/v1/driving/${points}?overview=full&geometries=geojson`, { signal: controller.signal });
+        if (!res.ok) return null;
+        const data = await res.json();
+        const route = data.code === 'Ok' && data.routes?.[0];
+        return route ? route.geometry.coordinates.map(([lng, lat]) => [lat, lng]) : null;
+    } catch (e) {
+        return null;
+    } finally {
+        clearTimeout(timeoutId);
+    }
+}
+
+export function clearRouteDetour() {
+    detourRequest++;
+    if (detourLine && routeLayer) routeLayer.removeLayer(detourLine);
+    detourLine = null;
+}
+
+// On the Route tab, draw the drive through `store` as a dashed orange line over the route, so
+// the way off the route and back is visible. Does nothing for stations not on the route.
+export async function showRouteDetour(store) {
+    clearRouteDetour();
+    const routeState = state.lastRouteState;
+    if (!store || state.currentTab !== 'route' || !routeState?.along || routeState.route.isApproximate || !routeLayer) return;
+    if (!routeState.along.some(s => s.state === store.state && s.city === store.city)) return;
+    const request = detourRequest;
+    const coords = await fetchRouteVia(routeState.origin, store, routeState.destination);
+    if (!coords || request !== detourRequest || state.lastRouteState !== routeState || state.currentTab !== 'route') return;
+    detourLine = L.polyline(coords, { color: '#e08a00', weight: 4, opacity: 0.95, dashArray: '8 8', interactive: false }).addTo(routeLayer);
+}
+
 export function renderRoutePanel() {
     const container = document.getElementById("sidebarContent");
     if (!container) return;
@@ -321,6 +362,7 @@ export function cancelEditRoute() {
 
 export function clearRouteVisuals() {
     if (routeLayer) routeLayer.clearLayers();
+    detourLine = null;
 }
 
 function renderRouteResults(routeState) {
@@ -378,6 +420,7 @@ function renderRouteOnMap(routeCoords, origin, destination) {
     if (!routeLayer || !map) return;
 
     routeLayer.clearLayers();
+    detourLine = null;
     L.polyline(routeCoords, { color: '#005DAA', weight: 5, opacity: 0.7 }).addTo(routeLayer);
     L.circleMarker([origin.lat, origin.lng], { radius: 8, fillColor: '#059669', color: '#fff', weight: 3, opacity: 1, fillOpacity: 1 })
         .addTo(routeLayer).bindPopup(`<b>Start:</b> ${escapeHtml(origin.label)}`);

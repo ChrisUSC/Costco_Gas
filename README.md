@@ -19,7 +19,7 @@ A live-updating map of Costco gas prices across the US. A scheduled scraper coll
 - 🔍 Search by city, address or zip code (store matches plus Nominatim geocoding)
 - 📈 Price-history chart per station with 7D / 30D / 90D / 1Y / All ranges
 - 🥇 **Lowest**: a ranked state leaderboard, with 72-hour price trends shown as an arrow and the size of the move (`▼ 4¢`, `▲ 6¢`, `–`)
-- ⛽ **Best value along a route**: set how many gallons you usually buy and your mpg in Settings. Route results rank stations by your fill-up plus the detour (the extra road miles a stop adds, measured with OSRM), mark the best value and show how much more the others cost (or sort by lowest price); station details show what your usual fill-up costs
+- ⛽ **Best value along a route**: set how many gallons you usually buy and your mpg in Settings. Route results rank stations by your fill-up plus the detour (the extra road miles a stop adds, measured with OSRM, and drawn on the map when you open a station), mark the best value and show how much more the others cost (or sort by lowest price); station details show what your usual fill-up costs
 - 📍 **Nearby**: stations within a 5–100 mi radius (10 mi by default) of you, a searched place or the map centre, sorted by price or distance
 - 🔗 Shareable links: `?store=STATE_City` opens a station, and `?tab=`, `?grade=` and `?state=` restore the view
 - ⚠️ The "Updated … ago" label turns amber and says the prices may be out of date when no new prices have arrived for 4 hours (they normally update hourly)

@@ -22,6 +22,7 @@ import {
     gradeVal,
     hasGradeData
 } from './prices.js';
+import { showRouteDetour } from './routes.js';
 import { openMobileStoreCard, sheetAwareCenter } from './sheet.js';
 import { findStore, isFavoriteStore, state } from './state.js';
 import { DIRECTIONS_APP_LABELS, directionsUrl, formatAddress } from './stores.js';
@@ -41,7 +42,11 @@ export function initMarkers() {
     markersLayer = createMarkersLayer().addTo(map);
     addPriceLegend();
     map.on('moveend', debounce(updatePinTiers, 80));
-    map.on('popupopen', (e) => { popupStore = e.popup._source?.options.store || null; syncUrl(); });
+    map.on('popupopen', (e) => {
+        popupStore = e.popup._source?.options.store || null;
+        syncUrl();
+        showRouteDetour(popupStore);
+    });
     map.on('popupclose', () => { popupStore = null; syncUrl(); });
 }
 

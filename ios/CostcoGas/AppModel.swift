@@ -85,7 +85,12 @@ final class AppModel {
     var nearbyCenter: LatLng?
     var searchedPlace: Place?
     var deviceLocation: LatLng?
-    var selectedStation: Station?
+    var selectedStation: Station? {
+        didSet { if selectedStation == nil { detourPath = nil } }
+    }
+    /// The drive through the open station, drawn on the map from the Route tab.
+    private(set) var detourPath: [LatLng]?
+    @ObservationIgnored private var detourTask: Task<Void, Never>?
     var historyStation: Station?
     var showSettings = false
     var panelSize: PanelSize = .half
@@ -379,6 +384,28 @@ final class AppModel {
         selectedStation = station
         if panelSize == .collapsed { panelSize = .half }
         if let c = station.coordinate { mapRequest = MapRequest(command: .center(c, spanDegrees: 0.05)) }
+        updateDetour(for: station)
+    }
+
+    /// On the Route tab, fetch the drive through a station on the route so the map can show the
+    /// way off the route and back.
+    private func updateDetour(for station: Station) {
+        detourTask?.cancel()
+        detourPath = nil
+        guard currentTab == .route, let result = routeResult, !result.route.isApproximate,
+              result.along.contains(where: { $0.id == station.id }), let stop = station.coordinate else { return }
+        let origin = result.origin.coordinate, destination = result.destination.coordinate
+        detourTask = Task { [weak self] in
+            let path = await RouteService.routeVia(origin: origin, stop: stop, destination: destination)
+            guard !Task.isCancelled, let self, self.selectedStation?.id == station.id else { return }
+            self.detourPath = path
+        }
+    }
+
+    /// This station's stop on the route being shown (Route tab only).
+    func routeStop(for station: Station) -> RouteStopCost? {
+        guard currentTab == .route, let result = routeResult else { return nil }
+        return routeStops(result).first { $0.id == station.id }
     }
 
     func showToast(_ message: String) {
@@ -531,6 +558,7 @@ final class AppModel {
         }
         routeOrigin = origin
         routeDest = destination
+        detourPath = nil
         routeResult = RouteResult(originText: originText, destText: destText, bufferMiles: routeBuffer,
                                   origin: origin, destination: destination, route: route, along: along,
                                   roadDetours: roadDetours)
@@ -612,6 +640,7 @@ final class AppModel {
     func clearRoute() {
         routeResult = nil
         routeError = nil
+        detourPath = nil
     }
 
     private func fillRouteFields(_ route: SavedRoute) {
