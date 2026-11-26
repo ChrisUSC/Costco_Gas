@@ -5,4 +5,4 @@ requests==2.34.2
 urllib3==2.8.0
 beautifulsoup4==4.15.0
 timezonefinder==9.0.0  # 9.1+ needs Python 3.12; CI runs 3.11
-boto3==1.44.1
+boto3==1.44.9
